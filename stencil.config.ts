@@ -21,6 +21,7 @@ export const config: Config = {
     },
   ],
   testing: {
-    browserHeadless: "new",
+    browserHeadless: 'new',
   },
+  globalStyle: 'src/styles/main.css',
 };
