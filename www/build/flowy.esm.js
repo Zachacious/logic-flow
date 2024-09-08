@@ -1,5 +1,5 @@
-import { B as BUILD, c as consoleDevInfo, H, d as doc, N as NAMESPACE, p as promiseResolve, b as bootstrapLazy } from './index-4f7a8ee4.js';
-export { s as setNonce } from './index-4f7a8ee4.js';
+import { B as BUILD, c as consoleDevInfo, H, d as doc, N as NAMESPACE, p as promiseResolve, b as bootstrapLazy } from './index-775bd678.js';
+export { s as setNonce } from './index-775bd678.js';
 import { g as globalScripts } from './app-globals-0f993ce5.js';
 
 /*
@@ -43,7 +43,7 @@ var patchCloneNodeFix = (HTMLElementPrototype) => {
 
 patchBrowser().then(async (options) => {
   await globalScripts();
-  return bootstrapLazy([["flowy-canvas",[[4,"flowy-canvas",{"renderGrid":[4,"render-grid"],"gridSize":[2,"grid-size"],"gridBgColor":[1,"grid-bg-color"],"gridLineColor":[1,"grid-line-color"],"maxZoom":[2,"max-zoom"],"minZoom":[2,"min-zoom"],"zoomSpeed":[2,"zoom-speed"],"zoom":[32],"lastZoom":[32],"initialPinchDistance":[32],"pan":[32],"isDragging":[32],"dragStart":[32]},null,{"zoom":["zoomChanged"],"pan":["panChanged"]}]]],["my-component",[[1,"my-component",{"first":[1],"middle":[1],"last":[1]}]]]], options);
+  return bootstrapLazy([["flowy-canvas",[[4,"flowy-canvas",{"renderGrid":[4,"render-grid"],"gridSize":[2,"grid-size"],"gridBgColor":[1,"grid-bg-color"],"gridLineColor":[1,"grid-line-color"],"maxZoom":[2,"max-zoom"],"minZoom":[2,"min-zoom"],"zoomSpeed":[2,"zoom-speed"],"zoom":[32],"pan":[32]},null,{"zoom":["zoomChanged"],"pan":["panChanged"]}]]],["my-component",[[1,"my-component",{"first":[1],"middle":[1],"last":[1]}]]]], options);
 });
 
 //# sourceMappingURL=flowy.esm.js.map
