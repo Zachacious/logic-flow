@@ -48,42 +48,26 @@ export class FlowyCanvas {
     canvasEl.addEventListener('touchmove', e => this.handleTouch(e, e => this.onPointerMove(e)));
     canvasEl.addEventListener('wheel', e => {
       e.preventDefault();
-      if (e.deltaY < 0) {
-        this.zoom = Math.min(this.maxZoom, Math.max(this.minZoom, this.zoom + this.zoomSpeed));
-      }
-      if (e.deltaY > 0) {
-        this.zoom = Math.min(this.maxZoom, Math.max(this.minZoom, this.zoom - this.zoomSpeed));
-      }
 
-      const contentEl = this.el.querySelector('.flowy-content') as HTMLElement;
-      // adjust pan to keep the same point under the cursor
-      const canvasRect = contentEl.getBoundingClientRect();
-      const canvasCenter = { x: canvasRect.width / 2, y: canvasRect.height / 2 };
-      // cursor delta from center
-      const cursorDelta = {
-        x: e.clientX - canvasCenter.x,
-        y: e.clientY - canvasCenter.y,
-      };
+      // Calculate the mouse position relative to the canvas
+      const canvasRect = canvasEl.getBoundingClientRect();
+      const mouseX = e.clientX - canvasRect.left;
+      const mouseY = e.clientY - canvasRect.top;
 
-      // const zoomFactor = this.zoomSpeed;
+      // Calculate the zoom level change
+      const zoomDelta = e.deltaY < 0 ? this.zoomSpeed : -this.zoomSpeed;
+      const newZoom = Math.min(this.maxZoom, Math.max(this.minZoom, this.zoom + zoomDelta));
 
-      // adjust pan
+      // Calculate the scale factor
+      const scaleFactor = newZoom / this.zoom;
 
-      if (e.deltaY < 0) {
-        this.pan = {
-          x: this.pan.x - cursorDelta.x * this.zoomSpeed,
-          y: this.pan.y - cursorDelta.y * this.zoomSpeed,
-        };
-      }
-      if (e.deltaY > 0) {
-        this.pan = {
-          x: this.pan.x + cursorDelta.x,
-          y: this.pan.y + cursorDelta.y,
-        };
-      }
+      // Adjust the pan position to keep the same point under the cursor
+      const newPanX = mouseX - (mouseX - this.pan.x * this.zoom) * scaleFactor;
+      const newPanY = mouseY - (mouseY - this.pan.y * this.zoom) * scaleFactor;
 
-      this.adjustZoom(e.deltaY * this.zoomSpeed, 0);
-      this.lastZoom = this.zoom;
+      // Update pan and zoom
+      this.pan = { x: newPanX / newZoom, y: newPanY / newZoom };
+      this.zoom = newZoom;
     });
   }
 
@@ -140,6 +124,9 @@ export class FlowyCanvas {
   updateScreen() {
     this.renderGridLines();
     const contentEl = this.el.querySelector('.flowy-content') as HTMLElement;
+
+    // order of transform is important
+    // contentEl.style.transform = `translate(${this.pan.x}px, ${this.pan.y}px) scale(${this.zoom})`;
     contentEl.style.transform = `scale(${this.zoom}) translate(${this.pan.x}px, ${this.pan.y}px)`;
   }
 

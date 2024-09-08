@@ -40,37 +40,21 @@ const FlowyCanvas = class {
         canvasEl.addEventListener('touchmove', e => this.handleTouch(e, e => this.onPointerMove(e)));
         canvasEl.addEventListener('wheel', e => {
             e.preventDefault();
-            if (e.deltaY < 0) {
-                this.zoom = Math.min(this.maxZoom, Math.max(this.minZoom, this.zoom + this.zoomSpeed));
-            }
-            if (e.deltaY > 0) {
-                this.zoom = Math.min(this.maxZoom, Math.max(this.minZoom, this.zoom - this.zoomSpeed));
-            }
-            const contentEl = this.el.querySelector('.flowy-content');
-            // adjust pan to keep the same point under the cursor
-            const canvasRect = contentEl.getBoundingClientRect();
-            const canvasCenter = { x: canvasRect.width / 2, y: canvasRect.height / 2 };
-            // cursor delta from center
-            const cursorDelta = {
-                x: e.clientX - canvasCenter.x,
-                y: e.clientY - canvasCenter.y,
-            };
-            // const zoomFactor = this.zoomSpeed;
-            // adjust pan
-            if (e.deltaY < 0) {
-                this.pan = {
-                    x: this.pan.x - cursorDelta.x * this.zoomSpeed,
-                    y: this.pan.y - cursorDelta.y * this.zoomSpeed,
-                };
-            }
-            if (e.deltaY > 0) {
-                this.pan = {
-                    x: this.pan.x + cursorDelta.x,
-                    y: this.pan.y + cursorDelta.y,
-                };
-            }
-            this.adjustZoom(e.deltaY * this.zoomSpeed, 0);
-            this.lastZoom = this.zoom;
+            // Calculate the mouse position relative to the canvas
+            const canvasRect = canvasEl.getBoundingClientRect();
+            const mouseX = e.clientX - canvasRect.left;
+            const mouseY = e.clientY - canvasRect.top;
+            // Calculate the zoom level change
+            const zoomDelta = e.deltaY < 0 ? this.zoomSpeed : -this.zoomSpeed;
+            const newZoom = Math.min(this.maxZoom, Math.max(this.minZoom, this.zoom + zoomDelta));
+            // Calculate the scale factor
+            const scaleFactor = newZoom / this.zoom;
+            // Adjust the pan position to keep the same point under the cursor
+            const newPanX = mouseX - (mouseX - this.pan.x * this.zoom) * scaleFactor;
+            const newPanY = mouseY - (mouseY - this.pan.y * this.zoom) * scaleFactor;
+            // Update pan and zoom
+            this.pan = { x: newPanX / newZoom, y: newPanY / newZoom };
+            this.zoom = newZoom;
         });
     }
     renderGridLines() {
@@ -116,6 +100,8 @@ const FlowyCanvas = class {
     updateScreen() {
         this.renderGridLines();
         const contentEl = this.el.querySelector('.flowy-content');
+        // order of transform is important
+        // contentEl.style.transform = `translate(${this.pan.x}px, ${this.pan.y}px) scale(${this.zoom})`;
         contentEl.style.transform = `scale(${this.zoom}) translate(${this.pan.x}px, ${this.pan.y}px)`;
     }
     zoomChanged() {
@@ -184,7 +170,7 @@ const FlowyCanvas = class {
         }
     }
     render() {
-        return (h(Host, { key: '2a3c6f960827aafe13ee6833d683c6258792bb1c' }, h("div", { key: '17f4bcd76fbe4b1985c4c141c0c2b2e3b9d263d4', class: "flowy-canvas" }, h("canvas", { key: '6bf343d142d70155e14919c84e19aea5638ec46f', class: "flowy-grid" }), h("div", { key: '918bf6a821a3e07c3b89282013a445c483171570', class: "flowy-content" }, h("slot", { key: 'd99480c5f533c107327049e67fdadb2f2d89f20b' })))));
+        return (h(Host, { key: '40bf1b49b6f9a99c959e9595cfc394527cf9722c' }, h("div", { key: 'b776ba1552334b11eba511e85ee341333d0fc687', class: "flowy-canvas" }, h("canvas", { key: '20f79236e51ec0f9aac6cf69a1202b5dfe96c611', class: "flowy-grid" }), h("div", { key: '32470db94805855658a208af337e6b72696c6de7', class: "flowy-content" }, h("slot", { key: '1d14cd65b9bc38808f539d356cf7487df66a443b' })))));
     }
     get el() { return getElement(this); }
     static get watchers() { return {
