@@ -6,6 +6,15 @@
  */
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
 export namespace Components {
+    interface FlowyCanvas {
+        "gridBgColor": string;
+        "gridLineColor": string;
+        "gridSize": number;
+        "maxZoom": number;
+        "minZoom": number;
+        "renderGrid": boolean;
+        "zoomSpeed": number;
+    }
     interface MyComponent {
         /**
           * The first name
@@ -22,6 +31,12 @@ export namespace Components {
     }
 }
 declare global {
+    interface HTMLFlowyCanvasElement extends Components.FlowyCanvas, HTMLStencilElement {
+    }
+    var HTMLFlowyCanvasElement: {
+        prototype: HTMLFlowyCanvasElement;
+        new (): HTMLFlowyCanvasElement;
+    };
     interface HTMLMyComponentElement extends Components.MyComponent, HTMLStencilElement {
     }
     var HTMLMyComponentElement: {
@@ -29,10 +44,20 @@ declare global {
         new (): HTMLMyComponentElement;
     };
     interface HTMLElementTagNameMap {
+        "flowy-canvas": HTMLFlowyCanvasElement;
         "my-component": HTMLMyComponentElement;
     }
 }
 declare namespace LocalJSX {
+    interface FlowyCanvas {
+        "gridBgColor"?: string;
+        "gridLineColor"?: string;
+        "gridSize"?: number;
+        "maxZoom"?: number;
+        "minZoom"?: number;
+        "renderGrid"?: boolean;
+        "zoomSpeed"?: number;
+    }
     interface MyComponent {
         /**
           * The first name
@@ -48,6 +73,7 @@ declare namespace LocalJSX {
         "middle"?: string;
     }
     interface IntrinsicElements {
+        "flowy-canvas": FlowyCanvas;
         "my-component": MyComponent;
     }
 }
@@ -55,6 +81,7 @@ export { LocalJSX as JSX };
 declare module "@stencil/core" {
     export namespace JSX {
         interface IntrinsicElements {
+            "flowy-canvas": LocalJSX.FlowyCanvas & JSXBase.HTMLAttributes<HTMLFlowyCanvasElement>;
             "my-component": LocalJSX.MyComponent & JSXBase.HTMLAttributes<HTMLMyComponentElement>;
         }
     }

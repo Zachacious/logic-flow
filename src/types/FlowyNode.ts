@@ -1,20 +1,13 @@
-export interface FlowyNode {
-  id: string;
-  inputs: FlowyNode[];
-  outputs: FlowyNode[];
-  data: any;
-}
+import { genUID } from '../utils/genUID';
+
+export type FlowyNodeType = string;
 
 export class FlowyNode {
   uid: string;
-  inputs: FlowyNode[];
-  outputs: FlowyNode[];
-  data: any;
+  type: FlowyNodeType;
 
-  constructor(FlowyNode: FlowyNode) {
-    this.id = FlowyNode.id;
-    this.inputs = FlowyNode.inputs;
-    this.outputs = FlowyNode.outputs;
-    this.data = FlowyNode.data;
+  constructor(flowyNode?: FlowyNode) {
+    this.uid = flowyNode.uid || genUID();
+    this.type = flowyNode.type || 'default';
   }
 }
