@@ -36,12 +36,15 @@ const FlowyCanvas = class {
     constructor(hostRef) {
         registerInstance(this, hostRef);
         this._lastZoom = 1;
+        // private _lastPan: Point = { x: 0, y: 0 };
         this._initialPinchDistance = 0;
         this._isDragging = false;
         this._dragStart = { x: 0, y: 0 };
-        this._needsRedraw = false;
+        this._renderGridData = { lastPan: { x: 0, y: 0 }, lastZoom: 1 };
+        this._needsRedraw = true;
         // Debounced version of the onResize method
         this._debouncedResize = debounce(() => this.onResize(), 200);
+        this._debouncedUpdateScreen = debounce(() => this.updateScreen(), 10);
         this.renderGrid = true;
         this.gridSize = 20;
         this.gridBgColor = '#f3f3f3';
@@ -60,6 +63,7 @@ const FlowyCanvas = class {
         this.renderGridLines();
         this._initialPinchDistance = 0;
         this._lastZoom = this.zoom;
+        // this._lastPan = this.pan;
         // throttled mousemove event for performance
         const throttledPointerMove = throttle(e => this.onPointerMove(e), 30);
         const throttledTouchMove = throttle((e, fun) => this.handleTouch(e, fun(e)), 30);
@@ -91,48 +95,43 @@ const FlowyCanvas = class {
         canvasEl.removeEventListener('touchmove', e => this.handleTouch(e, e => this.onPointerMove(e)));
         canvasEl.removeEventListener('wheel', e => this.handleWheel(e));
     }
-    // get canvasEl() {
-    //   if (!this._canvasEl) {
-    //     this._canvasEl = this.el.querySelector('.flowy-canvas') as HTMLDivElement;
-    //   }
-    //   return this._canvasEl;
-    // }
-    // get contentEl() {
-    //   if (!this._contentEl) {
-    //     this._contentEl = this.el.querySelector('.flowy-content') as HTMLDivElement;
-    //   }
-    //   return this._contentEl;
-    // }
-    // get gridEl() {
-    //   if (!this._gridEl) {
-    //     this._gridEl = this.el.querySelector('.flowy-grid') as HTMLCanvasElement;
-    //   }
-    //   return this._gridEl;
-    // }
     zoomChanged() {
         this._needsRedraw = true;
-        this.updateScreen();
+        // this.updateScreen();
+        this._debouncedUpdateScreen();
     }
     panChanged() {
         this._needsRedraw = true;
-        this.updateScreen();
+        // this.updateScreen();
+        this._debouncedUpdateScreen();
     }
     onResize() {
         this._needsRedraw = true;
         this.renderGridLines();
     }
+    // shouldRedraw() {
+    //   const redrawThreshold = 0.1;
+    //   const lastPan = this._renderGridData.lastPan;
+    //   const lastZoom = this._renderGridData.lastZoom;
+    //   const panChanged = Math.abs(this.pan.x - lastPan.x) > redrawThreshold || Math.abs(this.pan.y - lastPan.y) > redrawThreshold;
+    //   const zoomChanged = Math.abs(this.zoom - lastZoom) > redrawThreshold;
+    //   return panChanged || zoomChanged;
+    // }
     renderGridLines() {
         if (!this.renderGrid || !this._needsRedraw)
             return;
-        // if (this.renderGrid) {
-        // const canvasEl = this.el.querySelector('.flowy-grid') as HTMLCanvasElement;
+        this._renderGridData = { lastPan: Object.assign({}, this.pan), lastZoom: this.zoom };
         const canvasEl = this._gridEl;
         const ctx = canvasEl.getContext('2d');
         const width = window.innerWidth;
         const height = window.innerHeight;
         const step = this.gridSize * this.zoom;
-        canvasEl.width = width;
-        canvasEl.height = height;
+        // canvasEl.width = width;
+        // canvasEl.height = height;
+        const dpr = window.devicePixelRatio || 1;
+        canvasEl.width = width * dpr;
+        canvasEl.height = height * dpr;
+        ctx.scale(dpr, dpr);
         ctx.strokeStyle = this.gridLineColor;
         ctx.lineWidth = 1;
         // clear
@@ -140,30 +139,28 @@ const FlowyCanvas = class {
         // fill bg color
         ctx.fillStyle = this.gridBgColor;
         ctx.fillRect(0, 0, width, height);
+        const panOffsetX = (-this.pan.x % this.gridSize) * this.zoom;
+        const panOffsetY = (-this.pan.y % this.gridSize) * this.zoom;
         ctx.beginPath();
-        for (let x = this.pan.x * this.zoom; x <= width; x += step) {
+        // Draw vertical grid lines (x axis)
+        for (let x = -panOffsetX; x <= width; x += step) {
             ctx.moveTo(x, 0);
             ctx.lineTo(x, height);
         }
-        for (let xleft = this.pan.x * this.zoom; xleft >= -width; xleft -= step) {
-            ctx.moveTo(xleft, 0);
-            ctx.lineTo(xleft, height);
-        }
-        for (let y = this.pan.y * this.zoom; y <= height; y += step) {
+        // Draw horizontal grid lines (y axis)
+        for (let y = -panOffsetY; y <= height; y += step) {
             ctx.moveTo(0, y);
             ctx.lineTo(width, y);
         }
-        for (let ytop = this.pan.y * this.zoom; ytop >= -height; ytop -= step) {
-            ctx.moveTo(0, ytop);
-            ctx.lineTo(width, ytop);
-        }
         ctx.stroke();
         this._needsRedraw = false;
-        // }
     }
     updateScreen() {
         // this.renderGridLines();
         const contentEl = this._contentEl;
+        // Apply transformations to the content, aligning with the grid
+        // contentEl.style.transform = `translate(${this.pan.x}px, ${this.pan.y}px) scale(${this.zoom})`;
+        // contentEl.style.transform = `translate(${this.pan.x * this.zoom}px, ${this.pan.y * this.zoom}px) scale(${this.zoom})`;
         contentEl.style.transform = `scale(${this.zoom}) translate(${this.pan.x}px, ${this.pan.y}px)`;
         requestAnimationFrame(() => this.renderGridLines());
     }
@@ -186,10 +183,11 @@ const FlowyCanvas = class {
     onPointerUp() {
         this._isDragging = false;
         this._initialPinchDistance = 0;
-        this._lastZoom = this.zoom;
+        // this._lastZoom = this.zoom;
     }
     onPointerMove(event) {
         if (this._isDragging) {
+            // this._lastPan = this.pan;
             const loc = this.getEventLocation(event);
             this.pan = { x: loc.x / this.zoom - this._dragStart.x, y: loc.y / this.zoom - this._dragStart.y };
         }
@@ -213,6 +211,7 @@ const FlowyCanvas = class {
         const newPanY = mouseY - (mouseY - this.pan.y * this.zoom) * scaleFactor;
         // Update pan and zoom
         this.pan = { x: newPanX / newZoom, y: newPanY / newZoom };
+        this._lastZoom = this.zoom;
         this.zoom = newZoom;
         this._needsRedraw = true;
     }
@@ -249,7 +248,7 @@ const FlowyCanvas = class {
         }
     }
     render() {
-        return (h(Host, { key: '351a2613fdb4ee288081b06c3a1ccc5d0006568d' }, h("div", { key: '4cbdf7752526ab7da14ef8960cdebe0944cfdb4f', class: "flowy-canvas" }, h("canvas", { key: '8dd49fae2fb88755621649c1bf392aa9cb6ea6ac', class: "flowy-grid" }), h("div", { key: 'a0a2073c744799d5da43805422a19d9a2c1d4048', class: "flowy-content" }, h("slot", { key: 'a3fd40404f4846c37ce970319c8de8946b32773e' })))));
+        return (h(Host, { key: '16cfcfc4e7c0b1ed386a578ea514e110dde7ba11' }, h("div", { key: 'a4838945985e7e0e1f14b4dbca61058f8f103fff', class: "flowy-canvas" }, h("canvas", { key: '9d3099a8a006b525655437650e82caab1c3df9e6', class: "flowy-grid" }), h("div", { key: '329e8fe87788b74153fc0cdf9befe142d93095f7', class: "flowy-content" }, h("slot", { key: '6b020e8372ae69e290b7530cc0a56c0f599b8c31' })))));
     }
     get el() { return getElement(this); }
     static get watchers() { return {
