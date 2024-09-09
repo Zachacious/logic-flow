@@ -48,7 +48,8 @@
   },
   "license": "MIT",
   "dependencies": {
-    "@interactjs/dev-tools": "^1.10.27",
-    "@interactjs/interact": "^1.10.27"
+    "add": "^2.0.6",
+    "bun": "^1.1.27",
+    "interactjs": "^1.10.27"
   }
 }

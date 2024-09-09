@@ -52,16 +52,18 @@ export class FlowyCanvas {
 
     // throttled mousemove event for performance
     const throttledPointerMove = throttle(e => this.onPointerMove(e), 30);
-    const throttledTouchMove = throttle((e, fun) => this.handleTouch(e, fun(e)), 30);
+    const throttledTouchMove = throttle(e => this.handleTouchMove(e), 30);
 
     // setup event listeners
     // const canvasEl = this.el.querySelector('.flowy-virtual-area') as HTMLElement;
     canvasEl.addEventListener('mousedown', e => this.onPointerDown(e), { passive: true });
-    canvasEl.addEventListener('touchstart', e => this.handleTouch(e, e => this.onPointerDown(e)), { passive: true });
     canvasEl.addEventListener('mouseup', () => this.onPointerUp(), { passive: true });
-    canvasEl.addEventListener('touchend', () => this.onPointerUp(), { passive: true });
     canvasEl.addEventListener('mousemove', e => throttledPointerMove(e), { passive: true });
-    canvasEl.addEventListener('touchmove', e => throttledTouchMove(e, (e: MouseEvent | TouchEvent) => this.onPointerMove(e)), { passive: true });
+
+    canvasEl.addEventListener('touchstart', e => this.handleTouchStart(e), { passive: false });
+    canvasEl.addEventListener('touchmove', e => throttledTouchMove(e), { passive: true });
+    canvasEl.addEventListener('touchend', () => this.onPointerUp(), { passive: true });
+
     canvasEl.addEventListener('wheel', e => this.handleWheel(e), { passive: false });
 
     // Handle resize events
@@ -78,11 +80,13 @@ export class FlowyCanvas {
     // Clean up event listeners
     const canvasEl = this._canvasEl;
     canvasEl.removeEventListener('mousedown', e => this.onPointerDown(e));
-    canvasEl.removeEventListener('touchstart', e => this.handleTouch(e, e => this.onPointerDown(e)));
     canvasEl.removeEventListener('mouseup', () => this.onPointerUp());
-    canvasEl.removeEventListener('touchend', () => this.onPointerUp());
     canvasEl.removeEventListener('mousemove', e => this.onPointerMove(e));
-    canvasEl.removeEventListener('touchmove', e => this.handleTouch(e, e => this.onPointerMove(e)));
+
+    canvasEl.removeEventListener('touchstart', e => this.handleTouchStart(e));
+    canvasEl.removeEventListener('touchmove', e => this.handleTouchMove(e));
+    canvasEl.removeEventListener('touchend', () => this.onPointerUp());
+
     canvasEl.removeEventListener('wheel', e => this.handleWheel(e));
   }
 
@@ -234,37 +238,112 @@ export class FlowyCanvas {
     this._needsRedraw = true;
   }
 
-  handleTouch(event: TouchEvent, singleTouchHandler: (touch: TouchEvent) => void) {
+  // handleTouch(event: TouchEvent) {
+  //   if (event.touches.length === 1) {
+  //     this.onPointerDown(event); // direct call to the intended handler
+  //   } else if (event.touches.length === 2) {
+  //     this._isDragging = false;
+  //     this.handlePinch(event);
+  //   }
+  // }
+  handleTouchStart(event: TouchEvent) {
     if (event.touches.length === 1) {
-      singleTouchHandler(event);
-    } else if (event.type === 'touchmove' && event.touches.length === 2) {
-      this._isDragging = false;
+      // Single touch -> start panning
+      this.onPointerDown(event);
+    } else if (event.touches.length === 2) {
+      // Multi-touch -> start pinch zoom
+      this._initialPinchDistance = 0; // Reset initial pinch distance
+      this.handlePinch(event); // Start pinch gesture
+    }
+  }
+
+  handleTouchMove(event: TouchEvent) {
+    if (event.touches.length === 1) {
+      // Single touch -> panning
+      this.onPointerMove(event);
+    } else if (event.touches.length === 2) {
+      // Multi-touch -> pinch zooming
       this.handlePinch(event);
     }
   }
-
   handlePinch(event: TouchEvent) {
-    event.preventDefault();
+    if (event.touches.length !== 2) return;
+
+    // handle panning while pinching
+    this.onPointerMove(event);
+
+    event.preventDefault(); // Prevent default behavior like scrolling
 
     const touch1 = event.touches[0];
     const touch2 = event.touches[1];
+
+    // Calculate the distance between the two touch points (pinch)
     const distance = Math.sqrt((touch1.clientX - touch2.clientX) ** 2 + (touch1.clientY - touch2.clientY) ** 2);
+
     if (this._initialPinchDistance === 0) {
+      // If it's the start of the pinch, initialize the pinch distance
       this._initialPinchDistance = distance;
     } else {
-      this.adjustZoom(0, distance / this._initialPinchDistance);
+      // Calculate the scale factor based on the distance change
+      const scaleFactor = distance / this._initialPinchDistance;
+
+      // Calculate the midpoint between the two fingers (the pinch center)
+      const pinchCenterX = (touch1.clientX + touch2.clientX) / 2;
+      const pinchCenterY = (touch1.clientY + touch2.clientY) / 2;
+
+      // Apply zoom and keep the pinch center fixed
+      this.adjustZoomOnPinch(scaleFactor, pinchCenterX, pinchCenterY);
+
+      // Update the initial pinch distance for the next move
+      this._initialPinchDistance = distance;
     }
-    // const newZoom = this.lastZoom * (distance / this.initialPinchDistance);
-    // this.zoom = Math.min(this.maxZoom, Math.max(this.minZoom, newZoom));
   }
 
-  adjustZoom(amount: number, scale: number) {
-    if (!this._isDragging) {
-      if (amount !== 0) {
-      } else if (scale !== 1) {
-        this.zoom = Math.min(this.maxZoom, Math.max(this.minZoom, this.zoom - scale));
-      }
+  adjustZoomOnPinch(scaleFactor: number, pinchCenterX: number, pinchCenterY: number) {
+    // Calculate new zoom, ensuring it stays within min/max bounds
+    const newZoom = Math.min(this.maxZoom, Math.max(this.minZoom, this.zoom * scaleFactor));
+
+    // Calculate the ratio of the new zoom level compared to the current zoom
+    // const zoomDelta = newZoom / this.zoom;
+
+    // Find the pinch center position relative to the content's current position and zoom
+    const pinchContentX = (pinchCenterX - this.pan.x * this.zoom) / this.zoom;
+    const pinchContentY = (pinchCenterY - this.pan.y * this.zoom) / this.zoom;
+
+    // Adjust pan so the pinch center stays fixed after zooming
+    this.pan = {
+      x: pinchCenterX / newZoom - pinchContentX,
+      y: pinchCenterY / newZoom - pinchContentY,
+    };
+
+    // Apply the new zoom level
+    this.zoom = newZoom;
+
+    // Trigger a screen redraw
+    this._debouncedUpdateScreen();
+  }
+
+  adjustZoom(amount: number, scale: number, center?: Point) {
+    const zoomSensitivity = 0.05; // A sensitivity factor for zoom
+    const oldZoom = this.zoom;
+
+    // Modify zoom scaling with a sensitivity factor
+    const newZoom = Math.min(this.maxZoom, Math.max(this.minZoom, oldZoom * (1 + (scale - 1) * zoomSensitivity)));
+
+    if (center) {
+      const canvasRect = this._canvasEl.getBoundingClientRect();
+      const pointX = center.x - canvasRect.left;
+      const pointY = center.y - canvasRect.top;
+
+      const scaleFactor = newZoom / oldZoom;
+
+      const newPanX = pointX - (pointX - this.pan.x * oldZoom) * scaleFactor;
+      const newPanY = pointY - (pointY - this.pan.y * oldZoom) * scaleFactor;
+
+      this.pan = { x: newPanX / newZoom, y: newPanY / newZoom };
     }
+
+    this.zoom = newZoom;
   }
 
   render() {

@@ -15,6 +15,15 @@ export namespace Components {
         "renderGrid": boolean;
         "zoomSpeed": number;
     }
+    interface FlowyCanvasOld {
+        "gridBgColor": string;
+        "gridLineColor": string;
+        "gridSize": number;
+        "maxZoom": number;
+        "minZoom": number;
+        "renderGrid": boolean;
+        "zoomSpeed": number;
+    }
     interface MyComponent {
         /**
           * The first name
@@ -37,6 +46,12 @@ declare global {
         prototype: HTMLFlowyCanvasElement;
         new (): HTMLFlowyCanvasElement;
     };
+    interface HTMLFlowyCanvasOldElement extends Components.FlowyCanvasOld, HTMLStencilElement {
+    }
+    var HTMLFlowyCanvasOldElement: {
+        prototype: HTMLFlowyCanvasOldElement;
+        new (): HTMLFlowyCanvasOldElement;
+    };
     interface HTMLMyComponentElement extends Components.MyComponent, HTMLStencilElement {
     }
     var HTMLMyComponentElement: {
@@ -45,11 +60,21 @@ declare global {
     };
     interface HTMLElementTagNameMap {
         "flowy-canvas": HTMLFlowyCanvasElement;
+        "flowy-canvas-old": HTMLFlowyCanvasOldElement;
         "my-component": HTMLMyComponentElement;
     }
 }
 declare namespace LocalJSX {
     interface FlowyCanvas {
+        "gridBgColor"?: string;
+        "gridLineColor"?: string;
+        "gridSize"?: number;
+        "maxZoom"?: number;
+        "minZoom"?: number;
+        "renderGrid"?: boolean;
+        "zoomSpeed"?: number;
+    }
+    interface FlowyCanvasOld {
         "gridBgColor"?: string;
         "gridLineColor"?: string;
         "gridSize"?: number;
@@ -74,6 +99,7 @@ declare namespace LocalJSX {
     }
     interface IntrinsicElements {
         "flowy-canvas": FlowyCanvas;
+        "flowy-canvas-old": FlowyCanvasOld;
         "my-component": MyComponent;
     }
 }
@@ -82,6 +108,7 @@ declare module "@stencil/core" {
     export namespace JSX {
         interface IntrinsicElements {
             "flowy-canvas": LocalJSX.FlowyCanvas & JSXBase.HTMLAttributes<HTMLFlowyCanvasElement>;
+            "flowy-canvas-old": LocalJSX.FlowyCanvasOld & JSXBase.HTMLAttributes<HTMLFlowyCanvasOldElement>;
             "my-component": LocalJSX.MyComponent & JSXBase.HTMLAttributes<HTMLMyComponentElement>;
         }
     }
