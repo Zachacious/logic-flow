@@ -24,6 +24,8 @@ export namespace Components {
         "renderGrid": boolean;
         "zoomSpeed": number;
     }
+    interface LogicNode {
+    }
     interface MyComponent {
         /**
           * The first name
@@ -52,6 +54,12 @@ declare global {
         prototype: HTMLFlowyCanvasOldElement;
         new (): HTMLFlowyCanvasOldElement;
     };
+    interface HTMLLogicNodeElement extends Components.LogicNode, HTMLStencilElement {
+    }
+    var HTMLLogicNodeElement: {
+        prototype: HTMLLogicNodeElement;
+        new (): HTMLLogicNodeElement;
+    };
     interface HTMLMyComponentElement extends Components.MyComponent, HTMLStencilElement {
     }
     var HTMLMyComponentElement: {
@@ -61,6 +69,7 @@ declare global {
     interface HTMLElementTagNameMap {
         "flowy-canvas": HTMLFlowyCanvasElement;
         "flowy-canvas-old": HTMLFlowyCanvasOldElement;
+        "logic-node": HTMLLogicNodeElement;
         "my-component": HTMLMyComponentElement;
     }
 }
@@ -83,6 +92,8 @@ declare namespace LocalJSX {
         "renderGrid"?: boolean;
         "zoomSpeed"?: number;
     }
+    interface LogicNode {
+    }
     interface MyComponent {
         /**
           * The first name
@@ -100,6 +111,7 @@ declare namespace LocalJSX {
     interface IntrinsicElements {
         "flowy-canvas": FlowyCanvas;
         "flowy-canvas-old": FlowyCanvasOld;
+        "logic-node": LogicNode;
         "my-component": MyComponent;
     }
 }
@@ -109,6 +121,7 @@ declare module "@stencil/core" {
         interface IntrinsicElements {
             "flowy-canvas": LocalJSX.FlowyCanvas & JSXBase.HTMLAttributes<HTMLFlowyCanvasElement>;
             "flowy-canvas-old": LocalJSX.FlowyCanvasOld & JSXBase.HTMLAttributes<HTMLFlowyCanvasOldElement>;
+            "logic-node": LocalJSX.LogicNode & JSXBase.HTMLAttributes<HTMLLogicNodeElement>;
             "my-component": LocalJSX.MyComponent & JSXBase.HTMLAttributes<HTMLMyComponentElement>;
         }
     }
