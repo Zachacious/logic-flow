@@ -17,7 +17,7 @@ export class LogicNode {
 
   @State() isDragging = false;
 
-  private _dragStart: Point;
+  private _dragStart: Point = { x: 0, y: 0 };
 
   private _throttledPointerMove = throttle(e => this.onPointerMove(e), 30);
   private _throttledTouchMove = throttle(e => this.handleTouchMove(e), 30);
@@ -66,21 +66,21 @@ export class LogicNode {
   //   this.el.style.transform = `translate(${this.position.x}px, ${this.position.y}px)`;
   // }
 
-  // getEventLocation(event: MouseEvent | TouchEvent) {
-  //   if (event instanceof TouchEvent) {
-  //     if (event.touches && event.touches[0]) {
-  //       return { x: event.touches[0].clientX, y: event.touches[0].clientY };
-  //     }
-  //   } else {
-  //     return { x: event.clientX, y: event.clientY };
-  //   }
-  // }
+  getEventLocation(event: MouseEvent | TouchEvent) {
+    if (event instanceof TouchEvent) {
+      if (event.touches && event.touches[0]) {
+        return { x: event.touches[0].clientX, y: event.touches[0].clientY };
+      }
+    } else {
+      return { x: event.clientX, y: event.clientY };
+    }
+  }
 
   // handle drag and drop positioning
   onPointerDown(e: MouseEvent | TouchEvent) {
     e.stopPropagation();
     this.isDragging = true;
-    // this._dragStart = this.getEventLocation(e);
+    this._dragStart = this.getEventLocation(e);
   }
 
   onPointerMove(e: MouseEvent | TouchEvent) {

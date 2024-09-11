@@ -185,7 +185,8 @@ export class FlowyCanvas {
 
   nodeDragStart(el: HTMLElement, pos: Point) {
     this._activeNode = el;
-    this.activeNodePos = pos;
+    // this.activeNodePos = pos;
+
     this._isDraggingNode = true;
   }
 

@@ -7,6 +7,7 @@ const logicNodeCss = ":host{display:block}";
 const LogicNode = class {
     constructor(hostRef) {
         registerInstance(this, hostRef);
+        this._dragStart = { x: 0, y: 0 };
         this._throttledPointerMove = throttle(e => this.onPointerMove(e), 30);
         this._throttledTouchMove = throttle(e => this.handleTouchMove(e), 30);
         this._elMouseDown = (e) => this.onPointerDown(e);
@@ -48,20 +49,21 @@ const LogicNode = class {
     // updatePosition() {
     //   this.el.style.transform = `translate(${this.position.x}px, ${this.position.y}px)`;
     // }
-    // getEventLocation(event: MouseEvent | TouchEvent) {
-    //   if (event instanceof TouchEvent) {
-    //     if (event.touches && event.touches[0]) {
-    //       return { x: event.touches[0].clientX, y: event.touches[0].clientY };
-    //     }
-    //   } else {
-    //     return { x: event.clientX, y: event.clientY };
-    //   }
-    // }
+    getEventLocation(event) {
+        if (event instanceof TouchEvent) {
+            if (event.touches && event.touches[0]) {
+                return { x: event.touches[0].clientX, y: event.touches[0].clientY };
+            }
+        }
+        else {
+            return { x: event.clientX, y: event.clientY };
+        }
+    }
     // handle drag and drop positioning
     onPointerDown(e) {
         e.stopPropagation();
         this.isDragging = true;
-        // this._dragStart = this.getEventLocation(e);
+        this._dragStart = this.getEventLocation(e);
     }
     onPointerMove(e) {
         if (!this.isDragging)
@@ -93,7 +95,7 @@ const LogicNode = class {
         this.onPointerMove(e);
     }
     render() {
-        return (h(Host, { key: 'c397067a2597a4dbe994e86a5703a4771dac3e30', class: "flowy-node" }, h("div", { key: 'a957519f2cea703329922a2474870afc4e30ddc2', class: "flowy-node-header" }, this.title, h("slot", { key: '854f8e65e8edc48c27412d30cf9dee8093ee3473', name: "header" })), h("slot", { key: 'ff8debd9040bf0504ad89a5b3ac52127e05fb644' }), h("div", { key: 'd19edb46de5633814115ab497978290222aee6de', class: "flowy-node-footer" })));
+        return (h(Host, { key: '4f0572ed00c670f83289d13edb79a64aa6b07f20', class: "flowy-node" }, h("div", { key: '2e77e9f111dbba72c4bbe05b1b108815c3b644cf', class: "flowy-node-header" }, this.title, h("slot", { key: 'd653e537f7f4f60c1186b582210c78aa9f1f35a1', name: "header" })), h("slot", { key: '5c65dc4a30f4ad7bfa5ff164c75b1f45fc14a631' }), h("div", { key: '3d3923a155fdc58fdba68d63e4a62d6b220e7d6a', class: "flowy-node-footer" })));
     }
     get el() { return getElement(this); }
     static get watchers() { return {
