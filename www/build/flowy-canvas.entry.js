@@ -1,25 +1,7 @@
-import { r as registerInstance, h, a as Host, g as getElement } from './index-775bd678.js';
+import { r as registerInstance, h, a as Host, g as getElement } from './index-2e7362b2.js';
 import { d as debounce } from './debounce-25523ff8.js';
-
-const throttle = (fn, delay) => {
-    let lastFunc;
-    let lastRan;
-    return (...args) => {
-        if (!lastRan) {
-            fn(...args);
-            lastRan = Date.now();
-        }
-        else {
-            clearTimeout(lastFunc);
-            lastFunc = setTimeout(() => {
-                if (Date.now() - lastRan >= delay) {
-                    fn(...args);
-                    lastRan = Date.now();
-                }
-            }, delay - (Date.now() - lastRan));
-        }
-    };
-};
+import { t as throttle, e as events } from './events-121209b8.js';
+import './_commonjsHelpers-bc8ff177.js';
 
 const flowyCanvasCss = ":host{display:block}";
 
@@ -30,8 +12,9 @@ const FlowyCanvas = class {
         this._isDragging = false;
         this._dragStart = { x: 0, y: 0 };
         this._needsRedraw = true;
+        this._isDraggingNode = false;
         this._debouncedResize = debounce(() => this.onResize(), 50);
-        this._debouncedUpdateScreen = debounce(() => this.updateScreen(), 10);
+        this._debouncedUpdateScreen = debounce(() => this.updateScreen(), 5);
         this._throttledPointerMove = throttle(e => this.onPointerMove(e), 30);
         this._throttledTouchMove = throttle(e => this.handleTouchMove(e), 30);
         this._elMouseDown = (e) => this.onPointerDown(e);
@@ -45,11 +28,12 @@ const FlowyCanvas = class {
         this.gridSize = 20;
         this.gridBgColor = '#f3f3f3';
         this.gridLineColor = '#555555';
-        this.maxZoom = 5;
-        this.minZoom = 0.1;
-        this.zoomSpeed = 0.05;
+        this.maxZoom = 3;
+        this.minZoom = 0.2;
+        this.zoomSpeed = 0.08;
         this.zoom = 1;
         this.pan = { x: 0, y: 0 };
+        this.activeNodePos = { x: 0, y: 0 };
     }
     componentDidLoad() {
         this._canvasEl = this.el.querySelector('.flowy-canvas');
@@ -60,16 +44,26 @@ const FlowyCanvas = class {
         this.renderGridLines();
         this._initialPinchDistance = 0;
         // setup event listeners
-        canvasEl.addEventListener('mousedown', this._elMouseDown, { passive: true });
+        canvasEl.addEventListener('mousedown', this._elMouseDown, {
+            passive: true,
+        });
         canvasEl.addEventListener('mouseup', this._elMouseUp, { passive: true });
-        canvasEl.addEventListener('mousemove', this._elMouseMove, { passive: true });
-        canvasEl.addEventListener('touchstart', this._elTouchStart, { passive: false });
-        canvasEl.addEventListener('touchmove', this._elTouchMove, { passive: true });
+        canvasEl.addEventListener('mousemove', this._elMouseMove, {
+            passive: true,
+        });
+        canvasEl.addEventListener('touchstart', this._elTouchStart, {
+            passive: false,
+        });
+        canvasEl.addEventListener('touchmove', this._elTouchMove, {
+            passive: true,
+        });
         canvasEl.addEventListener('touchend', this._elTouchEnd, { passive: true });
         canvasEl.addEventListener('wheel', this._elWheel, { passive: false });
         // Handle resize events
         this._resizeObserver = new ResizeObserver(() => this._debouncedResize());
         this._resizeObserver.observe(this._canvasEl);
+        events.on('nodeDragStart', this.nodeDragStart.bind(this));
+        events.on('nodeDragStopped', this.nodeDragEnd.bind(this));
     }
     disconnectedCallback() {
         // Clean up resize observer
@@ -85,6 +79,8 @@ const FlowyCanvas = class {
         canvasEl.removeEventListener('touchmove', this._elTouchMove);
         canvasEl.removeEventListener('touchend', this._elTouchEnd);
         canvasEl.removeEventListener('wheel', this._elWheel);
+        // events.off('nodeDragStart', this.nodeDragStart.bind(this));
+        // events.off('nodeDragStopped', this.nodeDragEnd.bind(this));
     }
     zoomChanged() {
         this._needsRedraw = true;
@@ -95,6 +91,9 @@ const FlowyCanvas = class {
         this._needsRedraw = true;
         // this.updateScreen();
         this._debouncedUpdateScreen();
+    }
+    activeNodePosChanged() {
+        this._activeNode.style.transform = `translate(${this.activeNodePos.x}px, ${this.activeNodePos.y}px)`;
     }
     onResize() {
         this._needsRedraw = true;
@@ -134,11 +133,23 @@ const FlowyCanvas = class {
         ctx.stroke();
         this._needsRedraw = false;
     }
+    nodeDragStart(el, pos) {
+        this._activeNode = el;
+        this.activeNodePos = pos;
+        this._isDraggingNode = true;
+    }
+    // updateNodePosition() {
+    //   if (!this._activeNode) return;
+    //   this._activeNode.style.transform = `translate(${this.activeNodePos.x}px, ${this.activeNodePos.y}px)`;
+    // }
+    nodeDragEnd() {
+        this._isDraggingNode = false;
+    }
     updateScreen() {
         // this.renderGridLines();
         const contentEl = this._contentEl;
         // Apply transformations to the content, aligning with the grid
-        contentEl.style.transform = `scale(${this.zoom}) translate(${this.pan.x}px, ${this.pan.y}px)`;
+        contentEl.style.transform = `perspective(1px) scale(${this.zoom}) translate(${this.pan.x}px, ${this.pan.y}px)`;
         requestAnimationFrame(() => this.renderGridLines());
     }
     // get location from event data for mouse or touch
@@ -155,7 +166,10 @@ const FlowyCanvas = class {
     onPointerDown(event) {
         this._isDragging = true;
         const loc = this.getEventLocation(event);
-        this._dragStart = { x: loc.x / this.zoom - this.pan.x, y: loc.y / this.zoom - this.pan.y };
+        this._dragStart = {
+            x: loc.x / this.zoom - this.pan.x,
+            y: loc.y / this.zoom - this.pan.y,
+        };
     }
     onPointerUp() {
         this._isDragging = false;
@@ -166,7 +180,20 @@ const FlowyCanvas = class {
         if (this._isDragging) {
             // this._lastPan = this.pan;
             const loc = this.getEventLocation(event);
-            this.pan = { x: loc.x / this.zoom - this._dragStart.x, y: loc.y / this.zoom - this._dragStart.y };
+            this.pan = {
+                x: loc.x / this.zoom - this._dragStart.x,
+                y: loc.y / this.zoom - this._dragStart.y,
+            };
+        }
+        // handle node
+        if (this._isDraggingNode) {
+            const loc = this.getEventLocation(event);
+            const dx = loc.x - this.activeNodePos.x;
+            const dy = loc.y - this.activeNodePos.y;
+            // account for zoom and pan
+            const newx = (this.activeNodePos.x + dx) / this.zoom - this.pan.x;
+            const newy = (this.activeNodePos.y + dy) / this.zoom - this.pan.y;
+            this.activeNodePos = { x: newx, y: newy };
         }
     }
     handleWheel(event) {
@@ -208,6 +235,13 @@ const FlowyCanvas = class {
             // Multi-touch -> pinch zooming
             this.handlePinch(event);
         }
+        // // handle node
+        // if (this._isDraggingNode) {
+        //   const loc = this.getEventLocation(event);
+        //   const x = loc.x - this.activeNodePos.x;
+        //   const y = loc.y - this.activeNodePos.y;
+        //   this.activeNodePos = { x, y };
+        // }
     }
     handlePinch(event) {
         if (event.touches.length !== 2)
@@ -218,7 +252,8 @@ const FlowyCanvas = class {
         const touch1 = event.touches[0];
         const touch2 = event.touches[1];
         // Calculate the distance between the two touch points (pinch)
-        const distance = Math.sqrt((touch1.clientX - touch2.clientX) ** 2 + (touch1.clientY - touch2.clientY) ** 2);
+        const distance = Math.sqrt((touch1.clientX - touch2.clientX) ** 2 +
+            (touch1.clientY - touch2.clientY) ** 2);
         if (this._initialPinchDistance === 0) {
             // If it's the start of the pinch, initialize the pinch distance
             this._initialPinchDistance = distance;
@@ -254,12 +289,13 @@ const FlowyCanvas = class {
         this._debouncedUpdateScreen();
     }
     render() {
-        return (h(Host, { key: '32bc1a4ad61b42bf075a473c6bae07f4aa491904' }, h("div", { key: '4723aeb7b77173f2b7bd370a2a85b3b4e88844a3', class: "flowy-canvas" }, h("canvas", { key: 'b3755e83b07fcf330c352be9a6d57f33f196f1b8', class: "flowy-grid" }), h("div", { key: '680f2c8d0991ea601b8ba5eb1f5e0e02bf12e062', class: "flowy-content" }, h("slot", { key: '2a602fb111dd8028f0722db7a2e2b8c4c1915eb5' })))));
+        return (h(Host, { key: 'e94771968f95eb89a016eb2b30304b1395584c34' }, h("div", { key: '768d5d83b71c959288772746f2cf1de61b13c85c', class: "flowy-canvas" }, h("canvas", { key: '395955b3f31ffcfc92473529ae2e725e7276b647', class: "flowy-grid" }), h("div", { key: '62017b6a500144f136baf890172ba4d4fb51d2ba', class: "flowy-content" }, h("slot", { key: '751367c72aa4e9eb836c0c727f14836799fd844b' })))));
     }
     get el() { return getElement(this); }
     static get watchers() { return {
         "zoom": ["zoomChanged"],
-        "pan": ["panChanged"]
+        "pan": ["panChanged"],
+        "activeNodePos": ["activeNodePosChanged"]
     }; }
 };
 FlowyCanvas.style = flowyCanvasCss;

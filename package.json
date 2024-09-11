@@ -50,6 +50,7 @@
   "dependencies": {
     "add": "^2.0.6",
     "bun": "^1.1.27",
-    "interactjs": "^1.10.27"
+    "interactjs": "^1.10.27",
+    "tseep": "^1.2.2"
   }
 }

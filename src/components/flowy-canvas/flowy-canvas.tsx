@@ -2,6 +2,7 @@ import { Component, Host, Prop, h, Element, State, Watch } from '@stencil/core';
 import { Point } from '../../types/Point';
 import { debounce } from '../../utils/debounce';
 import { throttle } from '../../utils/throttle';
+import { events } from '../../events';
 
 @Component({
   tag: 'flowy-canvas',
@@ -15,12 +16,13 @@ export class FlowyCanvas {
   @Prop() gridSize: number = 20;
   @Prop() gridBgColor: string = '#f3f3f3';
   @Prop() gridLineColor: string = '#555555';
-  @Prop() maxZoom: number = 5;
-  @Prop() minZoom: number = 0.1;
-  @Prop() zoomSpeed: number = 0.05;
+  @Prop() maxZoom: number = 3;
+  @Prop() minZoom: number = 0.2;
+  @Prop() zoomSpeed: number = 0.08;
 
   @State() zoom: number = 1;
   @State() pan: Point = { x: 0, y: 0 };
+  @State() activeNodePos: Point = { x: 0, y: 0 };
 
   private _initialPinchDistance: number = 0;
   private _isDragging: boolean = false;
@@ -32,15 +34,19 @@ export class FlowyCanvas {
   private _needsRedraw: boolean = true;
   private _canvasRect: DOMRect;
 
+  private _activeNode: HTMLElement;
+  private _isDraggingNode: boolean = false;
+
   private _resizeObserver: ResizeObserver;
   private _debouncedResize = debounce(() => this.onResize(), 50);
-  private _debouncedUpdateScreen = debounce(() => this.updateScreen(), 10);
+  private _debouncedUpdateScreen = debounce(() => this.updateScreen(), 5);
   private _throttledPointerMove = throttle(e => this.onPointerMove(e), 30);
   private _throttledTouchMove = throttle(e => this.handleTouchMove(e), 30);
 
   private _elMouseDown = (e: MouseEvent | TouchEvent) => this.onPointerDown(e);
   private _elMouseUp = () => this.onPointerUp();
-  private _elMouseMove = (e: MouseEvent | TouchEvent) => this._throttledPointerMove(e);
+  private _elMouseMove = (e: MouseEvent | TouchEvent) =>
+    this._throttledPointerMove(e);
 
   private _elTouchStart = (e: TouchEvent) => this.handleTouchStart(e);
   private _elTouchMove = (e: TouchEvent) => this._throttledTouchMove(e);
@@ -61,12 +67,20 @@ export class FlowyCanvas {
     this._initialPinchDistance = 0;
 
     // setup event listeners
-    canvasEl.addEventListener('mousedown', this._elMouseDown, { passive: true });
+    canvasEl.addEventListener('mousedown', this._elMouseDown, {
+      passive: true,
+    });
     canvasEl.addEventListener('mouseup', this._elMouseUp, { passive: true });
-    canvasEl.addEventListener('mousemove', this._elMouseMove, { passive: true });
+    canvasEl.addEventListener('mousemove', this._elMouseMove, {
+      passive: true,
+    });
 
-    canvasEl.addEventListener('touchstart', this._elTouchStart, { passive: false });
-    canvasEl.addEventListener('touchmove', this._elTouchMove, { passive: true });
+    canvasEl.addEventListener('touchstart', this._elTouchStart, {
+      passive: false,
+    });
+    canvasEl.addEventListener('touchmove', this._elTouchMove, {
+      passive: true,
+    });
     canvasEl.addEventListener('touchend', this._elTouchEnd, { passive: true });
 
     canvasEl.addEventListener('wheel', this._elWheel, { passive: false });
@@ -74,6 +88,9 @@ export class FlowyCanvas {
     // Handle resize events
     this._resizeObserver = new ResizeObserver(() => this._debouncedResize());
     this._resizeObserver.observe(this._canvasEl);
+
+    events.on('nodeDragStart', this.nodeDragStart.bind(this));
+    events.on('nodeDragStopped', this.nodeDragEnd.bind(this));
   }
 
   disconnectedCallback() {
@@ -93,6 +110,9 @@ export class FlowyCanvas {
     canvasEl.removeEventListener('touchend', this._elTouchEnd);
 
     canvasEl.removeEventListener('wheel', this._elWheel);
+
+    // events.off('nodeDragStart', this.nodeDragStart.bind(this));
+    // events.off('nodeDragStopped', this.nodeDragEnd.bind(this));
   }
 
   @Watch('zoom')
@@ -107,6 +127,11 @@ export class FlowyCanvas {
     this._needsRedraw = true;
     // this.updateScreen();
     this._debouncedUpdateScreen();
+  }
+
+  @Watch('activeNodePos')
+  activeNodePosChanged() {
+    this._activeNode.style.transform = `translate(${this.activeNodePos.x}px, ${this.activeNodePos.y}px)`;
   }
 
   onResize() {
@@ -158,11 +183,26 @@ export class FlowyCanvas {
     this._needsRedraw = false;
   }
 
+  nodeDragStart(el: HTMLElement, pos: Point) {
+    this._activeNode = el;
+    this.activeNodePos = pos;
+    this._isDraggingNode = true;
+  }
+
+  // updateNodePosition() {
+  //   if (!this._activeNode) return;
+  //   this._activeNode.style.transform = `translate(${this.activeNodePos.x}px, ${this.activeNodePos.y}px)`;
+  // }
+
+  nodeDragEnd() {
+    this._isDraggingNode = false;
+  }
+
   updateScreen() {
     // this.renderGridLines();
     const contentEl = this._contentEl;
     // Apply transformations to the content, aligning with the grid
-    contentEl.style.transform = `scale(${this.zoom}) translate(${this.pan.x}px, ${this.pan.y}px)`;
+    contentEl.style.transform = `perspective(1px) scale(${this.zoom}) translate(${this.pan.x}px, ${this.pan.y}px)`;
     requestAnimationFrame(() => this.renderGridLines());
   }
 
@@ -180,7 +220,10 @@ export class FlowyCanvas {
   onPointerDown(event: MouseEvent | TouchEvent) {
     this._isDragging = true;
     const loc = this.getEventLocation(event);
-    this._dragStart = { x: loc.x / this.zoom - this.pan.x, y: loc.y / this.zoom - this.pan.y };
+    this._dragStart = {
+      x: loc.x / this.zoom - this.pan.x,
+      y: loc.y / this.zoom - this.pan.y,
+    };
   }
 
   onPointerUp() {
@@ -193,7 +236,22 @@ export class FlowyCanvas {
     if (this._isDragging) {
       // this._lastPan = this.pan;
       const loc = this.getEventLocation(event);
-      this.pan = { x: loc.x / this.zoom - this._dragStart.x, y: loc.y / this.zoom - this._dragStart.y };
+      this.pan = {
+        x: loc.x / this.zoom - this._dragStart.x,
+        y: loc.y / this.zoom - this._dragStart.y,
+      };
+    }
+
+    // handle node
+    if (this._isDraggingNode) {
+      const loc = this.getEventLocation(event);
+      const dx = loc.x - this.activeNodePos.x;
+      const dy = loc.y - this.activeNodePos.y;
+      // account for zoom and pan
+      const newx = (this.activeNodePos.x + dx) / this.zoom - this.pan.x;
+      const newy = (this.activeNodePos.y + dy) / this.zoom - this.pan.y;
+
+      this.activeNodePos = { x: newx, y: newy };
     }
   }
 
@@ -206,7 +264,10 @@ export class FlowyCanvas {
 
     // Calculate the zoom level change
     const zoomDelta = event.deltaY < 0 ? this.zoomSpeed : -this.zoomSpeed;
-    const newZoom = Math.min(this.maxZoom, Math.max(this.minZoom, this.zoom + zoomDelta));
+    const newZoom = Math.min(
+      this.maxZoom,
+      Math.max(this.minZoom, this.zoom + zoomDelta),
+    );
 
     // Calculate the scale factor
     const scaleFactor = newZoom / this.zoom;
@@ -241,6 +302,14 @@ export class FlowyCanvas {
       // Multi-touch -> pinch zooming
       this.handlePinch(event);
     }
+
+    // // handle node
+    // if (this._isDraggingNode) {
+    //   const loc = this.getEventLocation(event);
+    //   const x = loc.x - this.activeNodePos.x;
+    //   const y = loc.y - this.activeNodePos.y;
+    //   this.activeNodePos = { x, y };
+    // }
   }
   handlePinch(event: TouchEvent) {
     if (event.touches.length !== 2) return;
@@ -254,7 +323,10 @@ export class FlowyCanvas {
     const touch2 = event.touches[1];
 
     // Calculate the distance between the two touch points (pinch)
-    const distance = Math.sqrt((touch1.clientX - touch2.clientX) ** 2 + (touch1.clientY - touch2.clientY) ** 2);
+    const distance = Math.sqrt(
+      (touch1.clientX - touch2.clientX) ** 2 +
+        (touch1.clientY - touch2.clientY) ** 2,
+    );
 
     if (this._initialPinchDistance === 0) {
       // If it's the start of the pinch, initialize the pinch distance
@@ -275,9 +347,16 @@ export class FlowyCanvas {
     }
   }
 
-  adjustZoomOnPinch(scaleFactor: number, pinchCenterX: number, pinchCenterY: number) {
+  adjustZoomOnPinch(
+    scaleFactor: number,
+    pinchCenterX: number,
+    pinchCenterY: number,
+  ) {
     // Calculate new zoom, ensuring it stays within min/max bounds
-    const newZoom = Math.min(this.maxZoom, Math.max(this.minZoom, this.zoom * scaleFactor));
+    const newZoom = Math.min(
+      this.maxZoom,
+      Math.max(this.minZoom, this.zoom * scaleFactor),
+    );
 
     // Calculate the ratio of the new zoom level compared to the current zoom
     // const zoomDelta = newZoom / this.zoom;

@@ -36,23 +36,37 @@ body {
   left: 0;
   will-change: transform;
   image-rendering: crisp-edges;
+  backface-visibility: hidden;
   /* top: 50%;
   left: 50%; */
   /* transform: translate(-50%, -50%); */
 }
 
-.test-node {
-  width: 100px;
-  height: 100px;
-  background: #f00;
+.flowy-node {
   position: absolute;
   top: 0;
   left: 0;
-  /* top: 50%;
-  left: 50%;*/
-  /* transform: translate(-50%, -50%); */
+  min-width: 100px;
+  min-height: 50px;
+  background: #afafaf;
+  border: 2px solid #333;
+  border-radius: 5px;
+  padding: 0px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+  backface-visibility: hidden;
+  will-change: transform;
+  touch-action: none;
+  user-select: none;
 }
-.test-node-2 {
-  top: 1000px;
-  left: 1000px;
+
+.flowy-node .flowy-node-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  font-size: 0.7em;
+  padding: 4px;
+  background: #333;
+  color: #fff;
+  text-rendering: optimizeSpeed;
 }

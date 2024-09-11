@@ -5,6 +5,8 @@
  * It contains typing information for all components that exist in this project.
  */
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
+import { Point } from "./types/Point";
+export { Point } from "./types/Point";
 export namespace Components {
     interface FlowyCanvas {
         "gridBgColor": string;
@@ -25,6 +27,9 @@ export namespace Components {
         "zoomSpeed": number;
     }
     interface LogicNode {
+        "position": Point;
+        "title": string;
+        "type": string;
     }
     interface MyComponent {
         /**
@@ -93,6 +98,9 @@ declare namespace LocalJSX {
         "zoomSpeed"?: number;
     }
     interface LogicNode {
+        "position"?: Point;
+        "title"?: string;
+        "type"?: string;
     }
     interface MyComponent {
         /**
