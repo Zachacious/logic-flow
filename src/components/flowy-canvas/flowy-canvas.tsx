@@ -3,6 +3,8 @@ import { Point } from '../../types/Point';
 import { debounce } from '../../utils/debounce';
 import { throttle } from '../../utils/throttle';
 import { getEventLocation } from '../../utils/getEventLocation';
+import { nanoid } from 'nanoid';
+import { LogicNode } from '../logic-node/logic-node';
 
 @Component({
   tag: 'flowy-canvas',
@@ -23,9 +25,14 @@ export class FlowyCanvas {
   @State() zoom: number = 1;
   @State() pan: Point = { x: 0, y: 0 };
 
+  private _uid: string = nanoid();
   private _initialPinchDistance: number = 0;
   private _isDragging: boolean = false;
   private _dragStart: Point = { x: 0, y: 0 };
+
+  private _activeNode: HTMLLogicNodeElement;
+  private _activeNodeDragging: boolean = false;
+  private _activeNodeDragStart: Point = { x: 0, y: 0 };
 
   private _canvasEl: HTMLDivElement;
   private _contentEl: HTMLDivElement;
@@ -63,7 +70,7 @@ export class FlowyCanvas {
     this._initialPinchDistance = 0;
 
     // setup event listeners
-    canvasEl.addEventListener('mousedown', this._elMouseDown, {
+    window.addEventListener('mousedown', this._elMouseDown, {
       passive: true,
     });
     canvasEl.addEventListener('mouseup', this._elMouseUp, { passive: true });
@@ -94,7 +101,7 @@ export class FlowyCanvas {
 
     // Clean up event listeners
     const canvasEl = this._canvasEl;
-    canvasEl.removeEventListener('mousedown', this._elMouseDown);
+    window.removeEventListener('mousedown', this._elMouseDown);
     canvasEl.removeEventListener('mouseup', this._elMouseUp);
     canvasEl.removeEventListener('mousemove', this._elMouseMove);
 
@@ -188,8 +195,24 @@ export class FlowyCanvas {
   }
 
   onPointerDown(event: MouseEvent | TouchEvent) {
-    this._isDragging = true;
     const loc = getEventLocation(event);
+
+    const target = event.target as HTMLElement;
+
+    if (target.closest('logic-node')) {
+      this._activeNode = target.closest('logic-node') as HTMLLogicNodeElement;
+      const rect = this._activeNode.getBoundingClientRect();
+      this._activeNodeDragStart = {
+        x: (loc.x - rect.left) / this.zoom,
+        y: (loc.y - rect.top) / this.zoom,
+      };
+      this._activeNodeDragging = true;
+
+      return;
+    }
+
+    this._isDragging = true;
+
     this._dragStart = {
       x: loc.x / this.zoom - this.pan.x,
       y: loc.y / this.zoom - this.pan.y,
@@ -200,9 +223,20 @@ export class FlowyCanvas {
     this._isDragging = false;
     this._initialPinchDistance = 0;
     // this._lastZoom = this.zoom;
+    this._activeNode = null;
+    this._activeNodeDragging = false;
   }
 
   onPointerMove(event: MouseEvent | TouchEvent) {
+    if (this._activeNode && this._activeNodeDragging) {
+      const loc = getEventLocation(event);
+      const newX = loc.x / this.zoom - this._activeNodeDragStart.x - this.pan.x;
+      const newY = loc.y / this.zoom - this._activeNodeDragStart.y - this.pan.y;
+
+      this._activeNode.position = { x: newX, y: newY };
+      return;
+    }
+
     if (this._isDragging) {
       // this._lastPan = this.pan;
       const loc = getEventLocation(event);
@@ -327,7 +361,7 @@ export class FlowyCanvas {
 
   render() {
     return (
-      <Host>
+      <Host id={this._uid}>
         {/* <div class="flowy-virtual-area"> */}
         <div class="flowy-canvas">
           <canvas class="flowy-grid"></canvas>

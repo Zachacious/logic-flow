@@ -1,15 +1,48 @@
 import { r as registerInstance, h, a as Host, g as getElement } from './index-2e7362b2.js';
 import { d as debounce } from './debounce-25523ff8.js';
-import { t as throttle, g as getEventLocation } from './getEventLocation-16a02f08.js';
+import { n as nanoid } from './index.browser-00c404f8.js';
+
+const throttle = (fn, delay) => {
+    let lastFunc;
+    let lastRan;
+    return (...args) => {
+        if (!lastRan) {
+            fn(...args);
+            lastRan = Date.now();
+        }
+        else {
+            clearTimeout(lastFunc);
+            lastFunc = setTimeout(() => {
+                if (Date.now() - lastRan >= delay) {
+                    fn(...args);
+                    lastRan = Date.now();
+                }
+            }, delay - (Date.now() - lastRan));
+        }
+    };
+};
+
+const getEventLocation = (e) => {
+    if (e instanceof MouseEvent) {
+        return { x: e.clientX, y: e.clientY };
+    }
+    else if (e instanceof TouchEvent && e.touches.length > 0) {
+        return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    }
+    return { x: 0, y: 0 };
+};
 
 const flowyCanvasCss = ":host{display:block}";
 
 const FlowyCanvas = class {
     constructor(hostRef) {
         registerInstance(this, hostRef);
+        this._uid = nanoid();
         this._initialPinchDistance = 0;
         this._isDragging = false;
         this._dragStart = { x: 0, y: 0 };
+        this._activeNodeDragging = false;
+        this._activeNodeDragStart = { x: 0, y: 0 };
         this._needsRedraw = true;
         this._debouncedResize = debounce(() => this.onResize(), 50);
         this._debouncedUpdateScreen = debounce(() => this.updateScreen(), 5);
@@ -41,7 +74,7 @@ const FlowyCanvas = class {
         this.renderGridLines();
         this._initialPinchDistance = 0;
         // setup event listeners
-        canvasEl.addEventListener('mousedown', this._elMouseDown, {
+        window.addEventListener('mousedown', this._elMouseDown, {
             passive: true,
         });
         canvasEl.addEventListener('mouseup', this._elMouseUp, { passive: true });
@@ -67,7 +100,7 @@ const FlowyCanvas = class {
         }
         // Clean up event listeners
         const canvasEl = this._canvasEl;
-        canvasEl.removeEventListener('mousedown', this._elMouseDown);
+        window.removeEventListener('mousedown', this._elMouseDown);
         canvasEl.removeEventListener('mouseup', this._elMouseUp);
         canvasEl.removeEventListener('mousemove', this._elMouseMove);
         canvasEl.removeEventListener('touchstart', this._elTouchStart);
@@ -142,8 +175,19 @@ const FlowyCanvas = class {
         }
     }
     onPointerDown(event) {
-        this._isDragging = true;
         const loc = getEventLocation(event);
+        const target = event.target;
+        if (target.closest('logic-node')) {
+            this._activeNode = target.closest('logic-node');
+            const rect = this._activeNode.getBoundingClientRect();
+            this._activeNodeDragStart = {
+                x: (loc.x - rect.left) / this.zoom,
+                y: (loc.y - rect.top) / this.zoom,
+            };
+            this._activeNodeDragging = true;
+            return;
+        }
+        this._isDragging = true;
         this._dragStart = {
             x: loc.x / this.zoom - this.pan.x,
             y: loc.y / this.zoom - this.pan.y,
@@ -153,8 +197,17 @@ const FlowyCanvas = class {
         this._isDragging = false;
         this._initialPinchDistance = 0;
         // this._lastZoom = this.zoom;
+        this._activeNode = null;
+        this._activeNodeDragging = false;
     }
     onPointerMove(event) {
+        if (this._activeNode && this._activeNodeDragging) {
+            const loc = getEventLocation(event);
+            const newX = loc.x / this.zoom - this._activeNodeDragStart.x - this.pan.x;
+            const newY = loc.y / this.zoom - this._activeNodeDragStart.y - this.pan.y;
+            this._activeNode.position = { x: newX, y: newY };
+            return;
+        }
         if (this._isDragging) {
             // this._lastPan = this.pan;
             const loc = getEventLocation(event);
@@ -248,7 +301,7 @@ const FlowyCanvas = class {
         this._debouncedUpdateScreen();
     }
     render() {
-        return (h(Host, { key: '3842fe77d2d032b09a6de2aefe942f1bd60d45df' }, h("div", { key: 'fabe307d5339f19ffd15e33358176bb5924235d2', class: "flowy-canvas" }, h("canvas", { key: '8ac01eae15dc0ccfc6446c872c7ee2715da36b78', class: "flowy-grid" }), h("div", { key: '1198825f97be2ad4cd66ddf3737e3026240ebce5', class: "flowy-content" }, h("slot", { key: '39122b63360c624f856b5a1dfae4895cecd50b66' })))));
+        return (h(Host, { key: '0f4c60f9b68098b69a2af05a5feddf6cd21d8b45', id: this._uid }, h("div", { key: '5235f2de7194e3a4e095a2de36c80066dcb44337', class: "flowy-canvas" }, h("canvas", { key: '93850a6ea40d4bb82091207173ce6b70ce02d86a', class: "flowy-grid" }), h("div", { key: '79b653c741d22494be5e722827be73e9da9d4b30', class: "flowy-content" }, h("slot", { key: 'cc6d1724a5f3ad3e1f3972822728a76149bb3ff3' })))));
     }
     get el() { return getElement(this); }
     static get watchers() { return {

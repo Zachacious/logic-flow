@@ -3,6 +3,7 @@ import { Point } from '../../types/Point';
 import { throttle } from '../../utils/throttle';
 import { getEventLocation } from '../../utils/getEventLocation';
 import { debounce } from '../../utils/debounce';
+import { nanoid } from 'nanoid';
 // import { events } from '../../events';
 
 @Component({
@@ -19,22 +20,23 @@ export class LogicNode {
 
   @State() isDragging = false;
 
+  private _uid: string = nanoid();
   private _canvasZoom = 1;
   private _canvasPan = { x: 0, y: 0 };
 
-  private _dragStart: Point = { x: 0, y: 0 };
+  _dragStart: Point = { x: 0, y: 0 };
 
-  private _throttledPointerMove = throttle(e => this.onPointerMove(e), 10);
-  private _throttledTouchMove = throttle(e => this.handleTouchMove(e), 10);
+  // private _throttledPointerMove = throttle(e => this.onPointerMove(e), 10);
+  // private _throttledTouchMove = throttle(e => this.handleTouchMove(e), 10);
 
-  private _elMouseDown = (e: MouseEvent | TouchEvent) => this.onPointerDown(e);
-  private _elMouseUp = () => this.onPointerUp();
-  private _elMouseMove = (e: MouseEvent | TouchEvent) =>
-    this._throttledPointerMove(e);
+  // private _elMouseDown = (e: MouseEvent | TouchEvent) => this.onPointerDown(e);
+  // private _elMouseUp = () => this.onPointerUp();
+  // private _elMouseMove = (e: MouseEvent | TouchEvent) =>
+  //   this._throttledPointerMove(e);
 
-  private _elTouchStart = (e: TouchEvent) => this.handleTouchStart(e);
-  private _elTouchMove = (e: TouchEvent) => this._throttledTouchMove(e);
-  private _elTouchEnd = () => this.onPointerUp();
+  // private _elTouchStart = (e: TouchEvent) => this.handleTouchStart(e);
+  // private _elTouchMove = (e: TouchEvent) => this._throttledTouchMove(e);
+  // private _elTouchEnd = () => this.onPointerUp();
 
   private _debouncedUpdateTransform = debounce(
     () => this.updateTransform(),
@@ -42,29 +44,27 @@ export class LogicNode {
   );
 
   componentDidLoad() {
-    window.addEventListener('mouseup', this._elMouseUp, { passive: true });
-    window.addEventListener('mousemove', this._elMouseMove, { passive: false });
-
-    this.el.addEventListener('mousedown', this._elMouseDown, {
-      passive: false,
-    });
-    this.el.addEventListener('touchstart', this._elTouchStart, {
-      passive: false,
-    });
-    this.el.addEventListener('touchend', this._elTouchEnd, { passive: true });
-    this.el.addEventListener('touchmove', this._elTouchMove, {
-      passive: false,
-    });
+    // window.addEventListener('mouseup', this._elMouseUp, { passive: true });
+    // window.addEventListener('mousemove', this._elMouseMove, { passive: false });
+    // this.el.addEventListener('mousedown', this._elMouseDown, {
+    //   passive: false,
+    // });
+    // this.el.addEventListener('touchstart', this._elTouchStart, {
+    //   passive: false,
+    // });
+    // this.el.addEventListener('touchend', this._elTouchEnd, { passive: true });
+    // this.el.addEventListener('touchmove', this._elTouchMove, {
+    //   passive: false,
+    // });
   }
 
   disconnectedCallback() {
-    window.removeEventListener('mouseup', this._elMouseUp);
-    window.removeEventListener('mousemove', this._elMouseMove);
-
-    this.el.removeEventListener('mousedown', this._elMouseDown);
-    this.el.removeEventListener('touchstart', this._elTouchStart);
-    this.el.removeEventListener('touchend', this._elTouchEnd);
-    this.el.removeEventListener('touchmove', this._elTouchMove);
+    // window.removeEventListener('mouseup', this._elMouseUp);
+    // window.removeEventListener('mousemove', this._elMouseMove);
+    // this.el.removeEventListener('mousedown', this._elMouseDown);
+    // this.el.removeEventListener('touchstart', this._elTouchStart);
+    // this.el.removeEventListener('touchend', this._elTouchEnd);
+    // this.el.removeEventListener('touchmove', this._elTouchMove);
   }
 
   @Watch('position')
@@ -79,72 +79,72 @@ export class LogicNode {
   }
 
   // handle drag and drop positioning
-  onPointerDown(e: MouseEvent | TouchEvent) {
-    e.stopPropagation();
-    this.isDragging = true;
+  // onPointerDown(e: MouseEvent | TouchEvent) {
+  //   // e.stopPropagation();
+  //   this.isDragging = true;
 
-    const loc = getEventLocation(e);
-    // Get the current position of the node
-    const nodeRect = this.el.getBoundingClientRect();
+  //   const loc = getEventLocation(e);
+  //   // Get the current position of the node
+  //   const nodeRect = this.el.getBoundingClientRect();
 
-    // Get canvas bounding rect for pan/zoom calculations
-    const contentEl = this.el.closest('.flowy-content') as HTMLElement;
-    if (!contentEl) return;
+  //   // Get canvas bounding rect for pan/zoom calculations
+  //   const contentEl = this.el.closest('.flowy-content') as HTMLElement;
+  //   if (!contentEl) return;
 
-    // Store the current canvas zoom level
-    const zoomMatches = contentEl.style.transform.match(
-      /scale\((\d+(?:\.\d+)?)\)/,
-    );
-    this._canvasZoom = zoomMatches ? parseFloat(zoomMatches[1]) : 1;
+  //   // Store the current canvas zoom level
+  //   const zoomMatches = contentEl.style.transform.match(
+  //     /scale\((\d+(?:\.\d+)?)\)/,
+  //   );
+  //   this._canvasZoom = zoomMatches ? parseFloat(zoomMatches[1]) : 1;
 
-    // Store the current canvas pan position
-    const panMatches = contentEl.style.transform.match(
-      /translate\((-?\d+(?:\.\d*)?)px, (-?\d+(?:\.\d*)?)px\)/,
-    );
+  //   // Store the current canvas pan position
+  //   const panMatches = contentEl.style.transform.match(
+  //     /translate\((-?\d+(?:\.\d*)?)px, (-?\d+(?:\.\d*)?)px\)/,
+  //   );
 
-    this._canvasPan = {
-      x: panMatches ? parseInt(panMatches[1], 10) : 0,
-      y: panMatches ? parseInt(panMatches[2], 10) : 0,
-    };
+  //   this._canvasPan = {
+  //     x: panMatches ? parseInt(panMatches[1], 10) : 0,
+  //     y: panMatches ? parseInt(panMatches[2], 10) : 0,
+  //   };
 
-    this._dragStart = {
-      x: (loc.x - nodeRect.left) / this._canvasZoom,
-      y: (loc.y - nodeRect.top) / this._canvasZoom,
-    };
-  }
+  //   this._dragStart = {
+  //     x: (loc.x - nodeRect.left) / this._canvasZoom,
+  //     y: (loc.y - nodeRect.top) / this._canvasZoom,
+  //   };
+  // }
 
-  onPointerMove(e: MouseEvent | TouchEvent) {
-    if (!this.isDragging) return;
-    e.stopPropagation();
+  // onPointerMove(e: MouseEvent | TouchEvent) {
+  //   if (!this.isDragging) return;
+  //   e.stopPropagation();
 
-    requestAnimationFrame(() => {
-      const loc = getEventLocation(e);
-      const newX =
-        loc.x / this._canvasZoom - this._dragStart.x - this._canvasPan.x;
-      const newY =
-        loc.y / this._canvasZoom - this._dragStart.y - this._canvasPan.y;
+  //   requestAnimationFrame(() => {
+  //     const loc = getEventLocation(e);
+  //     const newX =
+  //       loc.x / this._canvasZoom - this._dragStart.x - this._canvasPan.x;
+  //     const newY =
+  //       loc.y / this._canvasZoom - this._dragStart.y - this._canvasPan.y;
 
-      this.position = { x: newX, y: newY };
-    });
-  }
+  //     this.position = { x: newX, y: newY };
+  //   });
+  // }
 
-  onPointerUp() {
-    this.isDragging = false;
-  }
+  // onPointerUp() {
+  //   this.isDragging = false;
+  // }
 
-  handleTouchStart(e: TouchEvent) {
-    e.preventDefault();
-    this.onPointerDown(e);
-  }
+  // handleTouchStart(e: TouchEvent) {
+  //   e.preventDefault();
+  //   this.onPointerDown(e);
+  // }
 
-  handleTouchMove(e: TouchEvent) {
-    e.preventDefault();
-    this.onPointerMove(e);
-  }
+  // handleTouchMove(e: TouchEvent) {
+  //   e.preventDefault();
+  //   this.onPointerMove(e);
+  // }
 
   render() {
     return (
-      <Host class="flowy-node">
+      <Host class="flowy-node" id={this._uid}>
         {/* <div class="flowy-node"> */}
         <div class="flowy-node-header">
           {this.title}
