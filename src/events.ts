@@ -6,6 +6,6 @@ export const events = new EventEmitter<{
   nodeDragMove: (el: HTMLElement, e: MouseEvent | TouchEvent) => void;
   nodeDragEnd: (el: HTMLElement) => void;
 
-  nodeDragStart: (el: HTMLElement, pos: Point) => void;
+  nodeDragStart: (el: HTMLElement, pos: Point, offset: Point) => void;
   nodeDragStopped: (el: HTMLElement) => void;
 }>();

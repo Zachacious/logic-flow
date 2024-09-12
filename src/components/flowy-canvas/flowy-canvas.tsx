@@ -2,7 +2,7 @@ import { Component, Host, Prop, h, Element, State, Watch } from '@stencil/core';
 import { Point } from '../../types/Point';
 import { debounce } from '../../utils/debounce';
 import { throttle } from '../../utils/throttle';
-import { events } from '../../events';
+// import { events } from '../../events';
 
 @Component({
   tag: 'flowy-canvas',
@@ -22,7 +22,7 @@ export class FlowyCanvas {
 
   @State() zoom: number = 1;
   @State() pan: Point = { x: 0, y: 0 };
-  @State() activeNodePos: Point = { x: 0, y: 0 };
+  // @State() activeNodePos: Point = { x: 0, y: 0 };
 
   private _initialPinchDistance: number = 0;
   private _isDragging: boolean = false;
@@ -34,8 +34,9 @@ export class FlowyCanvas {
   private _needsRedraw: boolean = true;
   private _canvasRect: DOMRect;
 
-  private _activeNode: HTMLElement;
-  private _isDraggingNode: boolean = false;
+  // private _activeNode: HTMLElement;
+  // private _activeNodeOffset: Point = { x: 0, y: 0 };
+  // private _isDraggingNode: boolean = false;
 
   private _resizeObserver: ResizeObserver;
   private _debouncedResize = debounce(() => this.onResize(), 50);
@@ -89,8 +90,8 @@ export class FlowyCanvas {
     this._resizeObserver = new ResizeObserver(() => this._debouncedResize());
     this._resizeObserver.observe(this._canvasEl);
 
-    events.on('nodeDragStart', this.nodeDragStart.bind(this));
-    events.on('nodeDragStopped', this.nodeDragEnd.bind(this));
+    // events.on('nodeDragStart', this.nodeDragStart.bind(this));
+    // events.on('nodeDragStopped', this.nodeDragEnd.bind(this));
   }
 
   disconnectedCallback() {
@@ -129,10 +130,10 @@ export class FlowyCanvas {
     this._debouncedUpdateScreen();
   }
 
-  @Watch('activeNodePos')
-  activeNodePosChanged() {
-    this._activeNode.style.transform = `translate(${this.activeNodePos.x}px, ${this.activeNodePos.y}px)`;
-  }
+  // @Watch('activeNodePos')
+  // activeNodePosChanged() {
+  //   this._activeNode.style.transform = `translate(${this.activeNodePos.x}px, ${this.activeNodePos.y}px)`;
+  // }
 
   onResize() {
     this._needsRedraw = true;
@@ -183,21 +184,28 @@ export class FlowyCanvas {
     this._needsRedraw = false;
   }
 
-  nodeDragStart(el: HTMLElement, pos: Point) {
-    this._activeNode = el;
-    // this.activeNodePos = pos;
+  // nodeDragStart(el: HTMLElement, pos: Point, offset: Point) {
+  //   this._activeNode = el;
+  //   this._activeNodeOffset = offset;
+  //   // adjust offset for content offset
+  //   // this._activeNodeOffset = {
+  //   //   x: offset.x + this._contentEl.getBoundingClientRect().left,
+  //   //   y: offset.y + this._contentEl.getBoundingClientRect().top,
+  //   // };
+  //   // console.log('nodeDragStart', this._activeNodeOffset);
+  //   // this.activeNodePos = pos;
 
-    this._isDraggingNode = true;
-  }
+  //   this._isDraggingNode = true;
+  // }
 
   // updateNodePosition() {
   //   if (!this._activeNode) return;
   //   this._activeNode.style.transform = `translate(${this.activeNodePos.x}px, ${this.activeNodePos.y}px)`;
   // }
 
-  nodeDragEnd() {
-    this._isDraggingNode = false;
-  }
+  // nodeDragEnd() {
+  //   this._isDraggingNode = false;
+  // }
 
   updateScreen() {
     // this.renderGridLines();
@@ -243,17 +251,21 @@ export class FlowyCanvas {
       };
     }
 
-    // handle node
-    if (this._isDraggingNode) {
-      const loc = this.getEventLocation(event);
-      const dx = loc.x - this.activeNodePos.x;
-      const dy = loc.y - this.activeNodePos.y;
-      // account for zoom and pan
-      const newx = (this.activeNodePos.x + dx) / this.zoom - this.pan.x;
-      const newy = (this.activeNodePos.y + dy) / this.zoom - this.pan.y;
+    // // handle node
+    // if (this._isDraggingNode) {
+    //   const loc = this.getEventLocation(event);
+    //   const dx = loc.x - this.activeNodePos.x;
+    //   const dy = loc.y - this.activeNodePos.y;
+    //   // account for zoom and pan and original offset
+    //   const newx =
+    //     (this.activeNodePos.x + dx - this._activeNodeOffset.x) / this.zoom -
+    //     this.pan.x;
+    //   const newy =
+    //     (this.activeNodePos.y + dy - this._activeNodeOffset.y) / this.zoom -
+    //     this.pan.y;
 
-      this.activeNodePos = { x: newx, y: newy };
-    }
+    //   this.activeNodePos = { x: newx, y: newy };
+    // }
   }
 
   handleWheel(event: WheelEvent) {

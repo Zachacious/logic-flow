@@ -1,18 +1,17 @@
 import { r as registerInstance, h, a as Host, g as getElement } from './index-2e7362b2.js';
 import { d as debounce } from './debounce-25523ff8.js';
-import { t as throttle, e as events } from './events-121209b8.js';
-import './_commonjsHelpers-bc8ff177.js';
+import { t as throttle } from './throttle-2ef1c0d0.js';
 
 const flowyCanvasCss = ":host{display:block}";
 
 const FlowyCanvas = class {
     constructor(hostRef) {
         registerInstance(this, hostRef);
+        // @State() activeNodePos: Point = { x: 0, y: 0 };
         this._initialPinchDistance = 0;
         this._isDragging = false;
         this._dragStart = { x: 0, y: 0 };
         this._needsRedraw = true;
-        this._isDraggingNode = false;
         this._debouncedResize = debounce(() => this.onResize(), 50);
         this._debouncedUpdateScreen = debounce(() => this.updateScreen(), 5);
         this._throttledPointerMove = throttle(e => this.onPointerMove(e), 30);
@@ -33,7 +32,6 @@ const FlowyCanvas = class {
         this.zoomSpeed = 0.08;
         this.zoom = 1;
         this.pan = { x: 0, y: 0 };
-        this.activeNodePos = { x: 0, y: 0 };
     }
     componentDidLoad() {
         this._canvasEl = this.el.querySelector('.flowy-canvas');
@@ -62,8 +60,8 @@ const FlowyCanvas = class {
         // Handle resize events
         this._resizeObserver = new ResizeObserver(() => this._debouncedResize());
         this._resizeObserver.observe(this._canvasEl);
-        events.on('nodeDragStart', this.nodeDragStart.bind(this));
-        events.on('nodeDragStopped', this.nodeDragEnd.bind(this));
+        // events.on('nodeDragStart', this.nodeDragStart.bind(this));
+        // events.on('nodeDragStopped', this.nodeDragEnd.bind(this));
     }
     disconnectedCallback() {
         // Clean up resize observer
@@ -92,9 +90,10 @@ const FlowyCanvas = class {
         // this.updateScreen();
         this._debouncedUpdateScreen();
     }
-    activeNodePosChanged() {
-        this._activeNode.style.transform = `translate(${this.activeNodePos.x}px, ${this.activeNodePos.y}px)`;
-    }
+    // @Watch('activeNodePos')
+    // activeNodePosChanged() {
+    //   this._activeNode.style.transform = `translate(${this.activeNodePos.x}px, ${this.activeNodePos.y}px)`;
+    // }
     onResize() {
         this._needsRedraw = true;
         this._canvasRect = this._canvasEl.getBoundingClientRect();
@@ -133,18 +132,25 @@ const FlowyCanvas = class {
         ctx.stroke();
         this._needsRedraw = false;
     }
-    nodeDragStart(el, pos) {
-        this._activeNode = el;
-        // this.activeNodePos = pos;
-        this._isDraggingNode = true;
-    }
+    // nodeDragStart(el: HTMLElement, pos: Point, offset: Point) {
+    //   this._activeNode = el;
+    //   this._activeNodeOffset = offset;
+    //   // adjust offset for content offset
+    //   // this._activeNodeOffset = {
+    //   //   x: offset.x + this._contentEl.getBoundingClientRect().left,
+    //   //   y: offset.y + this._contentEl.getBoundingClientRect().top,
+    //   // };
+    //   // console.log('nodeDragStart', this._activeNodeOffset);
+    //   // this.activeNodePos = pos;
+    //   this._isDraggingNode = true;
+    // }
     // updateNodePosition() {
     //   if (!this._activeNode) return;
     //   this._activeNode.style.transform = `translate(${this.activeNodePos.x}px, ${this.activeNodePos.y}px)`;
     // }
-    nodeDragEnd() {
-        this._isDraggingNode = false;
-    }
+    // nodeDragEnd() {
+    //   this._isDraggingNode = false;
+    // }
     updateScreen() {
         // this.renderGridLines();
         const contentEl = this._contentEl;
@@ -185,16 +191,20 @@ const FlowyCanvas = class {
                 y: loc.y / this.zoom - this._dragStart.y,
             };
         }
-        // handle node
-        if (this._isDraggingNode) {
-            const loc = this.getEventLocation(event);
-            const dx = loc.x - this.activeNodePos.x;
-            const dy = loc.y - this.activeNodePos.y;
-            // account for zoom and pan
-            const newx = (this.activeNodePos.x + dx) / this.zoom - this.pan.x;
-            const newy = (this.activeNodePos.y + dy) / this.zoom - this.pan.y;
-            this.activeNodePos = { x: newx, y: newy };
-        }
+        // // handle node
+        // if (this._isDraggingNode) {
+        //   const loc = this.getEventLocation(event);
+        //   const dx = loc.x - this.activeNodePos.x;
+        //   const dy = loc.y - this.activeNodePos.y;
+        //   // account for zoom and pan and original offset
+        //   const newx =
+        //     (this.activeNodePos.x + dx - this._activeNodeOffset.x) / this.zoom -
+        //     this.pan.x;
+        //   const newy =
+        //     (this.activeNodePos.y + dy - this._activeNodeOffset.y) / this.zoom -
+        //     this.pan.y;
+        //   this.activeNodePos = { x: newx, y: newy };
+        // }
     }
     handleWheel(event) {
         event.preventDefault();
@@ -289,13 +299,12 @@ const FlowyCanvas = class {
         this._debouncedUpdateScreen();
     }
     render() {
-        return (h(Host, { key: 'e76e88730b3952a8ef9a044961e5e682bb5effff' }, h("div", { key: '6b7f4c113890a877fda19c0fe91a497843c198c4', class: "flowy-canvas" }, h("canvas", { key: 'fc8e6e5553379f9d8a25daa66cc6cf63f27f8a97', class: "flowy-grid" }), h("div", { key: 'cc25c73fbf84ff77bbad712d8e2066564655b08a', class: "flowy-content" }, h("slot", { key: 'b851b5eba173ca69d6908989580bc0fbf1488b6e' })))));
+        return (h(Host, { key: 'de0c2d47321eecdd844d5e7fccbcdee1c372f52a' }, h("div", { key: '161feab71450bafdb10209e8cb0e0291c0996860', class: "flowy-canvas" }, h("canvas", { key: 'ffdda35bbf0f01b0ae0e3a11256439a36fb7737c', class: "flowy-grid" }), h("div", { key: '6409c0fec4c0d3090b5bb1788d520aaeb39b890e', class: "flowy-content" }, h("slot", { key: '8fa6cd1bef945b4607315801f38ec742601738ba' })))));
     }
     get el() { return getElement(this); }
     static get watchers() { return {
         "zoom": ["zoomChanged"],
-        "pan": ["panChanged"],
-        "activeNodePos": ["activeNodePosChanged"]
+        "pan": ["panChanged"]
     }; }
 };
 FlowyCanvas.style = flowyCanvasCss;
