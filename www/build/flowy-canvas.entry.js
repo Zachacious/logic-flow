@@ -1,13 +1,12 @@
 import { r as registerInstance, h, a as Host, g as getElement } from './index-2e7362b2.js';
 import { d as debounce } from './debounce-25523ff8.js';
-import { t as throttle } from './throttle-2ef1c0d0.js';
+import { t as throttle, g as getEventLocation } from './getEventLocation-16a02f08.js';
 
 const flowyCanvasCss = ":host{display:block}";
 
 const FlowyCanvas = class {
     constructor(hostRef) {
         registerInstance(this, hostRef);
-        // @State() activeNodePos: Point = { x: 0, y: 0 };
         this._initialPinchDistance = 0;
         this._isDragging = false;
         this._dragStart = { x: 0, y: 0 };
@@ -60,8 +59,6 @@ const FlowyCanvas = class {
         // Handle resize events
         this._resizeObserver = new ResizeObserver(() => this._debouncedResize());
         this._resizeObserver.observe(this._canvasEl);
-        // events.on('nodeDragStart', this.nodeDragStart.bind(this));
-        // events.on('nodeDragStopped', this.nodeDragEnd.bind(this));
     }
     disconnectedCallback() {
         // Clean up resize observer
@@ -77,8 +74,6 @@ const FlowyCanvas = class {
         canvasEl.removeEventListener('touchmove', this._elTouchMove);
         canvasEl.removeEventListener('touchend', this._elTouchEnd);
         canvasEl.removeEventListener('wheel', this._elWheel);
-        // events.off('nodeDragStart', this.nodeDragStart.bind(this));
-        // events.off('nodeDragStopped', this.nodeDragEnd.bind(this));
     }
     zoomChanged() {
         this._needsRedraw = true;
@@ -90,10 +85,6 @@ const FlowyCanvas = class {
         // this.updateScreen();
         this._debouncedUpdateScreen();
     }
-    // @Watch('activeNodePos')
-    // activeNodePosChanged() {
-    //   this._activeNode.style.transform = `translate(${this.activeNodePos.x}px, ${this.activeNodePos.y}px)`;
-    // }
     onResize() {
         this._needsRedraw = true;
         this._canvasRect = this._canvasEl.getBoundingClientRect();
@@ -132,25 +123,6 @@ const FlowyCanvas = class {
         ctx.stroke();
         this._needsRedraw = false;
     }
-    // nodeDragStart(el: HTMLElement, pos: Point, offset: Point) {
-    //   this._activeNode = el;
-    //   this._activeNodeOffset = offset;
-    //   // adjust offset for content offset
-    //   // this._activeNodeOffset = {
-    //   //   x: offset.x + this._contentEl.getBoundingClientRect().left,
-    //   //   y: offset.y + this._contentEl.getBoundingClientRect().top,
-    //   // };
-    //   // console.log('nodeDragStart', this._activeNodeOffset);
-    //   // this.activeNodePos = pos;
-    //   this._isDraggingNode = true;
-    // }
-    // updateNodePosition() {
-    //   if (!this._activeNode) return;
-    //   this._activeNode.style.transform = `translate(${this.activeNodePos.x}px, ${this.activeNodePos.y}px)`;
-    // }
-    // nodeDragEnd() {
-    //   this._isDraggingNode = false;
-    // }
     updateScreen() {
         // this.renderGridLines();
         const contentEl = this._contentEl;
@@ -171,7 +143,7 @@ const FlowyCanvas = class {
     }
     onPointerDown(event) {
         this._isDragging = true;
-        const loc = this.getEventLocation(event);
+        const loc = getEventLocation(event);
         this._dragStart = {
             x: loc.x / this.zoom - this.pan.x,
             y: loc.y / this.zoom - this.pan.y,
@@ -185,26 +157,12 @@ const FlowyCanvas = class {
     onPointerMove(event) {
         if (this._isDragging) {
             // this._lastPan = this.pan;
-            const loc = this.getEventLocation(event);
+            const loc = getEventLocation(event);
             this.pan = {
                 x: loc.x / this.zoom - this._dragStart.x,
                 y: loc.y / this.zoom - this._dragStart.y,
             };
         }
-        // // handle node
-        // if (this._isDraggingNode) {
-        //   const loc = this.getEventLocation(event);
-        //   const dx = loc.x - this.activeNodePos.x;
-        //   const dy = loc.y - this.activeNodePos.y;
-        //   // account for zoom and pan and original offset
-        //   const newx =
-        //     (this.activeNodePos.x + dx - this._activeNodeOffset.x) / this.zoom -
-        //     this.pan.x;
-        //   const newy =
-        //     (this.activeNodePos.y + dy - this._activeNodeOffset.y) / this.zoom -
-        //     this.pan.y;
-        //   this.activeNodePos = { x: newx, y: newy };
-        // }
     }
     handleWheel(event) {
         event.preventDefault();
@@ -245,13 +203,6 @@ const FlowyCanvas = class {
             // Multi-touch -> pinch zooming
             this.handlePinch(event);
         }
-        // // handle node
-        // if (this._isDraggingNode) {
-        //   const loc = this.getEventLocation(event);
-        //   const x = loc.x - this.activeNodePos.x;
-        //   const y = loc.y - this.activeNodePos.y;
-        //   this.activeNodePos = { x, y };
-        // }
     }
     handlePinch(event) {
         if (event.touches.length !== 2)
@@ -283,8 +234,6 @@ const FlowyCanvas = class {
     adjustZoomOnPinch(scaleFactor, pinchCenterX, pinchCenterY) {
         // Calculate new zoom, ensuring it stays within min/max bounds
         const newZoom = Math.min(this.maxZoom, Math.max(this.minZoom, this.zoom * scaleFactor));
-        // Calculate the ratio of the new zoom level compared to the current zoom
-        // const zoomDelta = newZoom / this.zoom;
         // Find the pinch center position relative to the content's current position and zoom
         const pinchContentX = (pinchCenterX - this.pan.x * this.zoom) / this.zoom;
         const pinchContentY = (pinchCenterY - this.pan.y * this.zoom) / this.zoom;
@@ -299,7 +248,7 @@ const FlowyCanvas = class {
         this._debouncedUpdateScreen();
     }
     render() {
-        return (h(Host, { key: 'de0c2d47321eecdd844d5e7fccbcdee1c372f52a' }, h("div", { key: '161feab71450bafdb10209e8cb0e0291c0996860', class: "flowy-canvas" }, h("canvas", { key: 'ffdda35bbf0f01b0ae0e3a11256439a36fb7737c', class: "flowy-grid" }), h("div", { key: '6409c0fec4c0d3090b5bb1788d520aaeb39b890e', class: "flowy-content" }, h("slot", { key: '8fa6cd1bef945b4607315801f38ec742601738ba' })))));
+        return (h(Host, { key: '3842fe77d2d032b09a6de2aefe942f1bd60d45df' }, h("div", { key: 'fabe307d5339f19ffd15e33358176bb5924235d2', class: "flowy-canvas" }, h("canvas", { key: '8ac01eae15dc0ccfc6446c872c7ee2715da36b78', class: "flowy-grid" }), h("div", { key: '1198825f97be2ad4cd66ddf3737e3026240ebce5', class: "flowy-content" }, h("slot", { key: '39122b63360c624f856b5a1dfae4895cecd50b66' })))));
     }
     get el() { return getElement(this); }
     static get watchers() { return {

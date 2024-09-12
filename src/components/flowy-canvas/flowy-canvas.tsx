@@ -2,7 +2,7 @@ import { Component, Host, Prop, h, Element, State, Watch } from '@stencil/core';
 import { Point } from '../../types/Point';
 import { debounce } from '../../utils/debounce';
 import { throttle } from '../../utils/throttle';
-// import { events } from '../../events';
+import { getEventLocation } from '../../utils/getEventLocation';
 
 @Component({
   tag: 'flowy-canvas',
@@ -22,7 +22,6 @@ export class FlowyCanvas {
 
   @State() zoom: number = 1;
   @State() pan: Point = { x: 0, y: 0 };
-  // @State() activeNodePos: Point = { x: 0, y: 0 };
 
   private _initialPinchDistance: number = 0;
   private _isDragging: boolean = false;
@@ -33,10 +32,6 @@ export class FlowyCanvas {
   private _gridEl: HTMLCanvasElement;
   private _needsRedraw: boolean = true;
   private _canvasRect: DOMRect;
-
-  // private _activeNode: HTMLElement;
-  // private _activeNodeOffset: Point = { x: 0, y: 0 };
-  // private _isDraggingNode: boolean = false;
 
   private _resizeObserver: ResizeObserver;
   private _debouncedResize = debounce(() => this.onResize(), 50);
@@ -89,9 +84,6 @@ export class FlowyCanvas {
     // Handle resize events
     this._resizeObserver = new ResizeObserver(() => this._debouncedResize());
     this._resizeObserver.observe(this._canvasEl);
-
-    // events.on('nodeDragStart', this.nodeDragStart.bind(this));
-    // events.on('nodeDragStopped', this.nodeDragEnd.bind(this));
   }
 
   disconnectedCallback() {
@@ -111,9 +103,6 @@ export class FlowyCanvas {
     canvasEl.removeEventListener('touchend', this._elTouchEnd);
 
     canvasEl.removeEventListener('wheel', this._elWheel);
-
-    // events.off('nodeDragStart', this.nodeDragStart.bind(this));
-    // events.off('nodeDragStopped', this.nodeDragEnd.bind(this));
   }
 
   @Watch('zoom')
@@ -129,11 +118,6 @@ export class FlowyCanvas {
     // this.updateScreen();
     this._debouncedUpdateScreen();
   }
-
-  // @Watch('activeNodePos')
-  // activeNodePosChanged() {
-  //   this._activeNode.style.transform = `translate(${this.activeNodePos.x}px, ${this.activeNodePos.y}px)`;
-  // }
 
   onResize() {
     this._needsRedraw = true;
@@ -184,29 +168,6 @@ export class FlowyCanvas {
     this._needsRedraw = false;
   }
 
-  // nodeDragStart(el: HTMLElement, pos: Point, offset: Point) {
-  //   this._activeNode = el;
-  //   this._activeNodeOffset = offset;
-  //   // adjust offset for content offset
-  //   // this._activeNodeOffset = {
-  //   //   x: offset.x + this._contentEl.getBoundingClientRect().left,
-  //   //   y: offset.y + this._contentEl.getBoundingClientRect().top,
-  //   // };
-  //   // console.log('nodeDragStart', this._activeNodeOffset);
-  //   // this.activeNodePos = pos;
-
-  //   this._isDraggingNode = true;
-  // }
-
-  // updateNodePosition() {
-  //   if (!this._activeNode) return;
-  //   this._activeNode.style.transform = `translate(${this.activeNodePos.x}px, ${this.activeNodePos.y}px)`;
-  // }
-
-  // nodeDragEnd() {
-  //   this._isDraggingNode = false;
-  // }
-
   updateScreen() {
     // this.renderGridLines();
     const contentEl = this._contentEl;
@@ -228,7 +189,7 @@ export class FlowyCanvas {
 
   onPointerDown(event: MouseEvent | TouchEvent) {
     this._isDragging = true;
-    const loc = this.getEventLocation(event);
+    const loc = getEventLocation(event);
     this._dragStart = {
       x: loc.x / this.zoom - this.pan.x,
       y: loc.y / this.zoom - this.pan.y,
@@ -244,28 +205,12 @@ export class FlowyCanvas {
   onPointerMove(event: MouseEvent | TouchEvent) {
     if (this._isDragging) {
       // this._lastPan = this.pan;
-      const loc = this.getEventLocation(event);
+      const loc = getEventLocation(event);
       this.pan = {
         x: loc.x / this.zoom - this._dragStart.x,
         y: loc.y / this.zoom - this._dragStart.y,
       };
     }
-
-    // // handle node
-    // if (this._isDraggingNode) {
-    //   const loc = this.getEventLocation(event);
-    //   const dx = loc.x - this.activeNodePos.x;
-    //   const dy = loc.y - this.activeNodePos.y;
-    //   // account for zoom and pan and original offset
-    //   const newx =
-    //     (this.activeNodePos.x + dx - this._activeNodeOffset.x) / this.zoom -
-    //     this.pan.x;
-    //   const newy =
-    //     (this.activeNodePos.y + dy - this._activeNodeOffset.y) / this.zoom -
-    //     this.pan.y;
-
-    //   this.activeNodePos = { x: newx, y: newy };
-    // }
   }
 
   handleWheel(event: WheelEvent) {
@@ -315,14 +260,6 @@ export class FlowyCanvas {
       // Multi-touch -> pinch zooming
       this.handlePinch(event);
     }
-
-    // // handle node
-    // if (this._isDraggingNode) {
-    //   const loc = this.getEventLocation(event);
-    //   const x = loc.x - this.activeNodePos.x;
-    //   const y = loc.y - this.activeNodePos.y;
-    //   this.activeNodePos = { x, y };
-    // }
   }
   handlePinch(event: TouchEvent) {
     if (event.touches.length !== 2) return;
@@ -370,9 +307,6 @@ export class FlowyCanvas {
       this.maxZoom,
       Math.max(this.minZoom, this.zoom * scaleFactor),
     );
-
-    // Calculate the ratio of the new zoom level compared to the current zoom
-    // const zoomDelta = newZoom / this.zoom;
 
     // Find the pinch center position relative to the content's current position and zoom
     const pinchContentX = (pinchCenterX - this.pan.x * this.zoom) / this.zoom;

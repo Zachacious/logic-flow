@@ -1,7 +1,9 @@
 import { Component, Host, Prop, h, Element, State, Watch } from '@stencil/core';
 import { Point } from '../../types/Point';
 import { throttle } from '../../utils/throttle';
-import { events } from '../../events';
+import { getEventLocation } from '../../utils/getEventLocation';
+import { debounce } from '../../utils/debounce';
+// import { events } from '../../events';
 
 @Component({
   tag: 'logic-node',
@@ -22,8 +24,8 @@ export class LogicNode {
 
   private _dragStart: Point = { x: 0, y: 0 };
 
-  private _throttledPointerMove = throttle(e => this.onPointerMove(e), 30);
-  private _throttledTouchMove = throttle(e => this.handleTouchMove(e), 30);
+  private _throttledPointerMove = throttle(e => this.onPointerMove(e), 10);
+  private _throttledTouchMove = throttle(e => this.handleTouchMove(e), 10);
 
   private _elMouseDown = (e: MouseEvent | TouchEvent) => this.onPointerDown(e);
   private _elMouseUp = () => this.onPointerUp();
@@ -34,62 +36,60 @@ export class LogicNode {
   private _elTouchMove = (e: TouchEvent) => this._throttledTouchMove(e);
   private _elTouchEnd = () => this.onPointerUp();
 
+  private _debouncedUpdateTransform = debounce(
+    () => this.updateTransform(),
+    10,
+  );
+
   componentDidLoad() {
     window.addEventListener('mouseup', this._elMouseUp, { passive: true });
-    window.addEventListener('mousemove', this._elMouseMove, { passive: true });
+    window.addEventListener('mousemove', this._elMouseMove, { passive: false });
 
-    this.el.addEventListener('mousedown', this._elMouseDown, { passive: true });
+    this.el.addEventListener('mousedown', this._elMouseDown, {
+      passive: false,
+    });
     this.el.addEventListener('touchstart', this._elTouchStart, {
-      passive: true,
+      passive: false,
     });
     this.el.addEventListener('touchend', this._elTouchEnd, { passive: true });
-    this.el.addEventListener('touchmove', this._elTouchMove, { passive: true });
+    this.el.addEventListener('touchmove', this._elTouchMove, {
+      passive: false,
+    });
   }
 
-  @Watch('isDragging')
-  onIsDraggingChange() {
-    if (this.isDragging) {
-      // rect
-      const originOffset = {
-        x: this._dragStart.x,
-        y: this._dragStart.y,
-      };
+  disconnectedCallback() {
+    window.removeEventListener('mouseup', this._elMouseUp);
+    window.removeEventListener('mousemove', this._elMouseMove);
 
-      events.emit('nodeDragStart', this.el, this.position, originOffset);
-    } else {
-      events.emit('nodeDragStopped', this.el);
-    }
+    this.el.removeEventListener('mousedown', this._elMouseDown);
+    this.el.removeEventListener('touchstart', this._elTouchStart);
+    this.el.removeEventListener('touchend', this._elTouchEnd);
+    this.el.removeEventListener('touchmove', this._elTouchMove);
   }
 
   @Watch('position')
   onPositionChange() {
     // update transform
-    this.el.style.transform = `translate(${this.position.x}px, ${this.position.y}px)`;
+    this._debouncedUpdateTransform();
+    // this.el.style.transform = `translate(${this.position.x}px, ${this.position.y}px)`;
   }
 
-  // Get event location utility (mouse or touch)
-  getEventLocation = (e: MouseEvent | TouchEvent) => {
-    if (e instanceof MouseEvent) {
-      return { x: e.clientX, y: e.clientY };
-    } else if (e instanceof TouchEvent && e.touches.length > 0) {
-      return { x: e.touches[0].clientX, y: e.touches[0].clientY };
-    }
-    return { x: 0, y: 0 };
-  };
+  updateTransform() {
+    this.el.style.transform = `translate(${this.position.x}px, ${this.position.y}px )`;
+  }
 
   // handle drag and drop positioning
   onPointerDown(e: MouseEvent | TouchEvent) {
     e.stopPropagation();
     this.isDragging = true;
 
-    const loc = this.getEventLocation(e);
+    const loc = getEventLocation(e);
     // Get the current position of the node
     const nodeRect = this.el.getBoundingClientRect();
 
     // Get canvas bounding rect for pan/zoom calculations
     const contentEl = this.el.closest('.flowy-content') as HTMLElement;
     if (!contentEl) return;
-    // const canvasRect = canvasEl.getBoundingClientRect();
 
     // Store the current canvas zoom level
     const zoomMatches = contentEl.style.transform.match(
@@ -117,18 +117,15 @@ export class LogicNode {
     if (!this.isDragging) return;
     e.stopPropagation();
 
-    const loc = this.getEventLocation(e);
+    requestAnimationFrame(() => {
+      const loc = getEventLocation(e);
+      const newX =
+        loc.x / this._canvasZoom - this._dragStart.x - this._canvasPan.x;
+      const newY =
+        loc.y / this._canvasZoom - this._dragStart.y - this._canvasPan.y;
 
-    const newX =
-      loc.x / this._canvasZoom - this._dragStart.x - this._canvasPan.x;
-    const newY =
-      loc.y / this._canvasZoom - this._dragStart.y - this._canvasPan.y;
-
-    // Update the node's position
-    this.position = {
-      x: newX,
-      y: newY,
-    };
+      this.position = { x: newX, y: newY };
+    });
   }
 
   onPointerUp() {
