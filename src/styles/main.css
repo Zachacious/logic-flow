@@ -46,6 +46,7 @@ body {
   position: absolute;
   top: 0;
   left: 0;
+  width: max-content;
   min-width: 100px;
   min-height: 50px;
   background: #afafaf;
@@ -69,4 +70,49 @@ body {
   background: #333;
   color: #fff;
   text-rendering: optimizeSpeed;
+}
+
+.flowy-node .flowy-node-footer {
+  height: 10px;
+}
+
+.logic-connector {
+  position: relative;
+  /* width: 100%; */
+  display: flex;
+  align-items: center;
+  padding: 2px 4px;
+}
+
+.logic-connector .connector {
+  width: 13px;
+  height: 10px;
+  background: #afafaf;
+  border-radius: 50%;
+  border: 2px solid #333;
+  margin: 0px 3px;
+}
+
+.logic-connector .connector-content {
+  width: 100%;
+  font-size: 0.7em;
+}
+
+.logic-connector .left-connector {
+  position: relative;
+  left: -14px;
+}
+
+.logic-connector .right-connector {
+  position: relative;
+  right: -14px;
+}
+
+.input-connector {
+  flex-direction: row;
+}
+
+.output-connector {
+  flex-direction: row-reverse;
+  text-align: right;
 }

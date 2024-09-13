@@ -26,6 +26,9 @@ export namespace Components {
         "renderGrid": boolean;
         "zoomSpeed": number;
     }
+    interface LogicConnector {
+        "type": 'input' | 'output';
+    }
     interface LogicNode {
         "position": Point;
         "title": string;
@@ -59,6 +62,12 @@ declare global {
         prototype: HTMLFlowyCanvasOldElement;
         new (): HTMLFlowyCanvasOldElement;
     };
+    interface HTMLLogicConnectorElement extends Components.LogicConnector, HTMLStencilElement {
+    }
+    var HTMLLogicConnectorElement: {
+        prototype: HTMLLogicConnectorElement;
+        new (): HTMLLogicConnectorElement;
+    };
     interface HTMLLogicNodeElement extends Components.LogicNode, HTMLStencilElement {
     }
     var HTMLLogicNodeElement: {
@@ -74,6 +83,7 @@ declare global {
     interface HTMLElementTagNameMap {
         "flowy-canvas": HTMLFlowyCanvasElement;
         "flowy-canvas-old": HTMLFlowyCanvasOldElement;
+        "logic-connector": HTMLLogicConnectorElement;
         "logic-node": HTMLLogicNodeElement;
         "my-component": HTMLMyComponentElement;
     }
@@ -97,6 +107,9 @@ declare namespace LocalJSX {
         "renderGrid"?: boolean;
         "zoomSpeed"?: number;
     }
+    interface LogicConnector {
+        "type"?: 'input' | 'output';
+    }
     interface LogicNode {
         "position"?: Point;
         "title"?: string;
@@ -119,6 +132,7 @@ declare namespace LocalJSX {
     interface IntrinsicElements {
         "flowy-canvas": FlowyCanvas;
         "flowy-canvas-old": FlowyCanvasOld;
+        "logic-connector": LogicConnector;
         "logic-node": LogicNode;
         "my-component": MyComponent;
     }
@@ -129,6 +143,7 @@ declare module "@stencil/core" {
         interface IntrinsicElements {
             "flowy-canvas": LocalJSX.FlowyCanvas & JSXBase.HTMLAttributes<HTMLFlowyCanvasElement>;
             "flowy-canvas-old": LocalJSX.FlowyCanvasOld & JSXBase.HTMLAttributes<HTMLFlowyCanvasOldElement>;
+            "logic-connector": LocalJSX.LogicConnector & JSXBase.HTMLAttributes<HTMLLogicConnectorElement>;
             "logic-node": LocalJSX.LogicNode & JSXBase.HTMLAttributes<HTMLLogicNodeElement>;
             "my-component": LocalJSX.MyComponent & JSXBase.HTMLAttributes<HTMLMyComponentElement>;
         }
