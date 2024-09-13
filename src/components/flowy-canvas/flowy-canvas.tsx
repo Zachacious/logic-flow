@@ -201,6 +201,8 @@ export class FlowyCanvas {
 
     if (target.closest('logic-node')) {
       this._activeNode = target.closest('logic-node') as HTMLLogicNodeElement;
+      // bring active node to front by moving element to the end of the parent
+      this._activeNode.parentNode.appendChild(this._activeNode);
       const rect = this._activeNode.getBoundingClientRect();
       this._activeNodeDragStart = {
         x: (loc.x - rect.left) / this.zoom,

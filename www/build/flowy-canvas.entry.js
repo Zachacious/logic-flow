@@ -179,6 +179,8 @@ const FlowyCanvas = class {
         const target = event.target;
         if (target.closest('logic-node')) {
             this._activeNode = target.closest('logic-node');
+            // bring active node to front by moving element to the end of the parent
+            this._activeNode.parentNode.appendChild(this._activeNode);
             const rect = this._activeNode.getBoundingClientRect();
             this._activeNodeDragStart = {
                 x: (loc.x - rect.left) / this.zoom,
@@ -301,7 +303,7 @@ const FlowyCanvas = class {
         this._debouncedUpdateScreen();
     }
     render() {
-        return (h(Host, { key: '5cba1861dc19ca0ca2f1064c6982f62935f6aad1', id: this._uid }, h("div", { key: 'a0bd9adf40c57fae73091115904dc702f175eb52', class: "flowy-canvas" }, h("canvas", { key: 'f966acae865e71d09725be280df719b8c10b8358', class: "flowy-grid" }), h("div", { key: '167848ef906d3f42f94b5567aa9321069ca85a50', class: "flowy-content" }, h("slot", { key: '52b5ddfdec5b724cafd5a450a5cc1b6832142bbd' })))));
+        return (h(Host, { key: 'becd1c2a092fb2ef9168d621b9aa7d0c5f2ab950', id: this._uid }, h("div", { key: 'f54e4e2e6b849890105977e776ccc7626fe9300e', class: "flowy-canvas" }, h("canvas", { key: 'bb661196193a123b164a30001d73ec25d6cb01ee', class: "flowy-grid" }), h("div", { key: 'd413ff0e97ff7028b7d8c2f600bc949bfae188f4', class: "flowy-content" }, h("slot", { key: '9a5705f37300582b123d9629c5353cd61b729799' })))));
     }
     get el() { return getElement(this); }
     static get watchers() { return {
