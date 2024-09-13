@@ -26,6 +26,8 @@ export namespace Components {
         "renderGrid": boolean;
         "zoomSpeed": number;
     }
+    interface LogicConnection {
+    }
     interface LogicConnector {
         "connectingConnector": LogicConnector | null;
         "isDrawing": boolean;
@@ -64,6 +66,12 @@ declare global {
         prototype: HTMLFlowyCanvasOldElement;
         new (): HTMLFlowyCanvasOldElement;
     };
+    interface HTMLLogicConnectionElement extends Components.LogicConnection, HTMLStencilElement {
+    }
+    var HTMLLogicConnectionElement: {
+        prototype: HTMLLogicConnectionElement;
+        new (): HTMLLogicConnectionElement;
+    };
     interface HTMLLogicConnectorElement extends Components.LogicConnector, HTMLStencilElement {
     }
     var HTMLLogicConnectorElement: {
@@ -85,6 +93,7 @@ declare global {
     interface HTMLElementTagNameMap {
         "flowy-canvas": HTMLFlowyCanvasElement;
         "flowy-canvas-old": HTMLFlowyCanvasOldElement;
+        "logic-connection": HTMLLogicConnectionElement;
         "logic-connector": HTMLLogicConnectorElement;
         "logic-node": HTMLLogicNodeElement;
         "my-component": HTMLMyComponentElement;
@@ -108,6 +117,8 @@ declare namespace LocalJSX {
         "minZoom"?: number;
         "renderGrid"?: boolean;
         "zoomSpeed"?: number;
+    }
+    interface LogicConnection {
     }
     interface LogicConnector {
         "connectingConnector"?: LogicConnector | null;
@@ -136,6 +147,7 @@ declare namespace LocalJSX {
     interface IntrinsicElements {
         "flowy-canvas": FlowyCanvas;
         "flowy-canvas-old": FlowyCanvasOld;
+        "logic-connection": LogicConnection;
         "logic-connector": LogicConnector;
         "logic-node": LogicNode;
         "my-component": MyComponent;
@@ -147,6 +159,7 @@ declare module "@stencil/core" {
         interface IntrinsicElements {
             "flowy-canvas": LocalJSX.FlowyCanvas & JSXBase.HTMLAttributes<HTMLFlowyCanvasElement>;
             "flowy-canvas-old": LocalJSX.FlowyCanvasOld & JSXBase.HTMLAttributes<HTMLFlowyCanvasOldElement>;
+            "logic-connection": LocalJSX.LogicConnection & JSXBase.HTMLAttributes<HTMLLogicConnectionElement>;
             "logic-connector": LocalJSX.LogicConnector & JSXBase.HTMLAttributes<HTMLLogicConnectorElement>;
             "logic-node": LocalJSX.LogicNode & JSXBase.HTMLAttributes<HTMLLogicNodeElement>;
             "my-component": LocalJSX.MyComponent & JSXBase.HTMLAttributes<HTMLMyComponentElement>;

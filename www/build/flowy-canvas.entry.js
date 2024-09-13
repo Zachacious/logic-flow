@@ -183,10 +183,14 @@ const FlowyCanvas = class {
             this._activeConnector = target.closest('logic-connector');
             this._activeConnector.isDrawing = true;
             const rect = this._activeConnector.getBoundingClientRect();
+            // const node = this._activeConnector.closest('logic-node') as HTMLLogicNodeElement;
+            // const nodeRect = node.getBoundingClientRect();
+            // account for node position and find center of connector
             this._activeConnectorStartPos = {
-                x: rect.left + rect.width / 2,
-                y: rect.top + rect.height / 2,
+                x: (rect.left + rect.width / 2) / this.zoom - this.pan.x,
+                y: (rect.top + rect.height / 2) / this.zoom - this.pan.y,
             };
+            console.log('connector start pos', this._activeConnectorStartPos);
             return;
         }
         else if (target.closest('logic-node')) {
@@ -221,11 +225,15 @@ const FlowyCanvas = class {
     onPointerMove(event) {
         if (this._activeConnector) {
             const loc = getEventLocation(event);
+            const pos = {
+                x: loc.x / this.zoom - this.pan.x,
+                y: loc.y / this.zoom - this.pan.y,
+            };
             requestAnimationFrame(() => {
                 const path = `M ${this._activeConnectorStartPos.x},${this._activeConnectorStartPos.y}
                   C ${this._activeConnectorStartPos.x + 100},${this._activeConnectorStartPos.y}
-                    ${loc.x - 100},${loc.y}
-                    ${loc.x},${loc.y}`;
+                    ${pos.x - 100},${pos.y}
+                    ${pos.x},${pos.y}`;
                 this._activeConnector
                     .querySelector('.connection-line')
                     .setAttribute('d', path);
@@ -332,7 +340,7 @@ const FlowyCanvas = class {
         this._debouncedUpdateScreen();
     }
     render() {
-        return (h(Host, { key: '0c55c34ded8bc6e73188368467a56c90972abbb8', id: this._uid }, h("div", { key: '259921de591dd8c5816047e731d690b1a4fa1064', class: "flowy-canvas" }, h("canvas", { key: 'dd968c6a51f19f0cfc06ff2d64ff49c38dcb1d49', class: "flowy-grid" }), h("div", { key: '3feb9be35ffcb2a062b15f46982a2e59ea65ee63', class: "flowy-content" }, h("slot", { key: '1944ea9e4fb6da51cf840c6fcd5d23ab9102a78c' })))));
+        return (h(Host, { key: '02a6e4a7cde078090784dda6762a90e4535cc896', id: this._uid }, h("div", { key: '8a1861c0d10d0794bff53a65b2cd5acdec10827f', class: "flowy-canvas" }, h("canvas", { key: 'ee7eec9893e3d9c19d0babefd468ea8c5896350c', class: "flowy-grid" }), h("div", { key: 'bb9ad415f64019f85a7b3a6e781c7f7eaeb5c3f9', class: "flowy-content" }, h("slot", { key: '64983fd8897662a0411614b0c1f7c11f6cc18d69' })))));
     }
     get el() { return getElement(this); }
     static get watchers() { return {

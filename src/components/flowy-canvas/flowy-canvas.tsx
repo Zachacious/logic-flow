@@ -208,10 +208,14 @@ export class FlowyCanvas {
       ) as HTMLLogicConnectorElement;
       this._activeConnector.isDrawing = true;
       const rect = this._activeConnector.getBoundingClientRect();
+      // const node = this._activeConnector.closest('logic-node') as HTMLLogicNodeElement;
+      // const nodeRect = node.getBoundingClientRect();
+      // account for node position and find center of connector
       this._activeConnectorStartPos = {
-        x: rect.left + rect.width / 2,
-        y: rect.top + rect.height / 2,
+        x: (rect.left + rect.width / 2) / this.zoom - this.pan.x,
+        y: (rect.top + rect.height / 2) / this.zoom - this.pan.y,
       };
+      console.log('connector start pos', this._activeConnectorStartPos);
       return;
     } else if (target.closest('logic-node')) {
       this._activeNode = target.closest('logic-node') as HTMLLogicNodeElement;
@@ -250,6 +254,10 @@ export class FlowyCanvas {
   onPointerMove(event: MouseEvent | TouchEvent) {
     if (this._activeConnector) {
       const loc = getEventLocation(event);
+      const pos = {
+        x: loc.x / this.zoom - this.pan.x,
+        y: loc.y / this.zoom - this.pan.y,
+      };
       requestAnimationFrame(() => {
         const path = `M ${this._activeConnectorStartPos.x},${
           this._activeConnectorStartPos.y
@@ -257,8 +265,8 @@ export class FlowyCanvas {
                   C ${this._activeConnectorStartPos.x + 100},${
           this._activeConnectorStartPos.y
         }
-                    ${loc.x - 100},${loc.y}
-                    ${loc.x},${loc.y}`;
+                    ${pos.x - 100},${pos.y}
+                    ${pos.x},${pos.y}`;
         this._activeConnector
           .querySelector('.connection-line')
           .setAttribute('d', path);
