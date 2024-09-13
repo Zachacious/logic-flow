@@ -1,5 +1,5 @@
-import { B as BUILD, c as consoleDevInfo, H, d as doc, N as NAMESPACE, p as promiseResolve, b as bootstrapLazy } from './index-2e7362b2.js';
-export { s as setNonce } from './index-2e7362b2.js';
+import { B as BUILD, c as consoleDevInfo, H, d as doc, N as NAMESPACE, p as promiseResolve, b as bootstrapLazy } from './index-215890eb.js';
+export { s as setNonce } from './index-215890eb.js';
 import { g as globalScripts } from './app-globals-0f993ce5.js';
 
 /*
@@ -43,7 +43,7 @@ var patchCloneNodeFix = (HTMLElementPrototype) => {
 
 patchBrowser().then(async (options) => {
   await globalScripts();
-  return bootstrapLazy([["flowy-canvas",[[4,"flowy-canvas",{"renderGrid":[4,"render-grid"],"gridSize":[2,"grid-size"],"gridBgColor":[1,"grid-bg-color"],"gridLineColor":[1,"grid-line-color"],"maxZoom":[2,"max-zoom"],"minZoom":[2,"min-zoom"],"zoomSpeed":[2,"zoom-speed"],"zoom":[32],"pan":[32]},null,{"zoom":["zoomChanged"],"pan":["panChanged"]}]]],["flowy-canvas-old",[[4,"flowy-canvas-old",{"renderGrid":[4,"render-grid"],"gridSize":[2,"grid-size"],"gridBgColor":[1,"grid-bg-color"],"gridLineColor":[1,"grid-line-color"],"maxZoom":[2,"max-zoom"],"minZoom":[2,"min-zoom"],"zoomSpeed":[2,"zoom-speed"],"zoom":[32],"pan":[32]},null,{"zoom":["zoomChanged"],"pan":["panChanged"]}]]],["logic-connector",[[4,"logic-connector",{"type":[1]}]]],["logic-node",[[4,"logic-node",{"type":[1],"title":[1],"position":[1040],"isDragging":[32]},null,{"position":["onPositionChange"]}]]],["my-component",[[1,"my-component",{"first":[1],"middle":[1],"last":[1]}]]]], options);
+  return bootstrapLazy([["flowy-canvas",[[4,"flowy-canvas",{"renderGrid":[4,"render-grid"],"gridSize":[2,"grid-size"],"gridBgColor":[1,"grid-bg-color"],"gridLineColor":[1,"grid-line-color"],"maxZoom":[2,"max-zoom"],"minZoom":[2,"min-zoom"],"zoomSpeed":[2,"zoom-speed"],"zoom":[32],"pan":[32]},null,{"zoom":["zoomChanged"],"pan":["panChanged"]}]]],["flowy-canvas-old",[[4,"flowy-canvas-old",{"renderGrid":[4,"render-grid"],"gridSize":[2,"grid-size"],"gridBgColor":[1,"grid-bg-color"],"gridLineColor":[1,"grid-line-color"],"maxZoom":[2,"max-zoom"],"minZoom":[2,"min-zoom"],"zoomSpeed":[2,"zoom-speed"],"zoom":[32],"pan":[32]},null,{"zoom":["zoomChanged"],"pan":["panChanged"]}]]],["logic-connector",[[4,"logic-connector",{"type":[1],"connectingConnector":[16],"isDrawing":[1028,"is-drawing"]}]]],["logic-node",[[4,"logic-node",{"type":[1],"title":[1],"position":[1040],"isDragging":[32]},null,{"position":["onPositionChange"]}]]],["my-component",[[1,"my-component",{"first":[1],"middle":[1],"last":[1]}]]]], options);
 });
 
 //# sourceMappingURL=flowy.esm.js.map

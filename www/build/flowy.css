@@ -116,3 +116,16 @@ body {
   flex-direction: row-reverse;
   text-align: right;
 }
+
+.logic-connector .connection-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.connection-line {
+  stroke: #000;
+  stroke-width: 2;
+  fill: none;
+  transition: stroke-width 0.2s ease, stroke 0.2s ease;
+}

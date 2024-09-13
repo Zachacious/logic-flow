@@ -1,4 +1,4 @@
-import { r as registerInstance, h, a as Host, g as getElement } from './index-2e7362b2.js';
+import { r as registerInstance, h, a as Host, g as getElement } from './index-215890eb.js';
 import { d as debounce } from './debounce-25523ff8.js';
 import { n as nanoid } from './index.browser-00c404f8.js';
 
@@ -43,6 +43,7 @@ const FlowyCanvas = class {
         this._dragStart = { x: 0, y: 0 };
         this._activeNodeDragging = false;
         this._activeNodeDragStart = { x: 0, y: 0 };
+        this._activeConnectorStartPos = { x: 0, y: 0 };
         this._needsRedraw = true;
         this._debouncedResize = debounce(() => this.onResize(), 50);
         this._debouncedUpdateScreen = debounce(() => this.updateScreen(), 5);
@@ -177,7 +178,18 @@ const FlowyCanvas = class {
     onPointerDown(event) {
         const loc = getEventLocation(event);
         const target = event.target;
-        if (target.closest('logic-node')) {
+        if (target.closest('.logic-connector')) {
+            console.log('connector clicked');
+            this._activeConnector = target.closest('logic-connector');
+            this._activeConnector.isDrawing = true;
+            const rect = this._activeConnector.getBoundingClientRect();
+            this._activeConnectorStartPos = {
+                x: rect.left + rect.width / 2,
+                y: rect.top + rect.height / 2,
+            };
+            return;
+        }
+        else if (target.closest('logic-node')) {
             this._activeNode = target.closest('logic-node');
             // bring active node to front by moving element to the end of the parent
             this._activeNode.parentNode.appendChild(this._activeNode);
@@ -201,9 +213,26 @@ const FlowyCanvas = class {
         // this._lastZoom = this.zoom;
         this._activeNode = null;
         this._activeNodeDragging = false;
+        if (this._activeConnector) {
+            // this._activeConnector.isDrawing = false;
+            this._activeConnector = null;
+        }
     }
     onPointerMove(event) {
-        if (this._activeNode && this._activeNodeDragging) {
+        if (this._activeConnector) {
+            const loc = getEventLocation(event);
+            requestAnimationFrame(() => {
+                const path = `M ${this._activeConnectorStartPos.x},${this._activeConnectorStartPos.y}
+                  C ${this._activeConnectorStartPos.x + 100},${this._activeConnectorStartPos.y}
+                    ${loc.x - 100},${loc.y}
+                    ${loc.x},${loc.y}`;
+                this._activeConnector
+                    .querySelector('.connection-line')
+                    .setAttribute('d', path);
+            });
+            return;
+        }
+        else if (this._activeNode && this._activeNodeDragging) {
             const loc = getEventLocation(event);
             const newX = loc.x / this.zoom - this._activeNodeDragStart.x - this.pan.x;
             const newY = loc.y / this.zoom - this._activeNodeDragStart.y - this.pan.y;
@@ -303,7 +332,7 @@ const FlowyCanvas = class {
         this._debouncedUpdateScreen();
     }
     render() {
-        return (h(Host, { key: 'becd1c2a092fb2ef9168d621b9aa7d0c5f2ab950', id: this._uid }, h("div", { key: 'f54e4e2e6b849890105977e776ccc7626fe9300e', class: "flowy-canvas" }, h("canvas", { key: 'bb661196193a123b164a30001d73ec25d6cb01ee', class: "flowy-grid" }), h("div", { key: 'd413ff0e97ff7028b7d8c2f600bc949bfae188f4', class: "flowy-content" }, h("slot", { key: '9a5705f37300582b123d9629c5353cd61b729799' })))));
+        return (h(Host, { key: '0c55c34ded8bc6e73188368467a56c90972abbb8', id: this._uid }, h("div", { key: '259921de591dd8c5816047e731d690b1a4fa1064', class: "flowy-canvas" }, h("canvas", { key: 'dd968c6a51f19f0cfc06ff2d64ff49c38dcb1d49', class: "flowy-grid" }), h("div", { key: '3feb9be35ffcb2a062b15f46982a2e59ea65ee63', class: "flowy-content" }, h("slot", { key: '1944ea9e4fb6da51cf840c6fcd5d23ab9102a78c' })))));
     }
     get el() { return getElement(this); }
     static get watchers() { return {

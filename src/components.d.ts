@@ -27,6 +27,8 @@ export namespace Components {
         "zoomSpeed": number;
     }
     interface LogicConnector {
+        "connectingConnector": LogicConnector | null;
+        "isDrawing": boolean;
         "type": 'input' | 'output';
     }
     interface LogicNode {
@@ -108,6 +110,8 @@ declare namespace LocalJSX {
         "zoomSpeed"?: number;
     }
     interface LogicConnector {
+        "connectingConnector"?: LogicConnector | null;
+        "isDrawing"?: boolean;
         "type"?: 'input' | 'output';
     }
     interface LogicNode {

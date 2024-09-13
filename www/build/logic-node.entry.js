@@ -1,4 +1,4 @@
-import { r as registerInstance, h, a as Host, g as getElement } from './index-2e7362b2.js';
+import { r as registerInstance, h, a as Host, g as getElement } from './index-215890eb.js';
 import { d as debounce } from './debounce-25523ff8.js';
 import { n as nanoid } from './index.browser-00c404f8.js';
 
@@ -23,7 +23,7 @@ const LogicNode = class {
         this.el.style.transform = `translate(${this.position.x}px, ${this.position.y}px )`;
     }
     render() {
-        return (h(Host, { key: '90d4e6570a91d62693fb1f646cc0066eb06b05a8', class: "flowy-node", id: this._uid }, h("div", { key: '71f08e43a6fead7086e272d14f91bc17be70c881', class: "flowy-node-header" }, this.title, h("slot", { key: 'ef634018d2e7a8269d614a50f750bc86b6c97bb9', name: "header" })), h("slot", { key: 'fb7392f49c5d16771b107bc9dcb18e390eaf5df6' }), h("div", { key: 'a7f4223a867a79e6c4c9cd13deba65004f7e4ea2', class: "flowy-node-footer" }, h("slot", { key: '0627943f7a9486bc6bb19f46050e3e5c43d19e39', name: "footer" }))));
+        return (h(Host, { key: '425633f510c2b082e7eda3e1fa9b3d2952219e5e', class: "flowy-node", id: this._uid }, h("div", { key: '091fd7f34e339419b86a931fa26d72644400115e', class: "flowy-node-header" }, this.title, h("slot", { key: 'cae0826c347698991611c603fa310a903642b278', name: "header" })), h("slot", { key: 'bea2b11c4c7f33bb84525b8896f49694ce870638' }), h("div", { key: 'f05e726aafc00fafaf8073d982d2874f315fb406', class: "flowy-node-footer" }, h("slot", { key: '26a362005e94b4a07f174644ae29557795a25dc8', name: "footer" }))));
     }
     get el() { return getElement(this); }
     static get watchers() { return {

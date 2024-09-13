@@ -33,6 +33,8 @@ export class FlowyCanvas {
   private _activeNode: HTMLLogicNodeElement;
   private _activeNodeDragging: boolean = false;
   private _activeNodeDragStart: Point = { x: 0, y: 0 };
+  private _activeConnector: HTMLLogicConnectorElement;
+  private _activeConnectorStartPos: Point = { x: 0, y: 0 };
 
   private _canvasEl: HTMLDivElement;
   private _contentEl: HTMLDivElement;
@@ -199,7 +201,19 @@ export class FlowyCanvas {
 
     const target = event.target as HTMLElement;
 
-    if (target.closest('logic-node')) {
+    if (target.closest('.logic-connector')) {
+      console.log('connector clicked');
+      this._activeConnector = target.closest(
+        'logic-connector',
+      ) as HTMLLogicConnectorElement;
+      this._activeConnector.isDrawing = true;
+      const rect = this._activeConnector.getBoundingClientRect();
+      this._activeConnectorStartPos = {
+        x: rect.left + rect.width / 2,
+        y: rect.top + rect.height / 2,
+      };
+      return;
+    } else if (target.closest('logic-node')) {
       this._activeNode = target.closest('logic-node') as HTMLLogicNodeElement;
       // bring active node to front by moving element to the end of the parent
       this._activeNode.parentNode.appendChild(this._activeNode);
@@ -227,10 +241,30 @@ export class FlowyCanvas {
     // this._lastZoom = this.zoom;
     this._activeNode = null;
     this._activeNodeDragging = false;
+    if (this._activeConnector) {
+      // this._activeConnector.isDrawing = false;
+      this._activeConnector = null;
+    }
   }
 
   onPointerMove(event: MouseEvent | TouchEvent) {
-    if (this._activeNode && this._activeNodeDragging) {
+    if (this._activeConnector) {
+      const loc = getEventLocation(event);
+      requestAnimationFrame(() => {
+        const path = `M ${this._activeConnectorStartPos.x},${
+          this._activeConnectorStartPos.y
+        }
+                  C ${this._activeConnectorStartPos.x + 100},${
+          this._activeConnectorStartPos.y
+        }
+                    ${loc.x - 100},${loc.y}
+                    ${loc.x},${loc.y}`;
+        this._activeConnector
+          .querySelector('.connection-line')
+          .setAttribute('d', path);
+      });
+      return;
+    } else if (this._activeNode && this._activeNodeDragging) {
       const loc = getEventLocation(event);
       const newX = loc.x / this.zoom - this._activeNodeDragStart.x - this.pan.x;
       const newY = loc.y / this.zoom - this._activeNodeDragStart.y - this.pan.y;
