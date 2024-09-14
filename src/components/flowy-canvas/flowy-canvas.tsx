@@ -269,6 +269,20 @@ export class FlowyCanvas {
           return;
         }
 
+        const activeParent = this._activeConnector.closest(
+          'logic-connector',
+        ) as HTMLLogicConnectorElement;
+        const targetParent = targetConnector.closest(
+          'logic-connector',
+        ) as HTMLLogicConnectorElement;
+        // make sure only input to output or output to input
+        if (activeParent.type === targetParent.type) {
+          this._activeConnection.remove();
+          this._activeConnector = null;
+          this._activeConnection = null;
+          return;
+        }
+
         this._activeConnection.end = {
           x:
             (targetConnector.getBoundingClientRect().left +
@@ -282,14 +296,6 @@ export class FlowyCanvas {
             this.pan.y,
         };
 
-        // connect the two connectors
-        // const aConn = this._activeConnector;
-        // aConn.connectingConnector = targetConnector;
-        // aConn.connection = this._activeConnection;
-        // aConn.connectingConnector.connectingConnector = this._activeConnector;
-        // aConn.connectingConnector.connection = this._activeConnection;
-        // Set the connection property on both connectors
-
         // get parent logic-connector from activeConnector and targetConnector
         const aConn = this._activeConnector.closest(
           'logic-connector',
@@ -301,11 +307,6 @@ export class FlowyCanvas {
         aConn.connection = this._activeConnection;
         tConn.connectingConnector = aConn;
         tConn.connection = this._activeConnection;
-
-        // this._activeConnector.connectingConnector = targetConnector;
-        // this._activeConnector.connection = this._activeConnection;
-        // targetConnector.connectingConnector = this._activeConnector;
-        // targetConnector.connection = this._activeConnection;
       } else {
         this._activeConnection.remove();
       }
