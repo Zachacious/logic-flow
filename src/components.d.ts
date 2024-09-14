@@ -6,7 +6,9 @@
  */
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
 import { Point } from "./types/Point";
+import { LogicConnection } from "./components/logic-connection/logic-connection";
 export { Point } from "./types/Point";
+export { LogicConnection } from "./components/logic-connection/logic-connection";
 export namespace Components {
     interface FlowyCanvas {
         "gridBgColor": string;
@@ -27,10 +29,12 @@ export namespace Components {
         "zoomSpeed": number;
     }
     interface LogicConnection {
+        "end": Point;
+        "start": Point;
     }
     interface LogicConnector {
         "connectingConnector": LogicConnector | null;
-        "isDrawing": boolean;
+        "connection": LogicConnection | null;
         "type": 'input' | 'output';
     }
     interface LogicNode {
@@ -119,10 +123,12 @@ declare namespace LocalJSX {
         "zoomSpeed"?: number;
     }
     interface LogicConnection {
+        "end"?: Point;
+        "start"?: Point;
     }
     interface LogicConnector {
         "connectingConnector"?: LogicConnector | null;
-        "isDrawing"?: boolean;
+        "connection"?: LogicConnection | null;
         "type"?: 'input' | 'output';
     }
     interface LogicNode {

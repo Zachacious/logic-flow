@@ -58,6 +58,7 @@ body {
   will-change: transform;
   touch-action: none;
   user-select: none;
+  z-index: 10;
 }
 
 .flowy-node .flowy-node-header {
@@ -123,9 +124,24 @@ body {
   left: 0;
 }
 
-.connection-line {
+/* .connection-line {
   stroke: #000;
   stroke-width: 2;
   fill: none;
   transition: stroke-width 0.2s ease, stroke 0.2s ease;
+} */
+
+.logic-connection .connection {
+  position: absolute;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.logic-connection .connection .connection-line {
+  stroke: #383838;
+  stroke-width: 6;
+  stroke-linecap: round;
+  fill: none;
+  transition: stroke-width 0.2s ease, stroke 0.2s ease;
+  pointer-events: all;
 }

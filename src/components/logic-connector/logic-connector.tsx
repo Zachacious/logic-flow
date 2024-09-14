@@ -1,4 +1,5 @@
 import { Component, Host, Prop, h } from '@stencil/core';
+import { LogicConnection } from '../logic-connection/logic-connection';
 
 @Component({
   tag: 'logic-connector',
@@ -8,7 +9,9 @@ import { Component, Host, Prop, h } from '@stencil/core';
 export class LogicConnector {
   @Prop() type: 'input' | 'output' = 'input';
   @Prop() connectingConnector: LogicConnector | null = null;
-  @Prop({ mutable: true }) isDrawing: boolean = false;
+  @Prop() connection: LogicConnection | null = null;
+
+  // @Prop({ mutable: true }) isDrawing: boolean = false;
   render() {
     const sideClass =
       this.type === 'input' ? 'left-connector' : 'right-connector';
@@ -18,11 +21,11 @@ export class LogicConnector {
     return (
       <Host class={`logic-connector ${typeClass}`}>
         <div class={`connector ${sideClass}`}>
-          {this.isDrawing && (
+          {/* {this.isDrawing && (
             <svg class="connection-layer" xmlns="http://www.w3.org/2000/svg">
               <path class="connection-line" d="" />
             </svg>
-          )}
+          )} */}
         </div>
         <div class={`connector-content ${sideClass}`}>
           <slot></slot>

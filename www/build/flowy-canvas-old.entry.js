@@ -398,7 +398,7 @@ const FlowyCanvasOld = class {
         this._debouncedUpdateScreen();
     }
     render() {
-        return (h(Host, { key: '3e617a9a01a1ed10bb92b71646823a8194ceb41e' }, h("div", { key: 'ee476681f8cf8621a794da6f872a5c99d98a104a', class: "flowy-canvas" }, h("canvas", { key: '16dbb5dd3c0ef4eeacee8add2fe9fb186e64bdd4', class: "flowy-grid" }), h("div", { key: '24dc23f251485f96b2b04bdbde9e77a8d0f5e45a', class: "flowy-content" }, h("slot", { key: '9e86280dd1b92a67055b5647bf0c0a38ab3bb233' })))));
+        return (h(Host, { key: '19617082851da65d34f8649ee6173723284b3be6' }, h("div", { key: '8a9e5b0206adc4d4d889eb25f55c2982256962a2', class: "flowy-canvas" }, h("canvas", { key: 'a866d5885cd604262737e7aef935c0333c816b98', class: "flowy-grid" }), h("div", { key: '6f3809046e1ebf11832faee43d22931e5d1f13ed', class: "flowy-content" }, h("slot", { key: '05de548997ac52cf20dd46281097c6358e45c21e' })))));
     }
     get el() { return getElement(this); }
     static get watchers() { return {

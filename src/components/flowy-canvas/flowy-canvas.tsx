@@ -35,6 +35,7 @@ export class FlowyCanvas {
   private _activeNodeDragStart: Point = { x: 0, y: 0 };
   private _activeConnector: HTMLLogicConnectorElement;
   private _activeConnectorStartPos: Point = { x: 0, y: 0 };
+  private _activeConnection: HTMLLogicConnectionElement;
 
   private _canvasEl: HTMLDivElement;
   private _contentEl: HTMLDivElement;
@@ -49,13 +50,13 @@ export class FlowyCanvas {
   private _throttledTouchMove = throttle(e => this.handleTouchMove(e), 30);
 
   private _elMouseDown = (e: MouseEvent | TouchEvent) => this.onPointerDown(e);
-  private _elMouseUp = () => this.onPointerUp();
+  private _elMouseUp = (e: MouseEvent | TouchEvent) => this.onPointerUp(e);
   private _elMouseMove = (e: MouseEvent | TouchEvent) =>
     this._throttledPointerMove(e);
 
   private _elTouchStart = (e: TouchEvent) => this.handleTouchStart(e);
   private _elTouchMove = (e: TouchEvent) => this._throttledTouchMove(e);
-  private _elTouchEnd = () => this.onPointerUp();
+  private _elTouchEnd = (e: MouseEvent | TouchEvent) => this.onPointerUp(e);
 
   private _elWheel = (e: WheelEvent) => this.handleWheel(e);
 
@@ -201,12 +202,11 @@ export class FlowyCanvas {
 
     const target = event.target as HTMLElement;
 
-    if (target.closest('.logic-connector')) {
-      console.log('connector clicked');
+    if (target.closest('.logic-connector .connector')) {
       this._activeConnector = target.closest(
-        'logic-connector',
+        'logic-connector .connector',
       ) as HTMLLogicConnectorElement;
-      this._activeConnector.isDrawing = true;
+      // this._activeConnector.isDrawing = true;
       const rect = this._activeConnector.getBoundingClientRect();
       // const node = this._activeConnector.closest('logic-node') as HTMLLogicNodeElement;
       // const nodeRect = node.getBoundingClientRect();
@@ -215,12 +215,21 @@ export class FlowyCanvas {
         x: (rect.left + rect.width / 2) / this.zoom - this.pan.x,
         y: (rect.top + rect.height / 2) / this.zoom - this.pan.y,
       };
-      console.log('connector start pos', this._activeConnectorStartPos);
+      // console.log('connector start pos', this._activeConnectorStartPos);
+
+      // create a new connection element
+      const connection = document.createElement('logic-connection');
+      connection.start = this._activeConnectorStartPos;
+      connection.end = this._activeConnectorStartPos;
+      this._contentEl.appendChild(connection);
+      this._activeConnection = connection;
+      // Associate the connection with the connector
+      // this._activeConnector.connection = connection;
       return;
     } else if (target.closest('logic-node')) {
       this._activeNode = target.closest('logic-node') as HTMLLogicNodeElement;
       // bring active node to front by moving element to the end of the parent
-      this._activeNode.parentNode.appendChild(this._activeNode);
+      // this._activeNode.parentNode.appendChild(this._activeNode);
       const rect = this._activeNode.getBoundingClientRect();
       this._activeNodeDragStart = {
         x: (loc.x - rect.left) / this.zoom,
@@ -239,37 +248,81 @@ export class FlowyCanvas {
     };
   }
 
-  onPointerUp() {
+  onPointerUp(event: MouseEvent | TouchEvent) {
     this._isDragging = false;
     this._initialPinchDistance = 0;
     // this._lastZoom = this.zoom;
     this._activeNode = null;
     this._activeNodeDragging = false;
-    if (this._activeConnector) {
-      // this._activeConnector.isDrawing = false;
+    if (this._activeConnector && this._activeConnection) {
+      const target = event.target as HTMLElement;
+      const targetConnector = target.closest(
+        'logic-connector .connector',
+      ) as HTMLLogicConnectorElement;
+
+      if (targetConnector) {
+        // make sure not already connected to this connector
+        if (this._activeConnector.connectingConnector === targetConnector) {
+          this._activeConnection.remove();
+          this._activeConnector = null;
+          this._activeConnection = null;
+          return;
+        }
+
+        this._activeConnection.end = {
+          x:
+            (targetConnector.getBoundingClientRect().left +
+              targetConnector.getBoundingClientRect().width / 2) /
+              this.zoom -
+            this.pan.x,
+          y:
+            (targetConnector.getBoundingClientRect().top +
+              targetConnector.getBoundingClientRect().height / 2) /
+              this.zoom -
+            this.pan.y,
+        };
+
+        // connect the two connectors
+        // const aConn = this._activeConnector;
+        // aConn.connectingConnector = targetConnector;
+        // aConn.connection = this._activeConnection;
+        // aConn.connectingConnector.connectingConnector = this._activeConnector;
+        // aConn.connectingConnector.connection = this._activeConnection;
+        // Set the connection property on both connectors
+
+        // get parent logic-connector from activeConnector and targetConnector
+        const aConn = this._activeConnector.closest(
+          'logic-connector',
+        ) as HTMLLogicConnectorElement;
+        const tConn = targetConnector.closest(
+          'logic-connector',
+        ) as HTMLLogicConnectorElement;
+        aConn.connectingConnector = tConn;
+        aConn.connection = this._activeConnection;
+        tConn.connectingConnector = aConn;
+        tConn.connection = this._activeConnection;
+
+        // this._activeConnector.connectingConnector = targetConnector;
+        // this._activeConnector.connection = this._activeConnection;
+        // targetConnector.connectingConnector = this._activeConnector;
+        // targetConnector.connection = this._activeConnection;
+      } else {
+        this._activeConnection.remove();
+      }
       this._activeConnector = null;
+      this._activeConnection = null;
     }
   }
 
   onPointerMove(event: MouseEvent | TouchEvent) {
     if (this._activeConnector) {
-      const loc = getEventLocation(event);
-      const pos = {
-        x: loc.x / this.zoom - this.pan.x,
-        y: loc.y / this.zoom - this.pan.y,
-      };
       requestAnimationFrame(() => {
-        const path = `M ${this._activeConnectorStartPos.x},${
-          this._activeConnectorStartPos.y
-        }
-                  C ${this._activeConnectorStartPos.x + 100},${
-          this._activeConnectorStartPos.y
-        }
-                    ${pos.x - 100},${pos.y}
-                    ${pos.x},${pos.y}`;
-        this._activeConnector
-          .querySelector('.connection-line')
-          .setAttribute('d', path);
+        const loc = getEventLocation(event);
+        const pos = {
+          x: loc.x / this.zoom - this.pan.x,
+          y: loc.y / this.zoom - this.pan.y,
+        };
+        this._activeConnection.end = pos;
       });
       return;
     } else if (this._activeNode && this._activeNodeDragging) {
@@ -278,6 +331,31 @@ export class FlowyCanvas {
       const newY = loc.y / this.zoom - this._activeNodeDragStart.y - this.pan.y;
 
       this._activeNode.position = { x: newX, y: newY };
+
+      // update connections
+      const connectors = this._activeNode.querySelectorAll(
+        'logic-connector',
+      ) as NodeListOf<HTMLLogicConnectorElement>;
+
+      connectors.forEach(connector => {
+        if (connector.connection) {
+          const connectorHub = connector.querySelector('.connector');
+          const rect = connectorHub.getBoundingClientRect();
+          const pos = {
+            x: (rect.left + rect.width / 2) / this.zoom - this.pan.x,
+            y: (rect.top + rect.height / 2) / this.zoom - this.pan.y,
+          };
+
+          // set pos based on side of connector being dragged
+          // TODO: get this part right
+          if (connector.type === 'input') {
+            connector.connection.end = pos;
+          } else {
+            connector.connection.start = pos;
+          }
+        }
+      });
+
       return;
     }
 
