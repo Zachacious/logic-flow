@@ -4,7 +4,6 @@ import { debounce } from '../../utils/debounce';
 import { throttle } from '../../utils/throttle';
 import { getEventLocation } from '../../utils/getEventLocation';
 import { nanoid } from 'nanoid';
-import { LogicNode } from '../logic-node/logic-node';
 
 @Component({
   tag: 'flowy-canvas',
@@ -304,9 +303,9 @@ export class FlowyCanvas {
           'logic-connector',
         ) as HTMLLogicConnectorElement;
         aConn.connectingConnector = tConn;
-        aConn.connection = this._activeConnection;
+        aConn.connections.push(this._activeConnection);
         tConn.connectingConnector = aConn;
-        tConn.connection = this._activeConnection;
+        tConn.connections.push(this._activeConnection);
       } else {
         this._activeConnection.remove();
       }
@@ -339,7 +338,7 @@ export class FlowyCanvas {
       ) as NodeListOf<HTMLLogicConnectorElement>;
 
       connectors.forEach(connector => {
-        if (connector.connection) {
+        if (connector.connections.length) {
           const connectorHub = connector.querySelector('.connector');
           const rect = connectorHub.getBoundingClientRect();
           const pos = {
@@ -347,13 +346,14 @@ export class FlowyCanvas {
             y: (rect.top + rect.height / 2) / this.zoom - this.pan.y,
           };
 
-          // set pos based on side of connector being dragged
-          // TODO: get this part right
-          if (connector.type === 'input') {
-            connector.connection.end = pos;
-          } else {
-            connector.connection.start = pos;
-          }
+          // Loop through each connection and update start or end
+          connector.connections.forEach(connection => {
+            if (connector.type === 'input') {
+              connection.end = pos;
+            } else {
+              connection.start = pos;
+            }
+          });
         }
       });
 

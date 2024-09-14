@@ -7,13 +7,13 @@ const LogicConnector = class {
         registerInstance(this, hostRef);
         this.type = 'input';
         this.connectingConnector = null;
-        this.connection = null;
+        this.connections = [];
     }
     // @Prop({ mutable: true }) isDrawing: boolean = false;
     render() {
         const sideClass = this.type === 'input' ? 'left-connector' : 'right-connector';
         const typeClass = this.type === 'input' ? 'input-connector' : 'output-connector';
-        return (h(Host, { key: '9f9eb5366e6c773ad7a057e0b13dda142d78116f', class: `logic-connector ${typeClass}` }, h("div", { key: 'd1485ac0191778fad7634d8c742056d2105649f5', class: `connector ${sideClass}` }), h("div", { key: 'fdc232f1218f894d786d4eddc02ccee028ef9083', class: `connector-content ${sideClass}` }, h("slot", { key: '4c74e20639669d4ff264238682d7014ee176bd17' }))));
+        return (h(Host, { key: '3dc73de041aebff804cfc9b6848e6007661da5d0', class: `logic-connector ${typeClass}` }, h("div", { key: '4623aa18a8e819972e829307bec9c891b573792e', class: `connector ${sideClass}` }), h("div", { key: '626938811fc990cf400b08b44b9e1c4e8e055587', class: `connector-content ${sideClass}` }, h("slot", { key: 'fe73828ae4a5c1d5505915e897b215a75b607fc6' }))));
     }
 };
 LogicConnector.style = logicConnectorCss;

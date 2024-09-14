@@ -34,7 +34,7 @@ export namespace Components {
     }
     interface LogicConnector {
         "connectingConnector": LogicConnector | null;
-        "connection": LogicConnection | null;
+        "connections": LogicConnection[];
         "type": 'input' | 'output';
     }
     interface LogicNode {
@@ -128,7 +128,7 @@ declare namespace LocalJSX {
     }
     interface LogicConnector {
         "connectingConnector"?: LogicConnector | null;
-        "connection"?: LogicConnection | null;
+        "connections"?: LogicConnection[];
         "type"?: 'input' | 'output';
     }
     interface LogicNode {

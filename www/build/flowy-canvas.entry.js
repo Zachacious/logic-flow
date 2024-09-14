@@ -258,9 +258,9 @@ const FlowyCanvas = class {
                 const aConn = this._activeConnector.closest('logic-connector');
                 const tConn = targetConnector.closest('logic-connector');
                 aConn.connectingConnector = tConn;
-                aConn.connection = this._activeConnection;
+                aConn.connections.push(this._activeConnection);
                 tConn.connectingConnector = aConn;
-                tConn.connection = this._activeConnection;
+                tConn.connections.push(this._activeConnection);
             }
             else {
                 this._activeConnection.remove();
@@ -289,21 +289,22 @@ const FlowyCanvas = class {
             // update connections
             const connectors = this._activeNode.querySelectorAll('logic-connector');
             connectors.forEach(connector => {
-                if (connector.connection) {
+                if (connector.connections.length) {
                     const connectorHub = connector.querySelector('.connector');
                     const rect = connectorHub.getBoundingClientRect();
                     const pos = {
                         x: (rect.left + rect.width / 2) / this.zoom - this.pan.x,
                         y: (rect.top + rect.height / 2) / this.zoom - this.pan.y,
                     };
-                    // set pos based on side of connector being dragged
-                    // TODO: get this part right
-                    if (connector.type === 'input') {
-                        connector.connection.end = pos;
-                    }
-                    else {
-                        connector.connection.start = pos;
-                    }
+                    // Loop through each connection and update start or end
+                    connector.connections.forEach(connection => {
+                        if (connector.type === 'input') {
+                            connection.end = pos;
+                        }
+                        else {
+                            connection.start = pos;
+                        }
+                    });
                 }
             });
             return;
@@ -401,7 +402,7 @@ const FlowyCanvas = class {
         this._debouncedUpdateScreen();
     }
     render() {
-        return (h(Host, { key: '0dd66fdd38f05d1dc627eae54bb3fe0d18b668ff', id: this._uid }, h("div", { key: '9e526c08b764ae7671d2ac98e596b09e8ab42f01', class: "flowy-canvas" }, h("canvas", { key: 'da43f2266bae3573cfcb79afad2a5f74a6d2fc60', class: "flowy-grid" }), h("div", { key: 'b066abcfbd6da64c4390d2a8702a11a3319bfb90', class: "flowy-content" }, h("slot", { key: '44ce5fe0c2c8455e910c65153b8439749ebfe2a3' })))));
+        return (h(Host, { key: 'ccb6b5479a3420fdf6a69fe4eb38d0340aefa33e', id: this._uid }, h("div", { key: 'ede17e6296d703e46bfaee9b3f468014ee43a8f3', class: "flowy-canvas" }, h("canvas", { key: '5d882d71e86b5b900c2acb5d7c01642ab09a1db1', class: "flowy-grid" }), h("div", { key: '37046527eacf71fd9220013ee123ad24cda11553', class: "flowy-content" }, h("slot", { key: 'b803e55d55047897c62eca486be1c87d0a2baae9' })))));
     }
     get el() { return getElement(this); }
     static get watchers() { return {

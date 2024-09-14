@@ -9,7 +9,8 @@ import { LogicConnection } from '../logic-connection/logic-connection';
 export class LogicConnector {
   @Prop() type: 'input' | 'output' = 'input';
   @Prop() connectingConnector: LogicConnector | null = null;
-  @Prop() connection: LogicConnection | null = null;
+  // @Prop() connection: LogicConnection | null = null;
+  @Prop() connections: LogicConnection[] = [];
 
   // @Prop({ mutable: true }) isDrawing: boolean = false;
   render() {

@@ -21,7 +21,7 @@ const LogicConnection = class {
           C ${this.start.x + controlOffset},${this.start.y}
             ${this.end.x - controlOffset},${this.end.y}
             ${this.end.x},${this.end.y}`;
-        return (h(Host, { key: '61688278dbf2ff9e4fb37bc6a1b3a5367608eb9b', class: "logic-connection" }, h("svg", { key: '37dc072e42f34bbb94d5c7ee82168d355cf04c55', class: "connection" }, h("path", { key: 'a2ff4dc7590f51ceafa99a2a42c23a646b6831e8', class: "connection-line", d: d }))));
+        return (h(Host, { key: 'cbafb3a62808b57124ec66e7c8a973f498d320bb', class: "logic-connection" }, h("svg", { key: 'e6b4335987f904b2c02cda513271fb9162749144', class: "connection" }, h("path", { key: 'cec10120dc36fffb9a1877ecd7d037fff65acf2b', class: "connection-line", d: d }))));
     }
 };
 LogicConnection.style = logicConnectionCss;
