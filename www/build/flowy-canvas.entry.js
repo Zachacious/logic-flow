@@ -313,6 +313,7 @@ const FlowyCanvas = class {
             const newY = loc.y / this.zoom - this._activeNodeDragStart.y - this.pan.y;
             // update connections
             const connectors = aNode.querySelectorAll('logic-connector');
+            // requestAnimationFrame(() => {
             for (let i = 0; i < connectors.length; i++) {
                 const connector = connectors[i];
                 const delta = {
@@ -320,15 +321,6 @@ const FlowyCanvas = class {
                     y: newY - aNodeOldPos.y,
                 };
                 const connId = connector.getAttribute('id');
-                // let rect = global().connectorRects[connId];
-                // // update rect
-                // rect = {
-                //   left: rect.left + delta.x,
-                //   top: rect.top + delta.y,
-                //   width: rect.width,
-                //   height: rect.height,
-                // };
-                // global().connectorRects[connId] = rect;
                 // update connections
                 // update rect
                 let rect = global().connectorRects[connId];
@@ -357,6 +349,7 @@ const FlowyCanvas = class {
                 }
             }
             aNode.position = { x: newX, y: newY };
+            // });
             return;
         }
         if (this._isDragging) {
@@ -452,7 +445,7 @@ const FlowyCanvas = class {
         this._debouncedUpdateScreen();
     }
     render() {
-        return (h(Host, { key: '932f6b1c5639f5fca659faf1e93f32c90be16455', id: this._uid }, h("div", { key: 'a9cffc1bd2a64b8d7b7f6d92677ac9125c349813', class: "flowy-canvas" }, h("canvas", { key: 'b70b0e4ba5cde979d8b84c9229d486c190ab1186', class: "flowy-grid" }), h("div", { key: 'ffd950970833d1a0ac9af5891df0b1742857a769', class: "flowy-content" }, h("slot", { key: '062d29d5e4aeb453a4cb49d4bf7e29d81f166423' })))));
+        return (h(Host, { key: '430d1caf88bdf7a55638e43c18bd09a64ba38410', id: this._uid }, h("div", { key: '90f5ecb44eaa1aa297a276c38b76359c4479eb71', class: "flowy-canvas" }, h("canvas", { key: '6302078c41746d330a071c1cf1549ed464bad18b', class: "flowy-grid" }), h("div", { key: 'cdabad02d949cf6d939fa06087b6501fe8e1ea6d', class: "flowy-content" }, h("slot", { key: '387e1020f6051876b0a87af5ae35c954c224a6fc' })))));
     }
     get el() { return getElement(this); }
     static get watchers() { return {

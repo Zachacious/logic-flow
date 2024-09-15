@@ -364,6 +364,7 @@ export class FlowyCanvas {
         'logic-connector',
       ) as NodeListOf<HTMLLogicConnectorElement>;
 
+      // requestAnimationFrame(() => {
       for (let i = 0; i < connectors.length; i++) {
         const connector = connectors[i];
         const delta = {
@@ -371,16 +372,6 @@ export class FlowyCanvas {
           y: newY - aNodeOldPos.y,
         };
         const connId = connector.getAttribute('id');
-        // let rect = global().connectorRects[connId];
-        // // update rect
-        // rect = {
-        //   left: rect.left + delta.x,
-        //   top: rect.top + delta.y,
-        //   width: rect.width,
-        //   height: rect.height,
-        // };
-
-        // global().connectorRects[connId] = rect;
 
         // update connections
         // update rect
@@ -412,6 +403,7 @@ export class FlowyCanvas {
       }
 
       aNode.position = { x: newX, y: newY };
+      // });
 
       return;
     }

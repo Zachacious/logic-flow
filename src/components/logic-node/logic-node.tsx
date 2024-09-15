@@ -36,9 +36,9 @@ export class LogicNode {
   }
 
   updateTransform() {
-    requestAnimationFrame(() => {
-      this.el.style.transform = `translate(${this.position.x}px, ${this.position.y}px )`;
-    });
+    // requestAnimationFrame(() => {
+    this.el.style.transform = `translate(${this.position.x}px, ${this.position.y}px )`;
+    // });
   }
 
   render() {
