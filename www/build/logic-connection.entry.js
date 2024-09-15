@@ -38,7 +38,7 @@ const LogicConnection = class {
         // });
     }
     render() {
-        return (h(Host, { key: '7c4005c13d2f9941ef84540b6d1da7eb62bc9219', class: "logic-connection", id: this._uid }, h("svg", { key: '80d5a99aee98a332a484035e9ad29fe56074f922', class: "connection" }, h("path", { key: '0c28c1e9beedac58e61ecb9876004e5db15da50e', class: "connection-line", d: this.path }))));
+        return (h(Host, { key: 'aade5e47ce27f63e47f6aed6301feaf45a976a7a', class: "logic-connection", id: this._uid }, h("svg", { key: '32257b5d55b88c5bbbcad820f151ecf90616d63e', class: "connection" }, h("path", { key: 'a45b71ff7f431a783ad81f30a9a499c3414d9ecf', class: "connection-line", d: this.path }))));
     }
     static get watchers() { return {
         "start": ["updatePath"],

@@ -29,6 +29,9 @@ const getEventLocation = (e) => {
     else if (e instanceof TouchEvent && e.touches.length > 0) {
         return { x: e.touches[0].clientX, y: e.touches[0].clientY };
     }
+    else if (e instanceof TouchEvent && e.changedTouches.length > 0) {
+        return { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
+    }
     return { x: 0, y: 0 };
 };
 
@@ -179,8 +182,14 @@ const FlowyCanvas = class {
         }
     }
     onPointerDown(event) {
+        // if(event.target.hasPointerCapture(event.pointerId)) {
+        //   event.target.releasePointerCapture(event.pointerId);
+        // }
         const loc = getEventLocation(event);
-        const target = event.target;
+        let target = event.target;
+        // if (event instanceof TouchEvent) {
+        target = document.elementFromPoint(loc.x, loc.y);
+        // }
         if (target.closest('.logic-connector .connector')) {
             this._activeConnector = target.closest('logic-connector .connector');
             const parentConn = this._activeConnector.closest('logic-connector');
@@ -227,13 +236,18 @@ const FlowyCanvas = class {
         };
     }
     onPointerUp(event) {
-        this._isDragging = false;
-        this._initialPinchDistance = 0;
-        // this._lastZoom = this.zoom;
-        this._activeNode = null;
-        this._activeNodeDragging = false;
+        event.stopPropagation();
         if (this._activeConnector && this._activeConnection) {
-            const target = event.target;
+            const loc = getEventLocation(event);
+            let target = event.target;
+            if (event instanceof TouchEvent) {
+                // console.log('touch event', event.changedTouches);
+                target = document.elementFromPoint(loc.x, loc.y);
+            }
+            // const target = document.elementFromPoint(
+            //   event.clientX,
+            //   event.clientY,
+            // ) as HTMLElement;
             const targetConnector = target.closest('logic-connector .connector');
             if (targetConnector) {
                 let aConn = this._activeConnector.closest('logic-connector');
@@ -241,6 +255,7 @@ const FlowyCanvas = class {
                 // make sure not already connected to this connector
                 if (this._activeConnector.connectingConnector === tConn ||
                     tConn.connectingConnector === aConn) {
+                    console.log('already connected');
                     this._activeConnection.remove();
                     this._activeConnector = null;
                     this._activeConnection = null;
@@ -248,6 +263,7 @@ const FlowyCanvas = class {
                 }
                 // make sure not connecting to itself
                 else if (this._activeConnector === targetConnector) {
+                    console.log('connecting to itself');
                     this._activeConnection.remove();
                     this._activeConnector = null;
                     this._activeConnection = null;
@@ -255,6 +271,7 @@ const FlowyCanvas = class {
                 }
                 // make sure only input to output or output to input
                 else if (aConn.type === tConn.type) {
+                    console.log('connecting same type');
                     this._activeConnection.remove();
                     this._activeConnector = null;
                     this._activeConnection = null;
@@ -290,6 +307,11 @@ const FlowyCanvas = class {
             this._activeConnector = null;
             this._activeConnection = null;
         }
+        this._isDragging = false;
+        this._initialPinchDistance = 0;
+        // this._lastZoom = this.zoom;
+        this._activeNode = null;
+        this._activeNodeDragging = false;
     }
     onPointerMove(event) {
         if (this._activeConnector && this._activeConnection) {
@@ -445,7 +467,7 @@ const FlowyCanvas = class {
         this._debouncedUpdateScreen();
     }
     render() {
-        return (h(Host, { key: '430d1caf88bdf7a55638e43c18bd09a64ba38410', id: this._uid }, h("div", { key: '90f5ecb44eaa1aa297a276c38b76359c4479eb71', class: "flowy-canvas" }, h("canvas", { key: '6302078c41746d330a071c1cf1549ed464bad18b', class: "flowy-grid" }), h("div", { key: 'cdabad02d949cf6d939fa06087b6501fe8e1ea6d', class: "flowy-content" }, h("slot", { key: '387e1020f6051876b0a87af5ae35c954c224a6fc' })))));
+        return (h(Host, { key: '4db90e1078e20478af647620a694609b0ca7ac57', id: this._uid }, h("div", { key: '5f77a756ad287177084be1ef902ddb0d6f331224', class: "flowy-canvas" }, h("canvas", { key: '5b54585d10b1720c9247d35c141c0c889b7ade40', class: "flowy-grid" }), h("div", { key: '0bf6be589ab19683a9da97df721caf763d849c14', class: "flowy-content" }, h("slot", { key: 'd6f95400e49157a1a95f9dbc61d1e799f4c5b26b' })))));
     }
     get el() { return getElement(this); }
     static get watchers() { return {

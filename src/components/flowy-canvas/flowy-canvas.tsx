@@ -200,9 +200,15 @@ export class FlowyCanvas {
   }
 
   onPointerDown(event: MouseEvent | TouchEvent) {
+    // if(event.target.hasPointerCapture(event.pointerId)) {
+    //   event.target.releasePointerCapture(event.pointerId);
+    // }
     const loc = getEventLocation(event);
 
-    const target = event.target as HTMLElement;
+    let target = event.target as HTMLElement;
+    // if (event instanceof TouchEvent) {
+    target = document.elementFromPoint(loc.x, loc.y) as HTMLElement;
+    // }
 
     if (target.closest('.logic-connector .connector')) {
       this._activeConnector = target.closest(
@@ -259,13 +265,18 @@ export class FlowyCanvas {
   }
 
   onPointerUp(event: MouseEvent | TouchEvent) {
-    this._isDragging = false;
-    this._initialPinchDistance = 0;
-    // this._lastZoom = this.zoom;
-    this._activeNode = null;
-    this._activeNodeDragging = false;
+    event.stopPropagation();
     if (this._activeConnector && this._activeConnection) {
-      const target = event.target as HTMLElement;
+      const loc = getEventLocation(event);
+      let target = event.target as HTMLElement;
+      if (event instanceof TouchEvent) {
+        // console.log('touch event', event.changedTouches);
+        target = document.elementFromPoint(loc.x, loc.y) as HTMLElement;
+      }
+      // const target = document.elementFromPoint(
+      //   event.clientX,
+      //   event.clientY,
+      // ) as HTMLElement;
       const targetConnector = target.closest(
         'logic-connector .connector',
       ) as HTMLLogicConnectorElement;
@@ -283,6 +294,7 @@ export class FlowyCanvas {
           this._activeConnector.connectingConnector === tConn ||
           tConn.connectingConnector === aConn
         ) {
+          console.log('already connected');
           this._activeConnection.remove();
           this._activeConnector = null;
           this._activeConnection = null;
@@ -291,6 +303,7 @@ export class FlowyCanvas {
 
         // make sure not connecting to itself
         else if (this._activeConnector === targetConnector) {
+          console.log('connecting to itself');
           this._activeConnection.remove();
           this._activeConnector = null;
           this._activeConnection = null;
@@ -299,6 +312,7 @@ export class FlowyCanvas {
 
         // make sure only input to output or output to input
         else if (aConn.type === tConn.type) {
+          console.log('connecting same type');
           this._activeConnection.remove();
           this._activeConnector = null;
           this._activeConnection = null;
@@ -337,6 +351,12 @@ export class FlowyCanvas {
       this._activeConnector = null;
       this._activeConnection = null;
     }
+
+    this._isDragging = false;
+    this._initialPinchDistance = 0;
+    // this._lastZoom = this.zoom;
+    this._activeNode = null;
+    this._activeNodeDragging = false;
   }
 
   onPointerMove(event: MouseEvent | TouchEvent) {
@@ -466,6 +486,7 @@ export class FlowyCanvas {
       this.handlePinch(event);
     }
   }
+
   handlePinch(event: TouchEvent) {
     if (event.touches.length !== 2) return;
 
