@@ -1,10 +1,7 @@
 import { Component, Host, Prop, h, Element, State, Watch } from '@stencil/core';
 import { Point } from '../../types/Point';
-import { throttle } from '../../utils/throttle';
-import { getEventLocation } from '../../utils/getEventLocation';
-import { debounce } from '../../utils/debounce';
-import { nanoid } from 'nanoid';
-// import { events } from '../../events';
+import { Size } from '../../types/Size';
+import { global } from '../../global';
 
 @Component({
   tag: 'logic-node',
@@ -17,32 +14,36 @@ export class LogicNode {
   @Prop() type: string = 'default';
   @Prop() title: string = 'Node';
   @Prop({ mutable: true }) position: Point = { x: 0, y: 0 };
+  @Prop({ mutable: true }) size: Size = { width: 0, height: 0 };
 
   @State() isDragging = false;
 
-  private _uid: string = nanoid();
+  private _uid: string = global().registerNode(this);
 
-  _dragStart: Point = { x: 0, y: 0 };
-
-  private _debouncedUpdateTransform = debounce(
-    () => this.updateTransform(),
-    10,
-  );
+  componentWillLoad() {
+    //  set initial size
+    this.updateTransform();
+    const rect = this.el.getBoundingClientRect();
+    this.size = { width: rect.width, height: rect.height };
+    this.position = { x: this.position.x, y: this.position.y };
+  }
 
   @Watch('position')
   onPositionChange() {
     // update transform
-    this._debouncedUpdateTransform();
+    this.updateTransform();
+    // this._debouncedUpdateTransform();
   }
 
   updateTransform() {
-    this.el.style.transform = `translate(${this.position.x}px, ${this.position.y}px )`;
+    requestAnimationFrame(() => {
+      this.el.style.transform = `translate(${this.position.x}px, ${this.position.y}px )`;
+    });
   }
 
   render() {
     return (
       <Host class="flowy-node" id={this._uid}>
-        {/* <div class="flowy-node"> */}
         <div class="flowy-node-header">
           {this.title}
           <slot name="header"></slot>

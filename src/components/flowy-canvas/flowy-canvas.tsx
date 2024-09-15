@@ -4,6 +4,7 @@ import { debounce } from '../../utils/debounce';
 import { throttle } from '../../utils/throttle';
 import { getEventLocation } from '../../utils/getEventLocation';
 import { nanoid } from 'nanoid';
+import { global } from '../../global';
 
 @Component({
   tag: 'flowy-canvas',
@@ -24,7 +25,7 @@ export class FlowyCanvas {
   @State() zoom: number = 1;
   @State() pan: Point = { x: 0, y: 0 };
 
-  private _uid: string = nanoid();
+  private _uid: string = global().registerViewport(this);
   private _initialPinchDistance: number = 0;
   private _isDragging: boolean = false;
   private _dragStart: Point = { x: 0, y: 0 };
@@ -43,15 +44,14 @@ export class FlowyCanvas {
   private _canvasRect: DOMRect;
 
   private _resizeObserver: ResizeObserver;
-  private _debouncedResize = debounce(() => this.onResize(), 50);
-  private _debouncedUpdateScreen = debounce(() => this.updateScreen(), 5);
-  private _throttledPointerMove = throttle(e => this.onPointerMove(e), 30);
-  private _throttledTouchMove = throttle(e => this.handleTouchMove(e), 30);
+  private _debouncedResize = debounce(() => this.onResize(), 16);
+  private _debouncedUpdateScreen = debounce(() => this.updateScreen(), 1);
+  // private _throttledPointerMove = throttle(e => this.onPointerMove(e), 1);
+  private _throttledTouchMove = throttle(e => this.handleTouchMove(e), 1);
 
   private _elMouseDown = (e: MouseEvent | TouchEvent) => this.onPointerDown(e);
   private _elMouseUp = (e: MouseEvent | TouchEvent) => this.onPointerUp(e);
-  private _elMouseMove = (e: MouseEvent | TouchEvent) =>
-    this._throttledPointerMove(e);
+  private _elMouseMove = (e: MouseEvent | TouchEvent) => this.onPointerMove(e);
 
   private _elTouchStart = (e: TouchEvent) => this.handleTouchStart(e);
   private _elTouchMove = (e: TouchEvent) => this._throttledTouchMove(e);
@@ -137,52 +137,55 @@ export class FlowyCanvas {
   renderGridLines() {
     if (!this.renderGrid || !this._needsRedraw) return;
 
-    const canvasEl = this._gridEl;
-    const ctx = canvasEl.getContext('2d');
-    const width = this._canvasRect.width;
-    const height = this._canvasRect.height;
-    const step = this.gridSize * this.zoom;
+    requestAnimationFrame(() => {
+      const canvasEl = this._gridEl;
+      const ctx = canvasEl.getContext('2d');
+      const width = this._canvasRect.width;
+      const height = this._canvasRect.height;
+      const step = this.gridSize * this.zoom;
 
-    const dpr = window.devicePixelRatio || 1;
-    canvasEl.width = width * dpr;
-    canvasEl.height = height * dpr;
-    ctx.scale(dpr, dpr);
+      const dpr = window.devicePixelRatio || 1;
+      canvasEl.width = width * dpr;
+      canvasEl.height = height * dpr;
+      ctx.scale(dpr, dpr);
 
-    ctx.strokeStyle = this.gridLineColor;
-    ctx.lineWidth = 1;
+      ctx.strokeStyle = this.gridLineColor;
+      ctx.lineWidth = 1;
 
-    // clear
-    ctx.fillStyle = this.gridBgColor;
-    ctx.fillRect(0, 0, width, height);
+      // clear
+      ctx.fillStyle = this.gridBgColor;
+      ctx.fillRect(0, 0, width, height);
 
-    const panOffsetX = (-this.pan.x % this.gridSize) * this.zoom;
-    const panOffsetY = (-this.pan.y % this.gridSize) * this.zoom;
+      const panOffsetX = (-this.pan.x % this.gridSize) * this.zoom;
+      const panOffsetY = (-this.pan.y % this.gridSize) * this.zoom;
 
-    ctx.beginPath();
+      ctx.beginPath();
 
-    // Draw vertical grid lines (x axis)
-    for (let x = -panOffsetX; x <= width; x += step) {
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, height);
-    }
+      // Draw vertical grid lines (x axis)
+      for (let x = -panOffsetX; x <= width; x += step) {
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, height);
+      }
 
-    // Draw horizontal grid lines (y axis)
-    for (let y = -panOffsetY; y <= height; y += step) {
-      ctx.moveTo(0, y);
-      ctx.lineTo(width, y);
-    }
+      // Draw horizontal grid lines (y axis)
+      for (let y = -panOffsetY; y <= height; y += step) {
+        ctx.moveTo(0, y);
+        ctx.lineTo(width, y);
+      }
 
-    ctx.stroke();
+      ctx.stroke();
+    });
 
     this._needsRedraw = false;
   }
 
   updateScreen() {
-    // this.renderGridLines();
-    const contentEl = this._contentEl;
-    // Apply transformations to the content, aligning with the grid
-    contentEl.style.transform = `perspective(1px) scale(${this.zoom}) translate(${this.pan.x}px, ${this.pan.y}px)`;
-    requestAnimationFrame(() => this.renderGridLines());
+    requestAnimationFrame(() => {
+      const contentEl = this._contentEl;
+      // Apply transformations to the content, aligning with the grid
+      contentEl.style.transform = `perspective(1px) scale(${this.zoom}) translate(${this.pan.x}px, ${this.pan.y}px)`;
+      this.renderGridLines();
+    });
   }
 
   // get location from event data for mouse or touch
@@ -205,21 +208,28 @@ export class FlowyCanvas {
       this._activeConnector = target.closest(
         'logic-connector .connector',
       ) as HTMLLogicConnectorElement;
+      const parentConn = this._activeConnector.closest(
+        'logic-connector',
+      ) as HTMLLogicConnectorElement;
       // this._activeConnector.isDrawing = true;
-      const rect = this._activeConnector.getBoundingClientRect();
+      // const rect = this._activeConnector.getBoundingClientRect();
+      const aConnId = parentConn.getAttribute('id');
+      const rect = global().connectorRects[aConnId];
       // const node = this._activeConnector.closest('logic-node') as HTMLLogicNodeElement;
       // const nodeRect = node.getBoundingClientRect();
       // account for node position and find center of connector
       this._activeConnectorStartPos = {
-        x: (rect.left + rect.width / 2) / this.zoom - this.pan.x,
-        y: (rect.top + rect.height / 2) / this.zoom - this.pan.y,
+        x: rect.left + rect.width / 2,
+        y: rect.top + rect.height / 2,
       };
-      // console.log('connector start pos', this._activeConnectorStartPos);
 
       // create a new connection element
       const connection = document.createElement('logic-connection');
       connection.start = this._activeConnectorStartPos;
       connection.end = this._activeConnectorStartPos;
+      // set input or output based on activeconnector parent
+
+      connection.type = parentConn.type;
       this._contentEl.appendChild(connection);
       this._activeConnection = connection;
       // Associate the connection with the connector
@@ -229,10 +239,11 @@ export class FlowyCanvas {
       this._activeNode = target.closest('logic-node') as HTMLLogicNodeElement;
       // bring active node to front by moving element to the end of the parent
       // this._activeNode.parentNode.appendChild(this._activeNode);
-      const rect = this._activeNode.getBoundingClientRect();
+      // const rect = this._activeNode.getBoundingClientRect();
+      const pos = this._activeNode.position;
       this._activeNodeDragStart = {
-        x: (loc.x - rect.left) / this.zoom,
-        y: (loc.y - rect.top) / this.zoom,
+        x: loc.x / this.zoom - pos.x - this.pan.x,
+        y: loc.y / this.zoom - pos.y - this.pan.y,
       };
       this._activeNodeDragging = true;
 
@@ -260,48 +271,62 @@ export class FlowyCanvas {
       ) as HTMLLogicConnectorElement;
 
       if (targetConnector) {
+        let aConn = this._activeConnector.closest(
+          'logic-connector',
+        ) as HTMLLogicConnectorElement;
+        let tConn = targetConnector.closest(
+          'logic-connector',
+        ) as HTMLLogicConnectorElement;
+
         // make sure not already connected to this connector
-        if (this._activeConnector.connectingConnector === targetConnector) {
+        if (
+          this._activeConnector.connectingConnector === tConn ||
+          tConn.connectingConnector === aConn
+        ) {
           this._activeConnection.remove();
           this._activeConnector = null;
           this._activeConnection = null;
           return;
         }
 
-        const activeParent = this._activeConnector.closest(
-          'logic-connector',
-        ) as HTMLLogicConnectorElement;
-        const targetParent = targetConnector.closest(
-          'logic-connector',
-        ) as HTMLLogicConnectorElement;
+        // make sure not connecting to itself
+        else if (this._activeConnector === targetConnector) {
+          this._activeConnection.remove();
+          this._activeConnector = null;
+          this._activeConnection = null;
+          return;
+        }
+
         // make sure only input to output or output to input
-        if (activeParent.type === targetParent.type) {
+        else if (aConn.type === tConn.type) {
           this._activeConnection.remove();
           this._activeConnector = null;
           this._activeConnection = null;
           return;
         }
 
-        this._activeConnection.end = {
-          x:
-            (targetConnector.getBoundingClientRect().left +
-              targetConnector.getBoundingClientRect().width / 2) /
-              this.zoom -
-            this.pan.x,
-          y:
-            (targetConnector.getBoundingClientRect().top +
-              targetConnector.getBoundingClientRect().height / 2) /
-              this.zoom -
-            this.pan.y,
-        };
+        // const targRect = targetConnector.getBoundingClientRect();
+        const targRect = global().connectorRects[tConn.getAttribute('id')];
+
+        // like above but if went from input to output, then start is the target and end is the active
+        // treat as though drawn from target to active
+        if (aConn.type === 'input') {
+          this._activeConnection.start = {
+            x: targRect.left + targRect.width / 2,
+            y: targRect.top + targRect.height / 2,
+          };
+
+          this._activeConnection.end = this._activeConnectorStartPos;
+          this._activeConnection.type = 'output';
+        } else {
+          this._activeConnection.end = {
+            x: targRect.left + targRect.width / 2,
+            y: targRect.top + targRect.height / 2,
+          };
+        }
 
         // get parent logic-connector from activeConnector and targetConnector
-        const aConn = this._activeConnector.closest(
-          'logic-connector',
-        ) as HTMLLogicConnectorElement;
-        const tConn = targetConnector.closest(
-          'logic-connector',
-        ) as HTMLLogicConnectorElement;
+
         aConn.connectingConnector = tConn;
         aConn.connections.push(this._activeConnection);
         tConn.connectingConnector = aConn;
@@ -315,47 +340,78 @@ export class FlowyCanvas {
   }
 
   onPointerMove(event: MouseEvent | TouchEvent) {
-    if (this._activeConnector) {
+    if (this._activeConnector && this._activeConnection) {
+      const aConn = this._activeConnection;
       requestAnimationFrame(() => {
         const loc = getEventLocation(event);
         const pos = {
           x: loc.x / this.zoom - this.pan.x,
           y: loc.y / this.zoom - this.pan.y,
         };
-        this._activeConnection.end = pos;
+        aConn.end = pos;
       });
       return;
     } else if (this._activeNode && this._activeNodeDragging) {
+      const aNode = this._activeNode;
+      // requestAnimationFrame(() => {
       const loc = getEventLocation(event);
+      const aNodeOldPos = aNode.position;
       const newX = loc.x / this.zoom - this._activeNodeDragStart.x - this.pan.x;
       const newY = loc.y / this.zoom - this._activeNodeDragStart.y - this.pan.y;
 
-      this._activeNode.position = { x: newX, y: newY };
-
       // update connections
-      const connectors = this._activeNode.querySelectorAll(
+      const connectors = aNode.querySelectorAll(
         'logic-connector',
       ) as NodeListOf<HTMLLogicConnectorElement>;
 
-      connectors.forEach(connector => {
+      for (let i = 0; i < connectors.length; i++) {
+        const connector = connectors[i];
+        const delta = {
+          x: newX - aNodeOldPos.x,
+          y: newY - aNodeOldPos.y,
+        };
+        const connId = connector.getAttribute('id');
+        // let rect = global().connectorRects[connId];
+        // // update rect
+        // rect = {
+        //   left: rect.left + delta.x,
+        //   top: rect.top + delta.y,
+        //   width: rect.width,
+        //   height: rect.height,
+        // };
+
+        // global().connectorRects[connId] = rect;
+
+        // update connections
+        // update rect
+        let rect = global().connectorRects[connId];
+        rect = {
+          left: rect.left + delta.x,
+          top: rect.top + delta.y,
+          width: rect.width,
+          height: rect.height,
+        };
+        global().connectorRects[connId] = rect;
+
         if (connector.connections.length) {
-          const connectorHub = connector.querySelector('.connector');
-          const rect = connectorHub.getBoundingClientRect();
           const pos = {
-            x: (rect.left + rect.width / 2) / this.zoom - this.pan.x,
-            y: (rect.top + rect.height / 2) / this.zoom - this.pan.y,
+            x: rect.left + rect.width / 2,
+            y: rect.top + rect.height / 2,
           };
 
-          // Loop through each connection and update start or end
-          connector.connections.forEach(connection => {
+          // reg for loop
+          for (let i = 0; i < connector.connections.length; i++) {
+            const connection = connector.connections[i];
             if (connector.type === 'input') {
               connection.end = pos;
             } else {
               connection.start = pos;
             }
-          });
+          }
         }
-      });
+      }
+
+      aNode.position = { x: newX, y: newY };
 
       return;
     }

@@ -1,4 +1,4 @@
-import { r as registerInstance, h, a as Host, g as getElement } from './index-215890eb.js';
+import { r as registerInstance, h, a as Host, g as getElement } from './index-d2e5e60a.js';
 import { d as debounce } from './debounce-25523ff8.js';
 
 var commonjsGlobal = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
@@ -398,7 +398,7 @@ const FlowyCanvasOld = class {
         this._debouncedUpdateScreen();
     }
     render() {
-        return (h(Host, { key: '7bd192a1dddde1e38e4c60828f5488a5bef6ca29' }, h("div", { key: 'f95278e92a01b2bcbffde29ebb1099b883810dfb', class: "flowy-canvas" }, h("canvas", { key: 'c2652688be915c5a52975c303f1151af87e5bbff', class: "flowy-grid" }), h("div", { key: 'f71593ed544693b058ec465fe54c5fe53aa20792', class: "flowy-content" }, h("slot", { key: '0f77bfae7bb1b50c0bf00adb6b4fdc775e224b23' })))));
+        return (h(Host, { key: '3e67f838956632c35e6c2958dc13053901ed755a' }, h("div", { key: 'd2be4660063fa2ab328447c238192e1e6c38b397', class: "flowy-canvas" }, h("canvas", { key: '967d11b727ca179cf4c1a4c678d36e3018f37d0b', class: "flowy-grid" }), h("div", { key: 'b4ede6e5088946d37801336e7642b343363c3616', class: "flowy-content" }, h("slot", { key: 'e3ea5ff2242e3fc2eef47d9c212cd3355321ca7d' })))));
     }
     get el() { return getElement(this); }
     static get watchers() { return {

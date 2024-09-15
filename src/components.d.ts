@@ -7,8 +7,10 @@
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
 import { Point } from "./types/Point";
 import { LogicConnection } from "./components/logic-connection/logic-connection";
+import { Size } from "./types/Size";
 export { Point } from "./types/Point";
 export { LogicConnection } from "./components/logic-connection/logic-connection";
+export { Size } from "./types/Size";
 export namespace Components {
     interface FlowyCanvas {
         "gridBgColor": string;
@@ -31,6 +33,7 @@ export namespace Components {
     interface LogicConnection {
         "end": Point;
         "start": Point;
+        "type": 'input' | 'output';
     }
     interface LogicConnector {
         "connectingConnector": LogicConnector | null;
@@ -39,6 +42,7 @@ export namespace Components {
     }
     interface LogicNode {
         "position": Point;
+        "size": Size;
         "title": string;
         "type": string;
     }
@@ -125,6 +129,7 @@ declare namespace LocalJSX {
     interface LogicConnection {
         "end"?: Point;
         "start"?: Point;
+        "type"?: 'input' | 'output';
     }
     interface LogicConnector {
         "connectingConnector"?: LogicConnector | null;
@@ -133,6 +138,7 @@ declare namespace LocalJSX {
     }
     interface LogicNode {
         "position"?: Point;
+        "size"?: Size;
         "title"?: string;
         "type"?: string;
     }

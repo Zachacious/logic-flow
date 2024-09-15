@@ -1,5 +1,6 @@
-import { Component, Host, Prop, h } from '@stencil/core';
+import { Component, Host, Prop, h, Element } from '@stencil/core';
 import { LogicConnection } from '../logic-connection/logic-connection';
+import { global } from '../../global';
 
 @Component({
   tag: 'logic-connector',
@@ -7,12 +8,25 @@ import { LogicConnection } from '../logic-connection/logic-connection';
   shadow: false,
 })
 export class LogicConnector {
+  @Element() el: HTMLElement;
+
   @Prop() type: 'input' | 'output' = 'input';
   @Prop() connectingConnector: LogicConnector | null = null;
-  // @Prop() connection: LogicConnection | null = null;
   @Prop() connections: LogicConnection[] = [];
 
-  // @Prop({ mutable: true }) isDrawing: boolean = false;
+  private _uid: string = global().registerConnector(this);
+
+  componentDidLoad() {
+    const connector = this.el.querySelector('.connector') as HTMLElement;
+    const rect = connector.getBoundingClientRect();
+    global().connectorRects[this._uid] = {
+      left: rect.x,
+      top: rect.y,
+      width: rect.width,
+      height: rect.height,
+    };
+  }
+
   render() {
     const sideClass =
       this.type === 'input' ? 'left-connector' : 'right-connector';
@@ -20,14 +34,8 @@ export class LogicConnector {
       this.type === 'input' ? 'input-connector' : 'output-connector';
 
     return (
-      <Host class={`logic-connector ${typeClass}`}>
-        <div class={`connector ${sideClass}`}>
-          {/* {this.isDrawing && (
-            <svg class="connection-layer" xmlns="http://www.w3.org/2000/svg">
-              <path class="connection-line" d="" />
-            </svg>
-          )} */}
-        </div>
+      <Host class={`logic-connector ${typeClass}`} id={this._uid}>
+        <div class={`connector ${sideClass}`}></div>
         <div class={`connector-content ${sideClass}`}>
           <slot></slot>
         </div>
