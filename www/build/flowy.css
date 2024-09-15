@@ -55,10 +55,10 @@ body {
   padding: 0px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
   backface-visibility: hidden;
-  will-change: transform;
+  /* will-change: transform; */
   touch-action: none;
   user-select: none;
-  z-index: 10;
+  /* z-index: 10; */
 }
 
 .flowy-node .flowy-node-header {
@@ -94,6 +94,11 @@ body {
   margin: 0px 3px;
 }
 
+.logic-connector .connector:hover {
+  z-index: 1;
+  /* background: #333; */
+}
+
 .logic-connector .connector-content {
   width: 100%;
   font-size: 0.7em;
@@ -118,6 +123,10 @@ body {
   text-align: right;
 }
 
+.logic-connector .connected {
+  /* background: #333; */
+}
+
 .logic-connector .connection-layer {
   position: absolute;
   top: 0;
@@ -139,9 +148,16 @@ body {
 
 .logic-connection .connection .connection-line {
   stroke: #383838;
-  stroke-width: 6;
+  stroke-width: 3;
   stroke-linecap: round;
   fill: none;
   transition: stroke-width 0.2s ease, stroke 0.2s ease;
   pointer-events: all;
+}
+
+.connection-cap {
+  pointer-events: none;
+  fill: #383838;
+  stroke-width: 6;
+  stroke: #383838;
 }

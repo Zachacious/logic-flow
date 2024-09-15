@@ -52,6 +52,7 @@ const FlowyCanvas = class {
         this._debouncedUpdateScreen = debounce(() => this.updateScreen(), 1);
         // private _throttledPointerMove = throttle(e => this.onPointerMove(e), 1);
         this._throttledTouchMove = throttle(e => this.handleTouchMove(e), 1);
+        this._forceContentReflowDebounced = debounce(() => this.forceContentReflow(), 30);
         this._elMouseDown = (e) => this.onPointerDown(e);
         this._elMouseUp = (e) => this.onPointerUp(e);
         this._elMouseMove = (e) => this.onPointerMove(e);
@@ -86,7 +87,7 @@ const FlowyCanvas = class {
             passive: true,
         });
         canvasEl.addEventListener('touchstart', this._elTouchStart, {
-            passive: false,
+            passive: true,
         });
         canvasEl.addEventListener('touchmove', this._elTouchMove, {
             passive: true,
@@ -236,7 +237,7 @@ const FlowyCanvas = class {
         };
     }
     onPointerUp(event) {
-        event.stopPropagation();
+        // event.stopPropagation();
         if (this._activeConnector && this._activeConnection) {
             const loc = getEventLocation(event);
             let target = event.target;
@@ -400,6 +401,10 @@ const FlowyCanvas = class {
         this.pan = { x: newPanX / newZoom, y: newPanY / newZoom };
         // this._lastZoom = this.zoom;
         this.zoom = newZoom;
+        // if zooming in, force a reflow to prevent blurry text
+        if (zoomDelta > 0) {
+            this._forceContentReflowDebounced();
+        }
         this._needsRedraw = true;
     }
     handleTouchStart(event) {
@@ -466,8 +471,15 @@ const FlowyCanvas = class {
         // Trigger a screen redraw
         this._debouncedUpdateScreen();
     }
+    forceContentReflow() {
+        // force repaint the content
+        const cdisplay = this._contentEl.style.display;
+        this._contentEl.style.display = 'none';
+        this._contentEl.offsetHeight; // trigger reflow
+        this._contentEl.style.display = cdisplay;
+    }
     render() {
-        return (h(Host, { key: '4db90e1078e20478af647620a694609b0ca7ac57', id: this._uid }, h("div", { key: '5f77a756ad287177084be1ef902ddb0d6f331224', class: "flowy-canvas" }, h("canvas", { key: '5b54585d10b1720c9247d35c141c0c889b7ade40', class: "flowy-grid" }), h("div", { key: '0bf6be589ab19683a9da97df721caf763d849c14', class: "flowy-content" }, h("slot", { key: 'd6f95400e49157a1a95f9dbc61d1e799f4c5b26b' })))));
+        return (h(Host, { key: 'd730ca0d23f76a1bd927446aab7aff907a2ce79c', id: this._uid }, h("div", { key: '2f0e8339f188dff8b33df29c5d58cf436cd132e0', class: "flowy-canvas" }, h("canvas", { key: '1eedd55cad23fb76ddcd13d9e1f0a1aaf535e9d4', class: "flowy-grid" }), h("div", { key: '84699581447ccbda9e874a0434da85be6e95d606', class: "flowy-content" }, h("slot", { key: 'b1999a51a8303c355eb972fef5332ca2b2024066' })))));
     }
     get el() { return getElement(this); }
     static get watchers() { return {

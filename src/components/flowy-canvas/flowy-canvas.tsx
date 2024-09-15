@@ -48,6 +48,10 @@ export class FlowyCanvas {
   private _debouncedUpdateScreen = debounce(() => this.updateScreen(), 1);
   // private _throttledPointerMove = throttle(e => this.onPointerMove(e), 1);
   private _throttledTouchMove = throttle(e => this.handleTouchMove(e), 1);
+  private _forceContentReflowDebounced = debounce(
+    () => this.forceContentReflow(),
+    30,
+  );
 
   private _elMouseDown = (e: MouseEvent | TouchEvent) => this.onPointerDown(e);
   private _elMouseUp = (e: MouseEvent | TouchEvent) => this.onPointerUp(e);
@@ -81,7 +85,7 @@ export class FlowyCanvas {
     });
 
     canvasEl.addEventListener('touchstart', this._elTouchStart, {
-      passive: false,
+      passive: true,
     });
     canvasEl.addEventListener('touchmove', this._elTouchMove, {
       passive: true,
@@ -265,7 +269,7 @@ export class FlowyCanvas {
   }
 
   onPointerUp(event: MouseEvent | TouchEvent) {
-    event.stopPropagation();
+    // event.stopPropagation();
     if (this._activeConnector && this._activeConnection) {
       const loc = getEventLocation(event);
       let target = event.target as HTMLElement;
@@ -463,6 +467,12 @@ export class FlowyCanvas {
     this.pan = { x: newPanX / newZoom, y: newPanY / newZoom };
     // this._lastZoom = this.zoom;
     this.zoom = newZoom;
+
+    // if zooming in, force a reflow to prevent blurry text
+    if (zoomDelta > 0) {
+      this._forceContentReflowDebounced();
+    }
+
     this._needsRedraw = true;
   }
 
@@ -549,6 +559,14 @@ export class FlowyCanvas {
 
     // Trigger a screen redraw
     this._debouncedUpdateScreen();
+  }
+
+  forceContentReflow() {
+    // force repaint the content
+    const cdisplay = this._contentEl.style.display;
+    this._contentEl.style.display = 'none';
+    this._contentEl.offsetHeight; // trigger reflow
+    this._contentEl.style.display = cdisplay;
   }
 
   render() {

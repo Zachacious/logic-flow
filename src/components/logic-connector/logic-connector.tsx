@@ -35,7 +35,11 @@ export class LogicConnector {
 
     return (
       <Host class={`logic-connector ${typeClass}`} id={this._uid}>
-        <div class={`connector ${sideClass}`}></div>
+        <div
+          class={`connector ${sideClass} ${
+            this.connections.length > 0 && 'connected'
+          }`}
+        ></div>
         <div class={`connector-content ${sideClass}`}>
           <slot></slot>
         </div>
