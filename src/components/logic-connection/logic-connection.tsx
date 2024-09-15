@@ -38,23 +38,33 @@ export class LogicConnection {
     const distance = Math.sqrt(delta.x ** 2 + delta.y ** 2);
     const controlOffset = Math.min(100, distance * 0.35);
 
-    // Calculate start and end points for the path
-    const startInset = {
-      x: this.start.x + this._capRadius,
-      y: this.start.y,
-    };
-    const endInset = {
-      x: this.end.x - this._capRadius,
-      y: this.end.y,
-    };
-
     // Generate the path based on type
     if (this.type === 'output') {
+      // Calculate start and end points for the path
+      const startInset = {
+        x: this.start.x + this._capRadius,
+        y: this.start.y,
+      };
+      const endInset = {
+        x: this.end.x - this._capRadius,
+        y: this.end.y,
+      };
+
       this.path = `M ${startInset.x},${startInset.y}
           C ${startInset.x + controlOffset},${startInset.y}
             ${endInset.x - controlOffset},${endInset.y}
             ${endInset.x},${endInset.y}`;
     } else {
+      // Calculate start and end points for the path
+      const startInset = {
+        x: this.start.x - this._capRadius,
+        y: this.start.y,
+      };
+      const endInset = {
+        x: this.end.x + this._capRadius,
+        y: this.end.y,
+      };
+
       this.path = `M ${startInset.x},${startInset.y}
           C ${startInset.x - controlOffset},${startInset.y}
             ${endInset.x + controlOffset},${endInset.y}

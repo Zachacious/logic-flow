@@ -253,6 +253,9 @@ const FlowyCanvas = class {
             if (targetConnector) {
                 let aConn = this._activeConnector.closest('logic-connector');
                 let tConn = targetConnector.closest('logic-connector');
+                // find parent node of each
+                const aNode = aConn.closest('logic-node');
+                const tNode = tConn.closest('logic-node');
                 // make sure not already connected to this connector
                 if (this._activeConnector.connectingConnector === tConn ||
                     tConn.connectingConnector === aConn) {
@@ -263,7 +266,7 @@ const FlowyCanvas = class {
                     return;
                 }
                 // make sure not connecting to itself
-                else if (this._activeConnector === targetConnector) {
+                else if (aNode === tNode || this._activeConnector === targetConnector) {
                     console.log('connecting to itself');
                     this._activeConnection.remove();
                     this._activeConnector = null;
@@ -479,7 +482,7 @@ const FlowyCanvas = class {
         this._contentEl.style.display = cdisplay;
     }
     render() {
-        return (h(Host, { key: 'd730ca0d23f76a1bd927446aab7aff907a2ce79c', id: this._uid }, h("div", { key: '2f0e8339f188dff8b33df29c5d58cf436cd132e0', class: "flowy-canvas" }, h("canvas", { key: '1eedd55cad23fb76ddcd13d9e1f0a1aaf535e9d4', class: "flowy-grid" }), h("div", { key: '84699581447ccbda9e874a0434da85be6e95d606', class: "flowy-content" }, h("slot", { key: 'b1999a51a8303c355eb972fef5332ca2b2024066' })))));
+        return (h(Host, { key: 'b9676c996ab984f2c1cce398a77c138203bc8f8c', id: this._uid }, h("div", { key: '208f0cf3c6163da65652963deae9b93468bebd55', class: "flowy-canvas" }, h("canvas", { key: '6f306a2f59a7d6a88a6ee1cd730bf5ee5fae6134', class: "flowy-grid" }), h("div", { key: '4c6e8ca88cd21bf6c01102cc82e24a6d494b8f2b', class: "flowy-content" }, h("slot", { key: '0ea766c65e8969da981f9b00d31f617716837570' })))));
     }
     get el() { return getElement(this); }
     static get watchers() { return {

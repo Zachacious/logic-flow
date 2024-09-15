@@ -293,6 +293,10 @@ export class FlowyCanvas {
           'logic-connector',
         ) as HTMLLogicConnectorElement;
 
+        // find parent node of each
+        const aNode = aConn.closest('logic-node') as HTMLLogicNodeElement;
+        const tNode = tConn.closest('logic-node') as HTMLLogicNodeElement;
+
         // make sure not already connected to this connector
         if (
           this._activeConnector.connectingConnector === tConn ||
@@ -306,7 +310,7 @@ export class FlowyCanvas {
         }
 
         // make sure not connecting to itself
-        else if (this._activeConnector === targetConnector) {
+        else if (aNode === tNode || this._activeConnector === targetConnector) {
           console.log('connecting to itself');
           this._activeConnection.remove();
           this._activeConnector = null;
