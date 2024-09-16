@@ -1,5 +1,5 @@
-import { r as registerInstance, h, a as Host, g as getElement } from './index-d2e5e60a.js';
-import { g as global } from './global-87087290.js';
+import { r as registerInstance, h, a as Host, g as getElement } from './index-c090f9ce.js';
+import { g as global } from './global-4b3b539c.js';
 
 const logicNodeCss = ":host{display:block}";
 
@@ -13,12 +13,21 @@ const LogicNode = class {
         this.size = { width: 0, height: 0 };
         this.isDragging = false;
     }
+    async getUid() {
+        return this._uid;
+    }
+    async destroy() {
+        global().unregisterNode(this._uid);
+    }
     componentWillLoad() {
         //  set initial size
         this.updateTransform();
         const rect = this.el.getBoundingClientRect();
         this.size = { width: rect.width, height: rect.height };
         this.position = { x: this.position.x, y: this.position.y };
+    }
+    disconnectedCallback() {
+        global().unregisterNode(this._uid);
     }
     onPositionChange() {
         // update transform
@@ -31,7 +40,7 @@ const LogicNode = class {
         // });
     }
     render() {
-        return (h(Host, { key: '16f1fffc3a1ff1fc6470fd988c27e22bd5f6d383', class: "flowy-node", id: this._uid }, h("div", { key: '18dd7ce00ec6cce1e318ed564ed698fd3741da5e', class: "flowy-node-header" }, this.title, h("slot", { key: 'cf42cddde166e9027d2a79cfdaf3ea4f5fc210a0', name: "header" })), h("slot", { key: '149aa061b658f759acb061c66f73e2df86e8b2d2' }), h("div", { key: '3f61f0893b1570980960d2231b95befc275723a1', class: "flowy-node-footer" }, h("slot", { key: '32ad9f220c3e5db390de37aadf2b73d9440e8f7f', name: "footer" }))));
+        return (h(Host, { key: '0efdca8a668efcf9c67352e8187dcc7b96462209', class: "flowy-node", id: this._uid }, h("div", { key: 'd2f9c6cca808e9467445eec0fd920f4df9beb0b9', class: "flowy-node-header" }, this.title, h("slot", { key: '0db3ba216d900acbec0ffd82a3b623f65d99948a', name: "header" })), h("slot", { key: '769e988ee224349579bb9be7f1e7319f540a85ac' }), h("div", { key: '0cfc22e90358f0b2f0afe656d0134a786542c869', class: "flowy-node-footer" }, h("slot", { key: '0440cfefdf5fa81e12430e9cc643b52aefaf8961', name: "footer" }))));
     }
     get el() { return getElement(this); }
     static get watchers() { return {

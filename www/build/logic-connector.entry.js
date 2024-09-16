@@ -1,5 +1,5 @@
-import { r as registerInstance, h, a as Host, g as getElement } from './index-d2e5e60a.js';
-import { g as global } from './global-87087290.js';
+import { r as registerInstance, h, a as Host, g as getElement } from './index-c090f9ce.js';
+import { g as global } from './global-4b3b539c.js';
 
 const logicConnectorCss = ":host{display:block}";
 
@@ -11,6 +11,12 @@ const LogicConnector = class {
         this.connectingConnector = null;
         this.connections = [];
     }
+    async getUid() {
+        return this._uid;
+    }
+    async destroy() {
+        global().unregisterConnector(this._uid);
+    }
     componentDidLoad() {
         const connector = this.el.querySelector('.connector');
         const rect = connector.getBoundingClientRect();
@@ -21,10 +27,13 @@ const LogicConnector = class {
             height: rect.height,
         };
     }
+    disconnectedCallback() {
+        global().unregisterConnector(this._uid);
+    }
     render() {
         const sideClass = this.type === 'input' ? 'left-connector' : 'right-connector';
         const typeClass = this.type === 'input' ? 'input-connector' : 'output-connector';
-        return (h(Host, { key: 'a37eb86b3b56273b9fa311c9383ea634aefa31bc', class: `logic-connector ${typeClass}`, id: this._uid }, h("div", { key: '657c825b8e47fc7e9aa787fd8e7663ad1b67330d', class: `connector ${sideClass} ${this.connections.length > 0 && 'connected'}` }), h("div", { key: 'ac1533cc3915d495ba794ae266043f1142641d5a', class: `connector-content ${sideClass}` }, h("slot", { key: '98aa65a7b09411786c10528569d2874e7a9ffe28' }))));
+        return (h(Host, { key: '7fb680dc9631511da98fbc9f7a7f661b65231cf0', class: `logic-connector ${typeClass}`, id: this._uid }, h("div", { key: '9ccea58463826cf8c91e13c9b92b77a0b02c1151', class: `connector ${sideClass} ${this.connections.length > 0 && 'connected'}` }), h("div", { key: 'b56257bc90391849e32c695a9c276328f37ac10b', class: `connector-content ${sideClass}` }, h("slot", { key: '84d21e9f50e9e3bc05322167f907a545461cbad5' }))));
     }
     get el() { return getElement(this); }
 };

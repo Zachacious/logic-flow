@@ -1,5 +1,5 @@
-import { r as registerInstance, h, a as Host } from './index-d2e5e60a.js';
-import { g as global } from './global-87087290.js';
+import { r as registerInstance, h, a as Host } from './index-c090f9ce.js';
+import { g as global } from './global-4b3b539c.js';
 
 const logicConnectionCss = ":host{display:block}";
 
@@ -22,6 +22,15 @@ const LogicConnection = class {
             this._capRadius = parseInt(style.width) / 2;
         }
     }
+    disconnectedCallback() {
+        global().unregisterConnection(this._uid);
+    }
+    async getUid() {
+        return this._uid;
+    }
+    async destroy() {
+        global().unregisterConnection(this._uid);
+    }
     updatePath() {
         const delta = {
             x: this.end.x - this.start.x,
@@ -29,15 +38,16 @@ const LogicConnection = class {
         };
         const distance = Math.sqrt(delta.x ** 2 + delta.y ** 2);
         const controlOffset = Math.min(100, distance * 0.35);
+        const capOffset = this._capRadius - 1;
         // Generate the path based on type
         if (this.type === 'output') {
             // Calculate start and end points for the path
             const startInset = {
-                x: this.start.x + this._capRadius,
+                x: this.start.x + capOffset,
                 y: this.start.y,
             };
             const endInset = {
-                x: this.end.x - this._capRadius,
+                x: this.end.x - capOffset,
                 y: this.end.y,
             };
             this.path = `M ${startInset.x},${startInset.y}
@@ -48,11 +58,11 @@ const LogicConnection = class {
         else {
             // Calculate start and end points for the path
             const startInset = {
-                x: this.start.x - this._capRadius,
+                x: this.start.x - capOffset,
                 y: this.start.y,
             };
             const endInset = {
-                x: this.end.x + this._capRadius,
+                x: this.end.x + capOffset,
                 y: this.end.y,
             };
             this.path = `M ${startInset.x},${startInset.y}
@@ -62,7 +72,7 @@ const LogicConnection = class {
         }
     }
     render() {
-        return (h(Host, { key: '59490e625ffd532ec4e3b5dae0852853298ebcf7', class: "logic-connection", id: this._uid }, h("svg", { key: 'bf432ee24aec64bfe0f910afdbf67c1bcdc274e7', class: "connection" }, h("path", { key: '4724bf2ae45c8ce8746f0d8f4460ca076f780c54', class: "connection-line", d: this.path }), h("circle", { key: '442aa60b49a6d80d2e93bf21170deef808a4b416', cx: this.start.x, cy: this.start.y, r: "1px", class: "connection-cap start-cap" }), h("circle", { key: 'b8712bebd6df02eaf9f04a76b81e340019f62bdb', cx: this.end.x, cy: this.end.y, r: "1px", class: "connection-cap end-cap" }))));
+        return (h(Host, { key: 'ac97a055911ccba1da29db32c1075e6ab296b8b7', class: "logic-connection", id: this._uid }, h("svg", { key: 'bd704960a2b76945dc19b9b89581a9476761ddba', class: "connection" }, h("path", { key: '61b07d0b05888cd319d81add7383fe3820ec50b9', class: "connection-line", d: this.path }), h("circle", { key: '3167af23f84c677258ba2148ab6083a76584a8d0', cx: this.start.x, cy: this.start.y, r: "1px", class: "connection-cap start-cap" }), h("circle", { key: '1905fedb74dbb05b223d5925985bb878e0c1d9c3', cx: this.end.x, cy: this.end.y, r: "1px", class: "connection-cap end-cap" }))));
     }
     static get watchers() { return {
         "start": ["updatePath"],

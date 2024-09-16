@@ -1,4 +1,4 @@
-import { Component, Host, Prop, h, Element } from '@stencil/core';
+import { Component, Host, Prop, h, Element, Method } from '@stencil/core';
 import { LogicConnection } from '../logic-connection/logic-connection';
 import { global } from '../../global';
 
@@ -16,6 +16,16 @@ export class LogicConnector {
 
   private _uid: string = global().registerConnector(this);
 
+  @Method()
+  async getUid() {
+    return this._uid;
+  }
+
+  @Method()
+  async destroy() {
+    global().unregisterConnector(this._uid);
+  }
+
   componentDidLoad() {
     const connector = this.el.querySelector('.connector') as HTMLElement;
     const rect = connector.getBoundingClientRect();
@@ -25,6 +35,10 @@ export class LogicConnector {
       width: rect.width,
       height: rect.height,
     };
+  }
+
+  disconnectedCallback() {
+    global().unregisterConnector(this._uid);
   }
 
   render() {

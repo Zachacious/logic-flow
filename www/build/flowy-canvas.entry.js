@@ -1,6 +1,6 @@
-import { r as registerInstance, h, a as Host, g as getElement } from './index-d2e5e60a.js';
+import { r as registerInstance, h, a as Host, g as getElement } from './index-c090f9ce.js';
 import { d as debounce } from './debounce-25523ff8.js';
-import { g as global } from './global-87087290.js';
+import { g as global } from './global-4b3b539c.js';
 
 const throttle = (fn, delay) => {
     let lastFunc;
@@ -35,6 +35,86 @@ const getEventLocation = (e) => {
     return { x: 0, y: 0 };
 };
 
+class Quadtree {
+    constructor(boundary, capacity) {
+        this.boundary = boundary;
+        this.capacity = capacity;
+        this.points = [];
+        this.divided = false;
+        this.northeast = null;
+        this.northwest = null;
+        this.southeast = null;
+        this.southwest = null;
+    }
+    subdivide() {
+        const { x, y, width, height } = this.boundary;
+        const halfWidth = width / 2;
+        const halfHeight = height / 2;
+        this.northeast = new Quadtree({ x: x + halfWidth, y: y, width: halfWidth, height: halfHeight }, this.capacity);
+        this.northwest = new Quadtree({ x: x, y: y, width: halfWidth, height: halfHeight }, this.capacity);
+        this.southeast = new Quadtree({
+            x: x + halfWidth,
+            y: y + halfHeight,
+            width: halfWidth,
+            height: halfHeight,
+        }, this.capacity);
+        this.southwest = new Quadtree({ x: x, y: y + halfHeight, width: halfWidth, height: halfHeight }, this.capacity);
+        this.divided = true;
+    }
+    insert(point) {
+        if (!this.contains(point))
+            return false;
+        if (this.points.length < this.capacity) {
+            this.points.push(point);
+            return true;
+        }
+        else {
+            if (!this.divided)
+                this.subdivide();
+            return (this.northeast.insert(point) ||
+                this.northwest.insert(point) ||
+                this.southeast.insert(point) ||
+                this.southwest.insert(point));
+        }
+    }
+    contains(point) {
+        const { x, y, width, height } = this.boundary;
+        return (point.x >= x &&
+            point.x < x + width &&
+            point.y >= y &&
+            point.y < y + height);
+    }
+    query(range, found = []) {
+        if (!this.intersects(range))
+            return found;
+        for (let point of this.points) {
+            if (this.inRange(point, range)) {
+                found.push(point);
+            }
+        }
+        if (this.divided) {
+            this.northwest.query(range, found);
+            this.northeast.query(range, found);
+            this.southwest.query(range, found);
+            this.southeast.query(range, found);
+        }
+        return found;
+    }
+    inRange(point, range) {
+        return (point.x >= range.x &&
+            point.x < range.x + range.width &&
+            point.y >= range.y &&
+            point.y < range.y + range.height);
+    }
+    intersects(range) {
+        const { x, y, width, height } = this.boundary;
+        return !(range.x > x + width ||
+            range.x + range.width < x ||
+            range.y > y + height ||
+            range.y + range.height < y);
+    }
+}
+
 const flowyCanvasCss = ":host{display:block}";
 
 const FlowyCanvas = class {
@@ -48,6 +128,7 @@ const FlowyCanvas = class {
         this._activeNodeDragStart = { x: 0, y: 0 };
         this._activeConnectorStartPos = { x: 0, y: 0 };
         this._needsRedraw = true;
+        this._connectorSnapDistance = 20;
         this._debouncedResize = debounce(() => this.onResize(), 16);
         this._debouncedUpdateScreen = debounce(() => this.updateScreen(), 1);
         // private _throttledPointerMove = throttle(e => this.onPointerMove(e), 1);
@@ -69,6 +150,12 @@ const FlowyCanvas = class {
         this.zoomSpeed = 0.08;
         this.zoom = 1;
         this.pan = { x: 0, y: 0 };
+    }
+    async getUid() {
+        return this._uid;
+    }
+    async destroy() {
+        global().unregisterViewport(this._uid);
     }
     componentDidLoad() {
         this._canvasEl = this.el.querySelector('.flowy-canvas');
@@ -94,6 +181,15 @@ const FlowyCanvas = class {
         });
         canvasEl.addEventListener('touchend', this._elTouchEnd, { passive: true });
         canvasEl.addEventListener('wheel', this._elWheel, { passive: false });
+        //create quadtree
+        const boundary = {
+            x: 0,
+            y: 0,
+            width: this._canvasRect.width,
+            height: this._canvasRect.height,
+        };
+        this._quadtree = new Quadtree(boundary, 4);
+        global().setViewportQuadtree(this._uid, this._quadtree);
         // Handle resize events
         this._resizeObserver = new ResizeObserver(() => this._debouncedResize());
         this._resizeObserver.observe(this._canvasEl);
@@ -112,6 +208,7 @@ const FlowyCanvas = class {
         canvasEl.removeEventListener('touchmove', this._elTouchMove);
         canvasEl.removeEventListener('touchend', this._elTouchEnd);
         canvasEl.removeEventListener('wheel', this._elWheel);
+        global().unregisterViewport(this._uid);
     }
     zoomChanged() {
         this._needsRedraw = true;
@@ -482,7 +579,7 @@ const FlowyCanvas = class {
         this._contentEl.style.display = cdisplay;
     }
     render() {
-        return (h(Host, { key: 'b9676c996ab984f2c1cce398a77c138203bc8f8c', id: this._uid }, h("div", { key: '208f0cf3c6163da65652963deae9b93468bebd55', class: "flowy-canvas" }, h("canvas", { key: '6f306a2f59a7d6a88a6ee1cd730bf5ee5fae6134', class: "flowy-grid" }), h("div", { key: '4c6e8ca88cd21bf6c01102cc82e24a6d494b8f2b', class: "flowy-content" }, h("slot", { key: '0ea766c65e8969da981f9b00d31f617716837570' })))));
+        return (h(Host, { key: '14a61b9ce9d7b1982f626c147686f981e353f9dd', id: this._uid }, h("div", { key: '29127ed84a9a5c52792b19be1f2dbb45879c76ae', class: "flowy-canvas" }, h("canvas", { key: '78668e158c872dc8dd9fb8c86f16b1e3578150a8', class: "flowy-grid" }), h("div", { key: '4cf5444d236e9d291ec81916b15116d0ec62161b', class: "flowy-content" }, h("slot", { key: '13b1d36f2b78c07cd4e3a4d0cccb38434b72e886' })))));
     }
     get el() { return getElement(this); }
     static get watchers() { return {

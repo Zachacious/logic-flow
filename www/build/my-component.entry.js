@@ -1,4 +1,4 @@
-import { r as registerInstance, h } from './index-d2e5e60a.js';
+import { r as registerInstance, h } from './index-c090f9ce.js';
 import { f as format } from './utils-11fcde98.js';
 
 const myComponentCss = ":host{display:block}";
@@ -14,7 +14,7 @@ const MyComponent = class {
         return format(this.first, this.middle, this.last);
     }
     render() {
-        return h("div", { key: '5b35cb1149c884968749aaf5264eecbe6c92eba1' }, "Hello, World! I'm ", this.getText());
+        return h("div", { key: 'd28f5ab8fea1df8903a26c436b10efef0b689f81' }, "Hello, World! I'm ", this.getText());
     }
 };
 MyComponent.style = myComponentCss;

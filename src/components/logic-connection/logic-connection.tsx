@@ -1,4 +1,4 @@
-import { Component, Host, Prop, Watch, h } from '@stencil/core';
+import { Component, Host, Method, Prop, Watch, h } from '@stencil/core';
 import { Point } from '../../types/Point';
 import { global } from '../../global';
 
@@ -27,6 +27,20 @@ export class LogicConnection {
     }
   }
 
+  disconnectedCallback() {
+    global().unregisterConnection(this._uid);
+  }
+
+  @Method()
+  async getUid() {
+    return this._uid;
+  }
+
+  @Method()
+  async destroy() {
+    global().unregisterConnection(this._uid);
+  }
+
   @Watch('start')
   @Watch('end')
   @Watch('type')
@@ -37,16 +51,17 @@ export class LogicConnection {
     };
     const distance = Math.sqrt(delta.x ** 2 + delta.y ** 2);
     const controlOffset = Math.min(100, distance * 0.35);
+    const capOffset = this._capRadius - 1;
 
     // Generate the path based on type
     if (this.type === 'output') {
       // Calculate start and end points for the path
       const startInset = {
-        x: this.start.x + this._capRadius,
+        x: this.start.x + capOffset,
         y: this.start.y,
       };
       const endInset = {
-        x: this.end.x - this._capRadius,
+        x: this.end.x - capOffset,
         y: this.end.y,
       };
 
@@ -57,11 +72,11 @@ export class LogicConnection {
     } else {
       // Calculate start and end points for the path
       const startInset = {
-        x: this.start.x - this._capRadius,
+        x: this.start.x - capOffset,
         y: this.start.y,
       };
       const endInset = {
-        x: this.end.x + this._capRadius,
+        x: this.end.x + capOffset,
         y: this.end.y,
       };
 

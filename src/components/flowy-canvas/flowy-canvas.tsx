@@ -1,10 +1,20 @@
-import { Component, Host, Prop, h, Element, State, Watch } from '@stencil/core';
+import {
+  Component,
+  Host,
+  Prop,
+  h,
+  Element,
+  State,
+  Watch,
+  Method,
+} from '@stencil/core';
 import { Point } from '../../types/Point';
 import { debounce } from '../../utils/debounce';
 import { throttle } from '../../utils/throttle';
 import { getEventLocation } from '../../utils/getEventLocation';
 import { nanoid } from 'nanoid';
 import { global } from '../../global';
+import { Quadtree } from '../../types/Quadtree';
 
 @Component({
   tag: 'flowy-canvas',
@@ -42,6 +52,9 @@ export class FlowyCanvas {
   private _gridEl: HTMLCanvasElement;
   private _needsRedraw: boolean = true;
   private _canvasRect: DOMRect;
+  private _quadtree: Quadtree;
+
+  private _connectorSnapDistance: number = 20;
 
   private _resizeObserver: ResizeObserver;
   private _debouncedResize = debounce(() => this.onResize(), 16);
@@ -62,6 +75,16 @@ export class FlowyCanvas {
   private _elTouchEnd = (e: MouseEvent | TouchEvent) => this.onPointerUp(e);
 
   private _elWheel = (e: WheelEvent) => this.handleWheel(e);
+
+  @Method()
+  async getUid() {
+    return this._uid;
+  }
+
+  @Method()
+  async destroy() {
+    global().unregisterViewport(this._uid);
+  }
 
   componentDidLoad() {
     this._canvasEl = this.el.querySelector('.flowy-canvas') as HTMLDivElement;
@@ -94,6 +117,17 @@ export class FlowyCanvas {
 
     canvasEl.addEventListener('wheel', this._elWheel, { passive: false });
 
+    //create quadtree
+    const boundary = {
+      x: 0,
+      y: 0,
+      width: this._canvasRect.width,
+      height: this._canvasRect.height,
+    };
+
+    this._quadtree = new Quadtree(boundary, 4);
+    global().setViewportQuadtree(this._uid, this._quadtree);
+
     // Handle resize events
     this._resizeObserver = new ResizeObserver(() => this._debouncedResize());
     this._resizeObserver.observe(this._canvasEl);
@@ -116,6 +150,8 @@ export class FlowyCanvas {
     canvasEl.removeEventListener('touchend', this._elTouchEnd);
 
     canvasEl.removeEventListener('wheel', this._elWheel);
+
+    global().unregisterViewport(this._uid);
   }
 
   @Watch('zoom')

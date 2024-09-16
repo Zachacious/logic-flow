@@ -13,6 +13,8 @@ export { LogicConnection } from "./components/logic-connection/logic-connection"
 export { Size } from "./types/Size";
 export namespace Components {
     interface FlowyCanvas {
+        "destroy": () => Promise<void>;
+        "getUid": () => Promise<string>;
         "gridBgColor": string;
         "gridLineColor": string;
         "gridSize": number;
@@ -31,16 +33,22 @@ export namespace Components {
         "zoomSpeed": number;
     }
     interface LogicConnection {
+        "destroy": () => Promise<void>;
         "end": Point;
+        "getUid": () => Promise<string>;
         "start": Point;
         "type": 'input' | 'output';
     }
     interface LogicConnector {
         "connectingConnector": LogicConnector | null;
         "connections": LogicConnection[];
+        "destroy": () => Promise<void>;
+        "getUid": () => Promise<string>;
         "type": 'input' | 'output';
     }
     interface LogicNode {
+        "destroy": () => Promise<void>;
+        "getUid": () => Promise<string>;
         "position": Point;
         "size": Size;
         "title": string;

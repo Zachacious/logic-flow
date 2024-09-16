@@ -1,4 +1,13 @@
-import { Component, Host, Prop, h, Element, State, Watch } from '@stencil/core';
+import {
+  Component,
+  Host,
+  Prop,
+  h,
+  Element,
+  State,
+  Watch,
+  Method,
+} from '@stencil/core';
 import { Point } from '../../types/Point';
 import { Size } from '../../types/Size';
 import { global } from '../../global';
@@ -20,12 +29,26 @@ export class LogicNode {
 
   private _uid: string = global().registerNode(this);
 
+  @Method()
+  async getUid() {
+    return this._uid;
+  }
+
+  @Method()
+  async destroy() {
+    global().unregisterNode(this._uid);
+  }
+
   componentWillLoad() {
     //  set initial size
     this.updateTransform();
     const rect = this.el.getBoundingClientRect();
     this.size = { width: rect.width, height: rect.height };
     this.position = { x: this.position.x, y: this.position.y };
+  }
+
+  disconnectedCallback() {
+    global().unregisterNode(this._uid);
   }
 
   @Watch('position')
