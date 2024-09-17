@@ -1,5 +1,5 @@
 import { r as registerInstance, h, a as Host } from './index-c090f9ce.js';
-import { g as global } from './global-4b3b539c.js';
+import { g as global } from './global-ed0ca1da.js';
 
 const logicConnectionCss = ":host{display:block}";
 
@@ -38,16 +38,16 @@ const LogicConnection = class {
         };
         const distance = Math.sqrt(delta.x ** 2 + delta.y ** 2);
         const controlOffset = Math.min(100, distance * 0.35);
-        const capOffset = this._capRadius - 1;
+        const capOffset = this._capRadius;
         // Generate the path based on type
         if (this.type === 'output') {
             // Calculate start and end points for the path
             const startInset = {
-                x: this.start.x + capOffset,
+                x: this.start.x + capOffset - 1,
                 y: this.start.y,
             };
             const endInset = {
-                x: this.end.x - capOffset,
+                x: this.end.x - capOffset + 1,
                 y: this.end.y,
             };
             this.path = `M ${startInset.x},${startInset.y}
@@ -58,11 +58,11 @@ const LogicConnection = class {
         else {
             // Calculate start and end points for the path
             const startInset = {
-                x: this.start.x - capOffset,
+                x: this.start.x - capOffset + 1,
                 y: this.start.y,
             };
             const endInset = {
-                x: this.end.x + capOffset,
+                x: this.end.x + capOffset - 1,
                 y: this.end.y,
             };
             this.path = `M ${startInset.x},${startInset.y}
@@ -72,7 +72,7 @@ const LogicConnection = class {
         }
     }
     render() {
-        return (h(Host, { key: 'ac97a055911ccba1da29db32c1075e6ab296b8b7', class: "logic-connection", id: this._uid }, h("svg", { key: 'bd704960a2b76945dc19b9b89581a9476761ddba', class: "connection" }, h("path", { key: '61b07d0b05888cd319d81add7383fe3820ec50b9', class: "connection-line", d: this.path }), h("circle", { key: '3167af23f84c677258ba2148ab6083a76584a8d0', cx: this.start.x, cy: this.start.y, r: "1px", class: "connection-cap start-cap" }), h("circle", { key: '1905fedb74dbb05b223d5925985bb878e0c1d9c3', cx: this.end.x, cy: this.end.y, r: "1px", class: "connection-cap end-cap" }))));
+        return (h(Host, { key: 'c2fb8c9924e6fe3488ba140ff939b4ad9eb943c3', class: "logic-connection", id: this._uid }, h("svg", { key: '351f81809030d3bf050ea5a34caecf973a6e9b3f', class: "connection" }, h("path", { key: 'b560d4ecc81b7ea6fa6e9c38dedbacfd86435840', class: "connection-line", d: this.path }), h("circle", { key: 'c70b82c86dd8d94bc1f51b70aec35afc81b68274', cx: this.start.x, cy: this.start.y, r: "1px", class: "connection-cap start-cap" }), h("circle", { key: 'afc97ce85fdad2ed5cceb58f1d2ca96ea41fd3a0', cx: this.end.x, cy: this.end.y, r: "1px", class: "connection-cap end-cap" }))));
     }
     static get watchers() { return {
         "start": ["updatePath"],

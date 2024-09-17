@@ -1,5 +1,5 @@
 import { Component, Host, Prop, h, Element, State, Watch } from '@stencil/core';
-import { Point } from '../types/Point';
+import { Coords } from '../types/Coords';
 import { debounce } from '../utils/debounce';
 import { throttle } from '../utils/throttle';
 import interact from 'interactjs';
@@ -20,14 +20,17 @@ export class FlowyCanvasOld {
   @Prop() zoomSpeed: number = 0.05;
 
   @State() zoom: number = 1;
-  @State() pan: Point = { x: 0, y: 0 };
+  @State() pan: Coords = { x: 0, y: 0 };
   private _lastZoom: number = 1;
   private _initialZoom: number = 1;
   // private _lastPan: Point = { x: 0, y: 0 };
   private _initialPinchDistance: number = 0;
   private _isDragging: boolean = false;
-  private _dragStart: Point = { x: 0, y: 0 };
-  private _renderGridData: { lastPan: Point; lastZoom: number } = { lastPan: { x: 0, y: 0 }, lastZoom: 1 };
+  private _dragStart: Coords = { x: 0, y: 0 };
+  private _renderGridData: { lastPan: Coords; lastZoom: number } = {
+    lastPan: { x: 0, y: 0 },
+    lastZoom: 1,
+  };
 
   private _canvasEl: HTMLDivElement;
   private _contentEl: HTMLDivElement;
@@ -69,9 +72,17 @@ export class FlowyCanvasOld {
       });
 
     // Add custom mouse and touch event listeners for middle mouse panning and scroll wheel zoom
-    this._canvasEl.addEventListener('wheel', this.handleWheelZoom.bind(this), { passive: false });
-    this._canvasEl.addEventListener('mousedown', this.handleMiddleMousePan.bind(this), { passive: true });
-    this._canvasEl.addEventListener('mouseup', this.onPointerUp.bind(this), { passive: true });
+    this._canvasEl.addEventListener('wheel', this.handleWheelZoom.bind(this), {
+      passive: false,
+    });
+    this._canvasEl.addEventListener(
+      'mousedown',
+      this.handleMiddleMousePan.bind(this),
+      { passive: true },
+    );
+    this._canvasEl.addEventListener('mouseup', this.onPointerUp.bind(this), {
+      passive: true,
+    });
 
     // throttled mousemove event for performance
     // const throttledPointerMove = throttle(e => this.onPointerMove(e), 30);
@@ -100,8 +111,14 @@ export class FlowyCanvasOld {
       this._resizeObserver.disconnect();
     }
 
-    this._canvasEl.removeEventListener('wheel', this.handleWheelZoom.bind(this));
-    this._canvasEl.removeEventListener('mousedown', this.handleMiddleMousePan.bind(this));
+    this._canvasEl.removeEventListener(
+      'wheel',
+      this.handleWheelZoom.bind(this),
+    );
+    this._canvasEl.removeEventListener(
+      'mousedown',
+      this.handleMiddleMousePan.bind(this),
+    );
     this._canvasEl.removeEventListener('mouseup', this.onPointerUp.bind(this));
 
     // Clean up event listeners
@@ -344,7 +361,10 @@ export class FlowyCanvasOld {
   // Interact.js gesture handlers for panning and pinch-to-zoom
   onDragStart(event) {
     this._isDragging = true;
-    this._dragStart = { x: event.clientX / this.zoom - this.pan.x, y: event.clientY / this.zoom - this.pan.y };
+    this._dragStart = {
+      x: event.clientX / this.zoom - this.pan.x,
+      y: event.clientY / this.zoom - this.pan.y,
+    };
   }
 
   onDragMove(event) {
@@ -383,7 +403,10 @@ export class FlowyCanvasOld {
     event.preventDefault();
 
     const zoomDelta = event.deltaY < 0 ? this.zoomSpeed : -this.zoomSpeed;
-    const newZoom = Math.min(this.maxZoom, Math.max(this.minZoom, this.zoom + zoomDelta));
+    const newZoom = Math.min(
+      this.maxZoom,
+      Math.max(this.minZoom, this.zoom + zoomDelta),
+    );
 
     const canvasRect = this._canvasEl.getBoundingClientRect();
     const mouseX = event.clientX - canvasRect.left;
@@ -404,9 +427,16 @@ export class FlowyCanvasOld {
     if (event.button === 1) {
       // Middle mouse button
       this._isDragging = true;
-      this._dragStart = { x: event.clientX / this.zoom - this.pan.x, y: event.clientY / this.zoom - this.pan.y };
-      document.addEventListener('mousemove', this.onDragMove.bind(this), { passive: true });
-      document.addEventListener('mouseup', this.onPointerUp.bind(this), { passive: true });
+      this._dragStart = {
+        x: event.clientX / this.zoom - this.pan.x,
+        y: event.clientY / this.zoom - this.pan.y,
+      };
+      document.addEventListener('mousemove', this.onDragMove.bind(this), {
+        passive: true,
+      });
+      document.addEventListener('mouseup', this.onPointerUp.bind(this), {
+        passive: true,
+      });
     }
   }
 
@@ -419,16 +449,24 @@ export class FlowyCanvasOld {
   // Adjust zoom based on scale or pinch
   adjustZoom(amount, scale, zoomCenter) {
     if (amount !== 0) {
-      const newZoom = Math.min(this.maxZoom, Math.max(this.minZoom, this.zoom + amount));
+      const newZoom = Math.min(
+        this.maxZoom,
+        Math.max(this.minZoom, this.zoom + amount),
+      );
       this.zoom = newZoom;
     } else if (scale !== 1) {
-      const newZoom = Math.min(this.maxZoom, Math.max(this.minZoom, this._initialZoom * scale));
+      const newZoom = Math.min(
+        this.maxZoom,
+        Math.max(this.minZoom, this._initialZoom * scale),
+      );
       this.zoom = newZoom;
 
       if (zoomCenter) {
         const scaleFactor = newZoom / this._initialZoom;
-        const newPanX = zoomCenter.x - (zoomCenter.x - this.pan.x * this.zoom) * scaleFactor;
-        const newPanY = zoomCenter.y - (zoomCenter.y - this.pan.y * this.zoom) * scaleFactor;
+        const newPanX =
+          zoomCenter.x - (zoomCenter.x - this.pan.x * this.zoom) * scaleFactor;
+        const newPanY =
+          zoomCenter.y - (zoomCenter.y - this.pan.y * this.zoom) * scaleFactor;
         this.pan = { x: newPanX / newZoom, y: newPanY / newZoom };
       }
     }

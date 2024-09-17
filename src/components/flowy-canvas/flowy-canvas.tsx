@@ -8,13 +8,13 @@ import {
   Watch,
   Method,
 } from '@stencil/core';
-import { Point } from '../../types/Point';
+import { Coords } from '../../types/Coords';
 import { debounce } from '../../utils/debounce';
 import { throttle } from '../../utils/throttle';
 import { getEventLocation } from '../../utils/getEventLocation';
-import { nanoid } from 'nanoid';
 import { global } from '../../global';
 import { Quadtree } from '../../types/Quadtree';
+import { Camera } from '../../types/Camera';
 
 @Component({
   tag: 'flowy-canvas',
@@ -32,19 +32,20 @@ export class FlowyCanvas {
   @Prop() minZoom: number = 0.2;
   @Prop() zoomSpeed: number = 0.08;
 
-  @State() zoom: number = 1;
-  @State() pan: Point = { x: 0, y: 0 };
+  // @State() zoom: number = 1;
+  // @State() pan: Coords = { x: 0, y: 0 };
+  camera: Camera;
 
   private _uid: string = global().registerViewport(this);
   private _initialPinchDistance: number = 0;
   private _isDragging: boolean = false;
-  private _dragStart: Point = { x: 0, y: 0 };
+  private _dragStart: Coords = { x: 0, y: 0 };
 
   private _activeNode: HTMLLogicNodeElement;
   private _activeNodeDragging: boolean = false;
-  private _activeNodeDragStart: Point = { x: 0, y: 0 };
+  private _activeNodeDragStart: Coords = { x: 0, y: 0 };
   private _activeConnector: HTMLLogicConnectorElement;
-  private _activeConnectorStartPos: Point = { x: 0, y: 0 };
+  private _activeConnectorStartPos: Coords = { x: 0, y: 0 };
   private _activeConnection: HTMLLogicConnectionElement;
 
   private _canvasEl: HTMLDivElement;
@@ -92,6 +93,8 @@ export class FlowyCanvas {
     this._gridEl = this.el.querySelector('.flowy-grid') as HTMLCanvasElement;
 
     this._canvasRect = this._canvasEl.getBoundingClientRect();
+
+    this.camera = global().camera;
 
     const canvasEl = this._canvasEl;
     this.renderGridLines();
@@ -154,17 +157,22 @@ export class FlowyCanvas {
     global().unregisterViewport(this._uid);
   }
 
-  @Watch('zoom')
-  zoomChanged() {
-    this._needsRedraw = true;
-    // this.updateScreen();
-    this._debouncedUpdateScreen();
-  }
+  // @Watch('zoom')
+  // zoomChanged() {
+  //   this._needsRedraw = true;
+  //   // this.updateScreen();
+  //   this._debouncedUpdateScreen();
+  // }
 
-  @Watch('pan')
-  panChanged() {
+  // @Watch('pan')
+  // panChanged() {
+  //   this._needsRedraw = true;
+  //   // this.updateScreen();
+  //   this._debouncedUpdateScreen();
+  // }
+
+  scheduleComponentUpdate() {
     this._needsRedraw = true;
-    // this.updateScreen();
     this._debouncedUpdateScreen();
   }
 
@@ -172,6 +180,14 @@ export class FlowyCanvas {
     this._needsRedraw = true;
     this._canvasRect = this._canvasEl.getBoundingClientRect();
     this.renderGridLines();
+    // update quadtree boundary
+    const boundary = {
+      x: 0,
+      y: 0,
+      width: this._canvasRect.width,
+      height: this._canvasRect.height,
+    };
+    this._quadtree.boundary = boundary;
   }
 
   renderGridLines() {
@@ -182,7 +198,7 @@ export class FlowyCanvas {
       const ctx = canvasEl.getContext('2d');
       const width = this._canvasRect.width;
       const height = this._canvasRect.height;
-      const step = this.gridSize * this.zoom;
+      const step = this.gridSize * this.camera.zoom;
 
       const dpr = window.devicePixelRatio || 1;
       canvasEl.width = width * dpr;
@@ -196,8 +212,10 @@ export class FlowyCanvas {
       ctx.fillStyle = this.gridBgColor;
       ctx.fillRect(0, 0, width, height);
 
-      const panOffsetX = (-this.pan.x % this.gridSize) * this.zoom;
-      const panOffsetY = (-this.pan.y % this.gridSize) * this.zoom;
+      const panOffsetX =
+        (-this.camera.pos.x % this.gridSize) * this.camera.zoom;
+      const panOffsetY =
+        (-this.camera.pos.y % this.gridSize) * this.camera.zoom;
 
       ctx.beginPath();
 
@@ -223,27 +241,28 @@ export class FlowyCanvas {
     requestAnimationFrame(() => {
       const contentEl = this._contentEl;
       // Apply transformations to the content, aligning with the grid
-      contentEl.style.transform = `perspective(1px) scale(${this.zoom}) translate(${this.pan.x}px, ${this.pan.y}px)`;
+      contentEl.style.transform = `perspective(1px) scale(${this.camera.zoom}) translate(${this.camera.pos.x}px, ${this.camera.pos.y}px)`;
       this.renderGridLines();
     });
   }
 
-  // get location from event data for mouse or touch
-  getEventLocation(event: MouseEvent | TouchEvent) {
-    if (event instanceof TouchEvent) {
-      if (event.touches && event.touches[0]) {
-        return { x: event.touches[0].clientX, y: event.touches[0].clientY };
-      }
-    } else {
-      return { x: event.clientX, y: event.clientY };
-    }
-  }
+  // // get location from event data for mouse or touch
+  // getEventLocation(event: MouseEvent | TouchEvent) {
+  //   if (event instanceof TouchEvent) {
+  //     if (event.touches && event.touches[0]) {
+  //       return { x: event.touches[0].clientX, y: event.touches[0].clientY };
+  //     }
+  //   } else {
+  //     return { x: event.clientX, y: event.clientY };
+  //   }
+  // }
 
   onPointerDown(event: MouseEvent | TouchEvent) {
     // if(event.target.hasPointerCapture(event.pointerId)) {
     //   event.target.releasePointerCapture(event.pointerId);
     // }
     const loc = getEventLocation(event);
+    const worldCoords = this.camera.toWorldCoords(loc);
 
     let target = event.target as HTMLElement;
     // if (event instanceof TouchEvent) {
@@ -288,9 +307,13 @@ export class FlowyCanvas {
       // const rect = this._activeNode.getBoundingClientRect();
       const pos = this._activeNode.position;
       this._activeNodeDragStart = {
-        x: loc.x / this.zoom - pos.x - this.pan.x,
-        y: loc.y / this.zoom - pos.y - this.pan.y,
+        x: loc.x / this.camera.zoom - pos.x - this.camera.pos.x,
+        y: loc.y / this.camera.zoom - pos.y - this.camera.pos.y,
       };
+      // this._activeNodeDragStart = {
+      //   x: worldCoords.x - pos.x,
+      //   y: worldCoords.y - pos.y,
+      // };
       this._activeNodeDragging = true;
 
       return;
@@ -299,9 +322,15 @@ export class FlowyCanvas {
     this._isDragging = true;
 
     this._dragStart = {
-      x: loc.x / this.zoom - this.pan.x,
-      y: loc.y / this.zoom - this.pan.y,
+      x: loc.x / this.camera.zoom - this.camera.pos.x,
+      y: loc.y / this.camera.zoom - this.camera.pos.y,
     };
+    // this._dragStart = this.camera.toScreenCoords(loc);
+    // console.log(
+    //   'drag start',
+    //   this._dragStart,
+    //   this.camera.toScreenCoords({ ...loc }),
+    // );
   }
 
   onPointerUp(event: MouseEvent | TouchEvent) {
@@ -398,30 +427,58 @@ export class FlowyCanvas {
 
     this._isDragging = false;
     this._initialPinchDistance = 0;
-    // this._lastZoom = this.zoom;
+    // this._lastZoom = this.camera.zoom;
     this._activeNode = null;
     this._activeNodeDragging = false;
   }
 
   onPointerMove(event: MouseEvent | TouchEvent) {
+    const loc = getEventLocation(event);
+    const worldCoords = this.camera.toWorldCoords(loc);
+
     if (this._activeConnector && this._activeConnection) {
       const aConn = this._activeConnection;
       requestAnimationFrame(() => {
-        const loc = getEventLocation(event);
-        const pos = {
-          x: loc.x / this.zoom - this.pan.x,
-          y: loc.y / this.zoom - this.pan.y,
-        };
-        aConn.end = pos;
+        const snappableConnector = this._quadtree.checkNearby(
+          loc.x,
+          loc.y,
+          25 * this.camera.zoom,
+          this.camera.pos,
+          this.camera.zoom,
+        );
+        if (snappableConnector) {
+          const rect = global().connectorRects[snappableConnector.id];
+          const pos = {
+            x: rect.left + rect.width / 2,
+            y: rect.top + rect.height / 2,
+          };
+          aConn.end = pos;
+        } else {
+          // const pos = worldCoords;
+          // const pos = this.camera.toScreenCoords(loc);
+          const pos = {
+            x: loc.x / this.camera.zoom - this.camera.pos.x,
+            y: loc.y / this.camera.zoom - this.camera.pos.y,
+          };
+          aConn.end = pos;
+        }
       });
       return;
     } else if (this._activeNode && this._activeNodeDragging) {
       const aNode = this._activeNode;
       // requestAnimationFrame(() => {
-      const loc = getEventLocation(event);
+      // const loc = getEventLocation(event);
       const aNodeOldPos = aNode.position;
-      const newX = loc.x / this.zoom - this._activeNodeDragStart.x - this.pan.x;
-      const newY = loc.y / this.zoom - this._activeNodeDragStart.y - this.pan.y;
+      const newX =
+        loc.x / this.camera.zoom -
+        this._activeNodeDragStart.x -
+        this.camera.pos.x;
+      const newY =
+        loc.y / this.camera.zoom -
+        this._activeNodeDragStart.y -
+        this.camera.pos.y;
+      // const newX = worldCoords.x - this._activeNodeDragStart.x;
+      // const newY = worldCoords.y - this._activeNodeDragStart.y;
 
       // update connections
       const connectors = aNode.querySelectorAll(
@@ -473,12 +530,13 @@ export class FlowyCanvas {
     }
 
     if (this._isDragging) {
-      // this._lastPan = this.pan;
+      // this._lastPan = this.camera.pos;
       const loc = getEventLocation(event);
-      this.pan = {
-        x: loc.x / this.zoom - this._dragStart.x,
-        y: loc.y / this.zoom - this._dragStart.y,
+      this.camera.pos = {
+        x: loc.x / this.camera.zoom - this._dragStart.x,
+        y: loc.y / this.camera.zoom - this._dragStart.y,
       };
+      this.scheduleComponentUpdate();
     }
   }
 
@@ -493,27 +551,30 @@ export class FlowyCanvas {
     const zoomDelta = event.deltaY < 0 ? this.zoomSpeed : -this.zoomSpeed;
     const newZoom = Math.min(
       this.maxZoom,
-      Math.max(this.minZoom, this.zoom + zoomDelta),
+      Math.max(this.minZoom, this.camera.zoom + zoomDelta),
     );
 
     // Calculate the scale factor
-    const scaleFactor = newZoom / this.zoom;
+    const scaleFactor = newZoom / this.camera.zoom;
 
     // Adjust the pan position to keep the same point under the cursor
-    const newPanX = mouseX - (mouseX - this.pan.x * this.zoom) * scaleFactor;
-    const newPanY = mouseY - (mouseY - this.pan.y * this.zoom) * scaleFactor;
+    const newPanX =
+      mouseX - (mouseX - this.camera.pos.x * this.camera.zoom) * scaleFactor;
+    const newPanY =
+      mouseY - (mouseY - this.camera.pos.y * this.camera.zoom) * scaleFactor;
 
     // Update pan and zoom
-    this.pan = { x: newPanX / newZoom, y: newPanY / newZoom };
-    // this._lastZoom = this.zoom;
-    this.zoom = newZoom;
+    this.camera.pos = { x: newPanX / newZoom, y: newPanY / newZoom };
+    // this._lastZoom = this.camera.zoom;
+    this.camera.zoom = newZoom;
 
     // if zooming in, force a reflow to prevent blurry text
     if (zoomDelta > 0) {
       this._forceContentReflowDebounced();
     }
 
-    this._needsRedraw = true;
+    // this._needsRedraw = true;
+    this.scheduleComponentUpdate();
   }
 
   handleTouchStart(event: TouchEvent) {
@@ -581,21 +642,23 @@ export class FlowyCanvas {
     // Calculate new zoom, ensuring it stays within min/max bounds
     const newZoom = Math.min(
       this.maxZoom,
-      Math.max(this.minZoom, this.zoom * scaleFactor),
+      Math.max(this.minZoom, this.camera.zoom * scaleFactor),
     );
 
     // Find the pinch center position relative to the content's current position and zoom
-    const pinchContentX = (pinchCenterX - this.pan.x * this.zoom) / this.zoom;
-    const pinchContentY = (pinchCenterY - this.pan.y * this.zoom) / this.zoom;
+    const pinchContentX =
+      (pinchCenterX - this.camera.pos.x * this.camera.zoom) / this.camera.zoom;
+    const pinchContentY =
+      (pinchCenterY - this.camera.pos.y * this.camera.zoom) / this.camera.zoom;
 
     // Adjust pan so the pinch center stays fixed after zooming
-    this.pan = {
+    this.camera.pos = {
       x: pinchCenterX / newZoom - pinchContentX,
       y: pinchCenterY / newZoom - pinchContentY,
     };
 
     // Apply the new zoom level
-    this.zoom = newZoom;
+    this.camera.zoom = newZoom;
 
     // Trigger a screen redraw
     this._debouncedUpdateScreen();

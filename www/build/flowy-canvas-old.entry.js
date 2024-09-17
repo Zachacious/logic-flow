@@ -54,7 +54,10 @@ const FlowyCanvasOld = class {
         this._initialPinchDistance = 0;
         this._isDragging = false;
         this._dragStart = { x: 0, y: 0 };
-        this._renderGridData = { lastPan: { x: 0, y: 0 }, lastZoom: 1 };
+        this._renderGridData = {
+            lastPan: { x: 0, y: 0 },
+            lastZoom: 1,
+        };
         this._needsRedraw = true;
         // Debounced version of the onResize method
         this._debouncedResize = debounce(() => this.onResize(), 200);
@@ -95,9 +98,13 @@ const FlowyCanvasOld = class {
             },
         });
         // Add custom mouse and touch event listeners for middle mouse panning and scroll wheel zoom
-        this._canvasEl.addEventListener('wheel', this.handleWheelZoom.bind(this), { passive: false });
+        this._canvasEl.addEventListener('wheel', this.handleWheelZoom.bind(this), {
+            passive: false,
+        });
         this._canvasEl.addEventListener('mousedown', this.handleMiddleMousePan.bind(this), { passive: true });
-        this._canvasEl.addEventListener('mouseup', this.onPointerUp.bind(this), { passive: true });
+        this._canvasEl.addEventListener('mouseup', this.onPointerUp.bind(this), {
+            passive: true,
+        });
         // throttled mousemove event for performance
         // const throttledPointerMove = throttle(e => this.onPointerMove(e), 30);
         // const throttledTouchMove = throttle((e, fun) => this.handleTouch(e, fun(e)), 30);
@@ -319,7 +326,10 @@ const FlowyCanvasOld = class {
     // Interact.js gesture handlers for panning and pinch-to-zoom
     onDragStart(event) {
         this._isDragging = true;
-        this._dragStart = { x: event.clientX / this.zoom - this.pan.x, y: event.clientY / this.zoom - this.pan.y };
+        this._dragStart = {
+            x: event.clientX / this.zoom - this.pan.x,
+            y: event.clientY / this.zoom - this.pan.y,
+        };
     }
     onDragMove(event) {
         if (this._isDragging) {
@@ -368,9 +378,16 @@ const FlowyCanvasOld = class {
         if (event.button === 1) {
             // Middle mouse button
             this._isDragging = true;
-            this._dragStart = { x: event.clientX / this.zoom - this.pan.x, y: event.clientY / this.zoom - this.pan.y };
-            document.addEventListener('mousemove', this.onDragMove.bind(this), { passive: true });
-            document.addEventListener('mouseup', this.onPointerUp.bind(this), { passive: true });
+            this._dragStart = {
+                x: event.clientX / this.zoom - this.pan.x,
+                y: event.clientY / this.zoom - this.pan.y,
+            };
+            document.addEventListener('mousemove', this.onDragMove.bind(this), {
+                passive: true,
+            });
+            document.addEventListener('mouseup', this.onPointerUp.bind(this), {
+                passive: true,
+            });
         }
     }
     onPointerUp(event) {
@@ -398,7 +415,7 @@ const FlowyCanvasOld = class {
         this._debouncedUpdateScreen();
     }
     render() {
-        return (h(Host, { key: '7f207f178943684b6950031aa11b75560868cd4f' }, h("div", { key: '9b339727c82fd30edced0d1aa240442f2475a749', class: "flowy-canvas" }, h("canvas", { key: '86e7bb37964e32fc824f3d7d6a3bb7fd580ede39', class: "flowy-grid" }), h("div", { key: '7d88ad4e4c1d9e5727d3e14f3be01df7d89721b1', class: "flowy-content" }, h("slot", { key: 'c90f2c86be841cc39ba8de58fcfa44f1f4bb5e50' })))));
+        return (h(Host, { key: '0242b556302e5a4f52887170cf12c2ec6b4ff7dc' }, h("div", { key: 'b5c920a01e5518c380fd7c01543f7cd09d97c3c5', class: "flowy-canvas" }, h("canvas", { key: '6190deecfe0056526fca985fcb5d5a04e305ce1c', class: "flowy-grid" }), h("div", { key: '9f29e59e4b31c2e5a33e264982df1cfa82079d4f', class: "flowy-content" }, h("slot", { key: '87010e0904808716ece2088a039ecd264313615f' })))));
     }
     get el() { return getElement(this); }
     static get watchers() { return {

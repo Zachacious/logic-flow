@@ -28,12 +28,33 @@ let nanoid = (size = 21) => {
   return id
 };
 
+class Camera {
+    constructor() {
+        this.uid = nanoid();
+        this.pos = { x: 0, y: 0 };
+        this.zoom = 1;
+    }
+    toScreenCoords(worldCoords) {
+        return {
+            x: (worldCoords.x - this.pos.x) * this.zoom,
+            y: (worldCoords.y - this.pos.y) * this.zoom,
+        };
+    }
+    toWorldCoords(screenCoords) {
+        return {
+            x: screenCoords.x / this.zoom - this.pos.x,
+            y: screenCoords.y / this.zoom - this.pos.y,
+        };
+    }
+}
+
 const viewports = new Map();
 const nodes = new Map();
 const connectors = new Map();
 const connections = new Map();
 const connectorRects = {};
-const quadTrees = new Map();
+const connectorQuadTrees = new Map();
+const camera = new Camera();
 const global = () => {
     const registerViewport = (canvas) => {
         const id = nanoid();
@@ -43,9 +64,9 @@ const global = () => {
     const unregisterViewport = (id) => {
         viewports.delete(id);
         // check for and remove quadtree
-        const quadtree = quadTrees.get(id);
+        const quadtree = connectorQuadTrees.get(id);
         if (quadtree) {
-            quadTrees.delete(id);
+            connectorQuadTrees.delete(id);
         }
     };
     const registerNode = (node) => {
@@ -100,7 +121,7 @@ const global = () => {
     const getConnector = (id) => connectors.get(id);
     const getConnection = (id) => connections.get(id);
     const setViewportQuadtree = (id, quadtree) => {
-        quadTrees.set(id, quadtree);
+        connectorQuadTrees.set(id, quadtree);
     };
     return {
         registerViewport,
@@ -117,10 +138,11 @@ const global = () => {
         getConnection,
         setViewportQuadtree,
         connectorRects,
-        quadTrees,
+        connectorQuadTrees,
+        camera,
     };
 };
 
 export { global as g };
 
-//# sourceMappingURL=global-4b3b539c.js.map
+//# sourceMappingURL=global-ed0ca1da.js.map

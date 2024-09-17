@@ -5,10 +5,10 @@
  * It contains typing information for all components that exist in this project.
  */
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
-import { Point } from "./types/Point";
+import { Coords } from "./types/Coords";
 import { LogicConnection } from "./components/logic-connection/logic-connection";
 import { Size } from "./types/Size";
-export { Point } from "./types/Point";
+export { Coords } from "./types/Coords";
 export { LogicConnection } from "./components/logic-connection/logic-connection";
 export { Size } from "./types/Size";
 export namespace Components {
@@ -34,9 +34,9 @@ export namespace Components {
     }
     interface LogicConnection {
         "destroy": () => Promise<void>;
-        "end": Point;
+        "end": Coords;
         "getUid": () => Promise<string>;
-        "start": Point;
+        "start": Coords;
         "type": 'input' | 'output';
     }
     interface LogicConnector {
@@ -45,11 +45,12 @@ export namespace Components {
         "destroy": () => Promise<void>;
         "getUid": () => Promise<string>;
         "type": 'input' | 'output';
+        "updateQuadtree": () => Promise<void>;
     }
     interface LogicNode {
         "destroy": () => Promise<void>;
         "getUid": () => Promise<string>;
-        "position": Point;
+        "position": Coords;
         "size": Size;
         "title": string;
         "type": string;
@@ -135,8 +136,8 @@ declare namespace LocalJSX {
         "zoomSpeed"?: number;
     }
     interface LogicConnection {
-        "end"?: Point;
-        "start"?: Point;
+        "end"?: Coords;
+        "start"?: Coords;
         "type"?: 'input' | 'output';
     }
     interface LogicConnector {
@@ -145,7 +146,7 @@ declare namespace LocalJSX {
         "type"?: 'input' | 'output';
     }
     interface LogicNode {
-        "position"?: Point;
+        "position"?: Coords;
         "size"?: Size;
         "title"?: string;
         "type"?: string;

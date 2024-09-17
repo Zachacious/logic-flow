@@ -1,5 +1,5 @@
 import { Component, Host, Method, Prop, Watch, h } from '@stencil/core';
-import { Point } from '../../types/Point';
+import { Coords } from '../../types/Coords';
 import { global } from '../../global';
 
 @Component({
@@ -8,8 +8,8 @@ import { global } from '../../global';
   shadow: false,
 })
 export class LogicConnection {
-  @Prop() start: Point = { x: 0, y: 0 };
-  @Prop() end: Point = { x: 0, y: 0 };
+  @Prop() start: Coords = { x: 0, y: 0 };
+  @Prop() end: Coords = { x: 0, y: 0 };
   @Prop() type: 'input' | 'output' = 'input';
 
   path: string;
@@ -51,17 +51,17 @@ export class LogicConnection {
     };
     const distance = Math.sqrt(delta.x ** 2 + delta.y ** 2);
     const controlOffset = Math.min(100, distance * 0.35);
-    const capOffset = this._capRadius - 1;
+    const capOffset = this._capRadius;
 
     // Generate the path based on type
     if (this.type === 'output') {
       // Calculate start and end points for the path
       const startInset = {
-        x: this.start.x + capOffset,
+        x: this.start.x + capOffset - 1,
         y: this.start.y,
       };
       const endInset = {
-        x: this.end.x - capOffset,
+        x: this.end.x - capOffset + 1,
         y: this.end.y,
       };
 
@@ -72,11 +72,11 @@ export class LogicConnection {
     } else {
       // Calculate start and end points for the path
       const startInset = {
-        x: this.start.x - capOffset,
+        x: this.start.x - capOffset + 1,
         y: this.start.y,
       };
       const endInset = {
-        x: this.end.x + capOffset,
+        x: this.end.x + capOffset - 1,
         y: this.end.y,
       };
 

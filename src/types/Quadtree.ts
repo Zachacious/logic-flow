@@ -1,7 +1,7 @@
 interface Point {
   x: number;
   y: number;
-  connectorId: string; // Unique ID of the connector
+  id: string; // Unique ID of the connector
 }
 
 interface BoundingBox {
@@ -80,6 +80,47 @@ export class Quadtree {
     }
   }
 
+  insertItems(points: Point[]): void {
+    for (let point of points) {
+      this.insert(point);
+    }
+  }
+
+  remove(id: string): boolean {
+    const removeFromNode = (node: Quadtree | null): boolean => {
+      if (node === null) return false;
+
+      // Remove points from the node
+      node.points = node.points.filter(point => point.id !== id);
+
+      // Recursively remove from child nodes
+      const removed =
+        removeFromNode(node.northwest) ||
+        removeFromNode(node.northeast) ||
+        removeFromNode(node.southwest) ||
+        removeFromNode(node.southeast);
+
+      // If no points in the node and no children have points, remove the node
+      if (node.points.length === 0 && !node.divided) {
+        node.northwest =
+          node.northeast =
+          node.southwest =
+          node.southeast =
+            null;
+      }
+
+      return removed;
+    };
+
+    return removeFromNode(this);
+  }
+
+  removeItems(ids: string[]): void {
+    for (let id of ids) {
+      this.remove(id);
+    }
+  }
+
   contains(point: Point): boolean {
     const { x, y, width, height } = this.boundary;
     return (
@@ -90,31 +131,48 @@ export class Quadtree {
     );
   }
 
-  query(range: BoundingBox, found: Point[] = []): Point[] {
+  query(
+    range: BoundingBox,
+    found: Point[] = [],
+    pan: { x: number; y: number },
+    zoom: number,
+  ): Point[] {
     if (!this.intersects(range)) return found;
 
     for (let point of this.points) {
-      if (this.inRange(point, range)) {
+      if (this.inRange(point, range, pan, zoom)) {
         found.push(point);
       }
     }
 
     if (this.divided) {
-      this.northwest!.query(range, found);
-      this.northeast!.query(range, found);
-      this.southwest!.query(range, found);
-      this.southeast!.query(range, found);
+      this.northwest!.query(range, found, pan, zoom);
+      this.northeast!.query(range, found, pan, zoom);
+      this.southwest!.query(range, found, pan, zoom);
+      this.southeast!.query(range, found, pan, zoom);
     }
 
     return found;
   }
 
-  inRange(point: Point, range: BoundingBox): boolean {
+  inRange(
+    point: Point,
+    range: BoundingBox,
+    pan: { x: number; y: number },
+    zoom: number,
+  ): boolean {
+    // Adjust the point position relative to pan and zoom
+    const adjPoint = {
+      x: (point.x + pan.x) * zoom,
+      y: (point.y + pan.y) * zoom,
+    };
+
+    // Check if the adjusted point is within the adjusted range
     return (
-      point.x >= range.x &&
-      point.x < range.x + range.width &&
-      point.y >= range.y &&
-      point.y < range.y + range.height
+      adjPoint.x >= range.x &&
+      adjPoint.x < range.x + range.width &&
+      adjPoint.y >= range.y &&
+      adjPoint.y < range.y + range.height
     );
   }
 
@@ -126,5 +184,29 @@ export class Quadtree {
       range.y > y + height ||
       range.y + range.height < y
     );
+  }
+
+  checkNearby(
+    x: number,
+    y: number,
+    range: number,
+    pan: { x: number; y: number },
+    zoom: number,
+  ) {
+    const bounds = {
+      x: x - range / 2,
+      y: y - range / 2,
+      width: range,
+      height: range,
+    };
+
+    const nearby = this.query(bounds, [], pan, zoom);
+
+    if (nearby.length > 0) {
+      const nearest = nearby[0];
+      return nearest;
+    }
+
+    return null;
   }
 }

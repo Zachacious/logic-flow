@@ -8,9 +8,10 @@ import {
   Watch,
   Method,
 } from '@stencil/core';
-import { Point } from '../../types/Point';
+import { Coords } from '../../types/Coords';
 import { Size } from '../../types/Size';
 import { global } from '../../global';
+import { debounce } from '../../utils/debounce';
 
 @Component({
   tag: 'logic-node',
@@ -22,12 +23,16 @@ export class LogicNode {
 
   @Prop() type: string = 'default';
   @Prop() title: string = 'Node';
-  @Prop({ mutable: true }) position: Point = { x: 0, y: 0 };
+  @Prop({ mutable: true }) position: Coords = { x: 0, y: 0 };
   @Prop({ mutable: true }) size: Size = { width: 0, height: 0 };
 
   @State() isDragging = false;
 
   private _uid: string = global().registerNode(this);
+  private _updateConnectorQuadtreeDebounced = debounce(
+    () => this.updateConnectorQuadtree(),
+    100,
+  );
 
   @Method()
   async getUid() {
@@ -55,13 +60,20 @@ export class LogicNode {
   onPositionChange() {
     // update transform
     this.updateTransform();
-    // this._debouncedUpdateTransform();
+    this._updateConnectorQuadtreeDebounced();
   }
 
   updateTransform() {
     // requestAnimationFrame(() => {
     this.el.style.transform = `translate(${this.position.x}px, ${this.position.y}px )`;
     // });
+  }
+
+  updateConnectorQuadtree() {
+    const connectors = this.el.querySelectorAll('logic-connector');
+    connectors.forEach((connector: HTMLLogicConnectorElement) => {
+      connector.updateQuadtree();
+    });
   }
 
   render() {

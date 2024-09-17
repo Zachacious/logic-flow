@@ -1,6 +1,6 @@
 import { r as registerInstance, h, a as Host, g as getElement } from './index-c090f9ce.js';
 import { d as debounce } from './debounce-25523ff8.js';
-import { g as global } from './global-4b3b539c.js';
+import { g as global } from './global-ed0ca1da.js';
 
 const throttle = (fn, delay) => {
     let lastFunc;
@@ -77,6 +77,39 @@ class Quadtree {
                 this.southwest.insert(point));
         }
     }
+    insertItems(points) {
+        for (let point of points) {
+            this.insert(point);
+        }
+    }
+    remove(id) {
+        const removeFromNode = (node) => {
+            if (node === null)
+                return false;
+            // Remove points from the node
+            node.points = node.points.filter(point => point.id !== id);
+            // Recursively remove from child nodes
+            const removed = removeFromNode(node.northwest) ||
+                removeFromNode(node.northeast) ||
+                removeFromNode(node.southwest) ||
+                removeFromNode(node.southeast);
+            // If no points in the node and no children have points, remove the node
+            if (node.points.length === 0 && !node.divided) {
+                node.northwest =
+                    node.northeast =
+                        node.southwest =
+                            node.southeast =
+                                null;
+            }
+            return removed;
+        };
+        return removeFromNode(this);
+    }
+    removeItems(ids) {
+        for (let id of ids) {
+            this.remove(id);
+        }
+    }
     contains(point) {
         const { x, y, width, height } = this.boundary;
         return (point.x >= x &&
@@ -84,27 +117,33 @@ class Quadtree {
             point.y >= y &&
             point.y < y + height);
     }
-    query(range, found = []) {
+    query(range, found = [], pan, zoom) {
         if (!this.intersects(range))
             return found;
         for (let point of this.points) {
-            if (this.inRange(point, range)) {
+            if (this.inRange(point, range, pan, zoom)) {
                 found.push(point);
             }
         }
         if (this.divided) {
-            this.northwest.query(range, found);
-            this.northeast.query(range, found);
-            this.southwest.query(range, found);
-            this.southeast.query(range, found);
+            this.northwest.query(range, found, pan, zoom);
+            this.northeast.query(range, found, pan, zoom);
+            this.southwest.query(range, found, pan, zoom);
+            this.southeast.query(range, found, pan, zoom);
         }
         return found;
     }
-    inRange(point, range) {
-        return (point.x >= range.x &&
-            point.x < range.x + range.width &&
-            point.y >= range.y &&
-            point.y < range.y + range.height);
+    inRange(point, range, pan, zoom) {
+        // Adjust the point position relative to pan and zoom
+        const adjPoint = {
+            x: (point.x + pan.x) * zoom,
+            y: (point.y + pan.y) * zoom,
+        };
+        // Check if the adjusted point is within the adjusted range
+        return (adjPoint.x >= range.x &&
+            adjPoint.x < range.x + range.width &&
+            adjPoint.y >= range.y &&
+            adjPoint.y < range.y + range.height);
     }
     intersects(range) {
         const { x, y, width, height } = this.boundary;
@@ -112,6 +151,20 @@ class Quadtree {
             range.x + range.width < x ||
             range.y > y + height ||
             range.y + range.height < y);
+    }
+    checkNearby(x, y, range, pan, zoom) {
+        const bounds = {
+            x: x - range / 2,
+            y: y - range / 2,
+            width: range,
+            height: range,
+        };
+        const nearby = this.query(bounds, [], pan, zoom);
+        if (nearby.length > 0) {
+            const nearest = nearby[0];
+            return nearest;
+        }
+        return null;
     }
 }
 
@@ -148,8 +201,6 @@ const FlowyCanvas = class {
         this.maxZoom = 3;
         this.minZoom = 0.2;
         this.zoomSpeed = 0.08;
-        this.zoom = 1;
-        this.pan = { x: 0, y: 0 };
     }
     async getUid() {
         return this._uid;
@@ -162,6 +213,7 @@ const FlowyCanvas = class {
         this._contentEl = this.el.querySelector('.flowy-content');
         this._gridEl = this.el.querySelector('.flowy-grid');
         this._canvasRect = this._canvasEl.getBoundingClientRect();
+        this.camera = global().camera;
         const canvasEl = this._canvasEl;
         this.renderGridLines();
         this._initialPinchDistance = 0;
@@ -210,20 +262,34 @@ const FlowyCanvas = class {
         canvasEl.removeEventListener('wheel', this._elWheel);
         global().unregisterViewport(this._uid);
     }
-    zoomChanged() {
+    // @Watch('zoom')
+    // zoomChanged() {
+    //   this._needsRedraw = true;
+    //   // this.updateScreen();
+    //   this._debouncedUpdateScreen();
+    // }
+    // @Watch('pan')
+    // panChanged() {
+    //   this._needsRedraw = true;
+    //   // this.updateScreen();
+    //   this._debouncedUpdateScreen();
+    // }
+    scheduleComponentUpdate() {
         this._needsRedraw = true;
-        // this.updateScreen();
-        this._debouncedUpdateScreen();
-    }
-    panChanged() {
-        this._needsRedraw = true;
-        // this.updateScreen();
         this._debouncedUpdateScreen();
     }
     onResize() {
         this._needsRedraw = true;
         this._canvasRect = this._canvasEl.getBoundingClientRect();
         this.renderGridLines();
+        // update quadtree boundary
+        const boundary = {
+            x: 0,
+            y: 0,
+            width: this._canvasRect.width,
+            height: this._canvasRect.height,
+        };
+        this._quadtree.boundary = boundary;
     }
     renderGridLines() {
         if (!this.renderGrid || !this._needsRedraw)
@@ -233,7 +299,7 @@ const FlowyCanvas = class {
             const ctx = canvasEl.getContext('2d');
             const width = this._canvasRect.width;
             const height = this._canvasRect.height;
-            const step = this.gridSize * this.zoom;
+            const step = this.gridSize * this.camera.zoom;
             const dpr = window.devicePixelRatio || 1;
             canvasEl.width = width * dpr;
             canvasEl.height = height * dpr;
@@ -243,8 +309,8 @@ const FlowyCanvas = class {
             // clear
             ctx.fillStyle = this.gridBgColor;
             ctx.fillRect(0, 0, width, height);
-            const panOffsetX = (-this.pan.x % this.gridSize) * this.zoom;
-            const panOffsetY = (-this.pan.y % this.gridSize) * this.zoom;
+            const panOffsetX = (-this.camera.pos.x % this.gridSize) * this.camera.zoom;
+            const panOffsetY = (-this.camera.pos.y % this.gridSize) * this.camera.zoom;
             ctx.beginPath();
             // Draw vertical grid lines (x axis)
             for (let x = -panOffsetX; x <= width; x += step) {
@@ -264,26 +330,26 @@ const FlowyCanvas = class {
         requestAnimationFrame(() => {
             const contentEl = this._contentEl;
             // Apply transformations to the content, aligning with the grid
-            contentEl.style.transform = `perspective(1px) scale(${this.zoom}) translate(${this.pan.x}px, ${this.pan.y}px)`;
+            contentEl.style.transform = `perspective(1px) scale(${this.camera.zoom}) translate(${this.camera.pos.x}px, ${this.camera.pos.y}px)`;
             this.renderGridLines();
         });
     }
-    // get location from event data for mouse or touch
-    getEventLocation(event) {
-        if (event instanceof TouchEvent) {
-            if (event.touches && event.touches[0]) {
-                return { x: event.touches[0].clientX, y: event.touches[0].clientY };
-            }
-        }
-        else {
-            return { x: event.clientX, y: event.clientY };
-        }
-    }
+    // // get location from event data for mouse or touch
+    // getEventLocation(event: MouseEvent | TouchEvent) {
+    //   if (event instanceof TouchEvent) {
+    //     if (event.touches && event.touches[0]) {
+    //       return { x: event.touches[0].clientX, y: event.touches[0].clientY };
+    //     }
+    //   } else {
+    //     return { x: event.clientX, y: event.clientY };
+    //   }
+    // }
     onPointerDown(event) {
         // if(event.target.hasPointerCapture(event.pointerId)) {
         //   event.target.releasePointerCapture(event.pointerId);
         // }
         const loc = getEventLocation(event);
+        const worldCoords = this.camera.toWorldCoords(loc);
         let target = event.target;
         // if (event instanceof TouchEvent) {
         target = document.elementFromPoint(loc.x, loc.y);
@@ -321,17 +387,27 @@ const FlowyCanvas = class {
             // const rect = this._activeNode.getBoundingClientRect();
             const pos = this._activeNode.position;
             this._activeNodeDragStart = {
-                x: loc.x / this.zoom - pos.x - this.pan.x,
-                y: loc.y / this.zoom - pos.y - this.pan.y,
+                x: loc.x / this.camera.zoom - pos.x - this.camera.pos.x,
+                y: loc.y / this.camera.zoom - pos.y - this.camera.pos.y,
             };
+            // this._activeNodeDragStart = {
+            //   x: worldCoords.x - pos.x,
+            //   y: worldCoords.y - pos.y,
+            // };
             this._activeNodeDragging = true;
             return;
         }
         this._isDragging = true;
         this._dragStart = {
-            x: loc.x / this.zoom - this.pan.x,
-            y: loc.y / this.zoom - this.pan.y,
+            x: loc.x / this.camera.zoom - this.camera.pos.x,
+            y: loc.y / this.camera.zoom - this.camera.pos.y,
         };
+        // this._dragStart = this.camera.toScreenCoords(loc);
+        // console.log(
+        //   'drag start',
+        //   this._dragStart,
+        //   this.camera.toScreenCoords({ ...loc }),
+        // );
     }
     onPointerUp(event) {
         // event.stopPropagation();
@@ -410,30 +486,50 @@ const FlowyCanvas = class {
         }
         this._isDragging = false;
         this._initialPinchDistance = 0;
-        // this._lastZoom = this.zoom;
+        // this._lastZoom = this.camera.zoom;
         this._activeNode = null;
         this._activeNodeDragging = false;
     }
     onPointerMove(event) {
+        const loc = getEventLocation(event);
+        const worldCoords = this.camera.toWorldCoords(loc);
         if (this._activeConnector && this._activeConnection) {
             const aConn = this._activeConnection;
             requestAnimationFrame(() => {
-                const loc = getEventLocation(event);
-                const pos = {
-                    x: loc.x / this.zoom - this.pan.x,
-                    y: loc.y / this.zoom - this.pan.y,
-                };
-                aConn.end = pos;
+                const snappableConnector = this._quadtree.checkNearby(loc.x, loc.y, 25 * this.camera.zoom, this.camera.pos, this.camera.zoom);
+                if (snappableConnector) {
+                    const rect = global().connectorRects[snappableConnector.id];
+                    const pos = {
+                        x: rect.left + rect.width / 2,
+                        y: rect.top + rect.height / 2,
+                    };
+                    aConn.end = pos;
+                }
+                else {
+                    // const pos = worldCoords;
+                    // const pos = this.camera.toScreenCoords(loc);
+                    const pos = {
+                        x: loc.x / this.camera.zoom - this.camera.pos.x,
+                        y: loc.y / this.camera.zoom - this.camera.pos.y,
+                    };
+                    aConn.end = pos;
+                }
             });
             return;
         }
         else if (this._activeNode && this._activeNodeDragging) {
             const aNode = this._activeNode;
             // requestAnimationFrame(() => {
-            const loc = getEventLocation(event);
+            // const loc = getEventLocation(event);
             const aNodeOldPos = aNode.position;
-            const newX = loc.x / this.zoom - this._activeNodeDragStart.x - this.pan.x;
-            const newY = loc.y / this.zoom - this._activeNodeDragStart.y - this.pan.y;
+            const newX = loc.x / this.camera.zoom -
+                this._activeNodeDragStart.x -
+                this.camera.pos.x;
+            const newY = loc.y / this.camera.zoom -
+                this._activeNodeDragStart.y -
+                this.camera.pos.y;
+            // const newX = worldCoords.x - this._activeNodeDragStart.x;
+            // const newY = worldCoords.y - this._activeNodeDragStart.y;
             // update connections
             const connectors = aNode.querySelectorAll('logic-connector');
             // requestAnimationFrame(() => {
@@ -476,12 +572,13 @@ const FlowyCanvas = class {
             return;
         }
         if (this._isDragging) {
-            // this._lastPan = this.pan;
+            // this._lastPan = this.camera.pos;
             const loc = getEventLocation(event);
-            this.pan = {
-                x: loc.x / this.zoom - this._dragStart.x,
-                y: loc.y / this.zoom - this._dragStart.y,
+            this.camera.pos = {
+                x: loc.x / this.camera.zoom - this._dragStart.x,
+                y: loc.y / this.camera.zoom - this._dragStart.y,
             };
+            this.scheduleComponentUpdate();
         }
     }
     handleWheel(event) {
@@ -491,21 +588,22 @@ const FlowyCanvas = class {
         const mouseY = event.clientY - canvasRect.top;
         // Calculate the zoom level change
         const zoomDelta = event.deltaY < 0 ? this.zoomSpeed : -this.zoomSpeed;
-        const newZoom = Math.min(this.maxZoom, Math.max(this.minZoom, this.zoom + zoomDelta));
+        const newZoom = Math.min(this.maxZoom, Math.max(this.minZoom, this.camera.zoom + zoomDelta));
         // Calculate the scale factor
-        const scaleFactor = newZoom / this.zoom;
+        const scaleFactor = newZoom / this.camera.zoom;
         // Adjust the pan position to keep the same point under the cursor
-        const newPanX = mouseX - (mouseX - this.pan.x * this.zoom) * scaleFactor;
-        const newPanY = mouseY - (mouseY - this.pan.y * this.zoom) * scaleFactor;
+        const newPanX = mouseX - (mouseX - this.camera.pos.x * this.camera.zoom) * scaleFactor;
+        const newPanY = mouseY - (mouseY - this.camera.pos.y * this.camera.zoom) * scaleFactor;
         // Update pan and zoom
-        this.pan = { x: newPanX / newZoom, y: newPanY / newZoom };
-        // this._lastZoom = this.zoom;
-        this.zoom = newZoom;
+        this.camera.pos = { x: newPanX / newZoom, y: newPanY / newZoom };
+        // this._lastZoom = this.camera.zoom;
+        this.camera.zoom = newZoom;
         // if zooming in, force a reflow to prevent blurry text
         if (zoomDelta > 0) {
             this._forceContentReflowDebounced();
         }
-        this._needsRedraw = true;
+        // this._needsRedraw = true;
+        this.scheduleComponentUpdate();
     }
     handleTouchStart(event) {
         if (event.touches.length === 1) {
@@ -557,17 +655,17 @@ const FlowyCanvas = class {
     }
     adjustZoomOnPinch(scaleFactor, pinchCenterX, pinchCenterY) {
         // Calculate new zoom, ensuring it stays within min/max bounds
-        const newZoom = Math.min(this.maxZoom, Math.max(this.minZoom, this.zoom * scaleFactor));
+        const newZoom = Math.min(this.maxZoom, Math.max(this.minZoom, this.camera.zoom * scaleFactor));
         // Find the pinch center position relative to the content's current position and zoom
-        const pinchContentX = (pinchCenterX - this.pan.x * this.zoom) / this.zoom;
-        const pinchContentY = (pinchCenterY - this.pan.y * this.zoom) / this.zoom;
+        const pinchContentX = (pinchCenterX - this.camera.pos.x * this.camera.zoom) / this.camera.zoom;
+        const pinchContentY = (pinchCenterY - this.camera.pos.y * this.camera.zoom) / this.camera.zoom;
         // Adjust pan so the pinch center stays fixed after zooming
-        this.pan = {
+        this.camera.pos = {
             x: pinchCenterX / newZoom - pinchContentX,
             y: pinchCenterY / newZoom - pinchContentY,
         };
         // Apply the new zoom level
-        this.zoom = newZoom;
+        this.camera.zoom = newZoom;
         // Trigger a screen redraw
         this._debouncedUpdateScreen();
     }
@@ -579,13 +677,9 @@ const FlowyCanvas = class {
         this._contentEl.style.display = cdisplay;
     }
     render() {
-        return (h(Host, { key: '14a61b9ce9d7b1982f626c147686f981e353f9dd', id: this._uid }, h("div", { key: '29127ed84a9a5c52792b19be1f2dbb45879c76ae', class: "flowy-canvas" }, h("canvas", { key: '78668e158c872dc8dd9fb8c86f16b1e3578150a8', class: "flowy-grid" }), h("div", { key: '4cf5444d236e9d291ec81916b15116d0ec62161b', class: "flowy-content" }, h("slot", { key: '13b1d36f2b78c07cd4e3a4d0cccb38434b72e886' })))));
+        return (h(Host, { key: '7836b94db570097b6ce737f3e9c08e72d08c335b', id: this._uid }, h("div", { key: '2d7450e801d01b4a59fc5b5b25c3dab470fae03c', class: "flowy-canvas" }, h("canvas", { key: '67adb12354d3fc1cf3487bc8ab01b442d482d95a', class: "flowy-grid" }), h("div", { key: 'db2f38ea52cbd93191a30f7abea9379ac5bb68d9', class: "flowy-content" }, h("slot", { key: '1d0183736da0643327402ebfe7dd5f58e420e14a' })))));
     }
     get el() { return getElement(this); }
-    static get watchers() { return {
-        "zoom": ["zoomChanged"],
-        "pan": ["panChanged"]
-    }; }
 };
 FlowyCanvas.style = flowyCanvasCss;
 

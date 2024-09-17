@@ -1,12 +1,12 @@
 import { genUID } from '../utils/genUID';
 import { FlowyNode } from './FlowyNode';
-import { Point } from './Point';
+import { Coords } from './Coords';
 
 export class FlowyEdge {
   uid: string;
   source: FlowyNode;
   target: FlowyNode;
-  offsets: Point[];
+  offsets: Coords[];
   constructor(flowyConnection: FlowyEdge) {
     this.uid = flowyConnection.uid || genUID();
     this.source = flowyConnection.source || new FlowyNode();

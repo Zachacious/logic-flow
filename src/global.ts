@@ -5,6 +5,7 @@ import { LogicConnector } from './components/logic-connector/logic-connector';
 import { LogicNode } from './components/logic-node/logic-node';
 import { Rect } from './types/Rect';
 import { Quadtree } from './types/Quadtree';
+import { Camera } from './types/Camera';
 
 const viewports = new Map<string, FlowyCanvas>();
 const nodes = new Map<string, LogicNode>();
@@ -12,7 +13,9 @@ const connectors = new Map<string, LogicConnector>();
 const connections = new Map<string, LogicConnection>();
 
 const connectorRects = <Record<string, Rect>>{};
-const quadTrees = new Map<string, Quadtree>();
+const connectorQuadTrees = new Map<string, Quadtree>();
+
+const camera = new Camera();
 
 export const global = () => {
   const registerViewport = (canvas: FlowyCanvas) => {
@@ -24,9 +27,9 @@ export const global = () => {
   const unregisterViewport = (id: string) => {
     viewports.delete(id);
     // check for and remove quadtree
-    const quadtree = quadTrees.get(id);
+    const quadtree = connectorQuadTrees.get(id);
     if (quadtree) {
-      quadTrees.delete(id);
+      connectorQuadTrees.delete(id);
     }
   };
 
@@ -90,7 +93,7 @@ export const global = () => {
   const getConnection = (id: string) => connections.get(id);
 
   const setViewportQuadtree = (id: string, quadtree: Quadtree) => {
-    quadTrees.set(id, quadtree);
+    connectorQuadTrees.set(id, quadtree);
   };
 
   return {
@@ -109,6 +112,7 @@ export const global = () => {
     setViewportQuadtree,
 
     connectorRects,
-    quadTrees,
+    connectorQuadTrees,
+    camera,
   };
 };

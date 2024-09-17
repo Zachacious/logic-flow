@@ -1,4 +1,4 @@
-export type Point = {
+export type Coords = {
   x: number;
   y: number;
 };
