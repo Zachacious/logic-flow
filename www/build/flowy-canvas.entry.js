@@ -386,22 +386,23 @@ const FlowyCanvas = class {
             // this._activeNode.parentNode.appendChild(this._activeNode);
             // const rect = this._activeNode.getBoundingClientRect();
             const pos = this._activeNode.position;
-            this._activeNodeDragStart = {
-                x: loc.x / this.camera.zoom - pos.x - this.camera.pos.x,
-                y: loc.y / this.camera.zoom - pos.y - this.camera.pos.y,
-            };
             // this._activeNodeDragStart = {
-            //   x: worldCoords.x - pos.x,
-            //   y: worldCoords.y - pos.y,
+            //   x: loc.x / this.camera.zoom - pos.x - this.camera.pos.x,
+            //   y: loc.y / this.camera.zoom - pos.y - this.camera.pos.y,
             // };
+            this._activeNodeDragStart = {
+                x: worldCoords.x - pos.x,
+                y: worldCoords.y - pos.y,
+            };
             this._activeNodeDragging = true;
             return;
         }
         this._isDragging = true;
-        this._dragStart = {
-            x: loc.x / this.camera.zoom - this.camera.pos.x,
-            y: loc.y / this.camera.zoom - this.camera.pos.y,
-        };
+        // this._dragStart = {
+        //   x: loc.x / this.camera.zoom - this.camera.pos.x,
+        //   y: loc.y / this.camera.zoom - this.camera.pos.y,
+        // };
+        this._dragStart = worldCoords;
         // this._dragStart = this.camera.toScreenCoords(loc);
         // console.log(
         //   'drag start',
@@ -484,6 +485,22 @@ const FlowyCanvas = class {
             this._activeConnector = null;
             this._activeConnection = null;
         }
+        else if (this._activeNode && this._activeNodeDragging) {
+            this._activeNodeDragging = false;
+            // update connector in quadtree
+            const connectors = this._activeNode.querySelectorAll('logic-connector');
+            for (let i = 0; i < connectors.length; i++) {
+                const connector = connectors[i];
+                const connectorId = connector.getAttribute('id');
+                const rect = global().connectorRects[connectorId];
+                this._quadtree.remove(connectorId);
+                this._quadtree.insert({
+                    x: rect.left + rect.width / 2,
+                    y: rect.top + rect.height / 2,
+                    id: connectorId,
+                });
+            }
+        }
         this._isDragging = false;
         this._initialPinchDistance = 0;
         // this._lastZoom = this.camera.zoom;
@@ -492,9 +509,9 @@ const FlowyCanvas = class {
     }
     onPointerMove(event) {
         const loc = getEventLocation(event);
-        const worldCoords = this.camera.toWorldCoords(loc);
         if (this._activeConnector && this._activeConnection) {
             const aConn = this._activeConnection;
+            const worldCoords = this.camera.toWorldCoords(loc);
             requestAnimationFrame(() => {
                 const snappableConnector = this._quadtree.checkNearby(loc.x, loc.y, 25 * this.camera.zoom, this.camera.pos, this.camera.zoom);
                 if (snappableConnector) {
@@ -508,10 +525,11 @@ const FlowyCanvas = class {
                 else {
                     // const pos = worldCoords;
                     // const pos = this.camera.toScreenCoords(loc);
-                    const pos = {
-                        x: loc.x / this.camera.zoom - this.camera.pos.x,
-                        y: loc.y / this.camera.zoom - this.camera.pos.y,
-                    };
+                    // const pos = {
+                    //   x: loc.x / this.camera.zoom - this.camera.pos.x,
+                    //   y: loc.y / this.camera.zoom - this.camera.pos.y,
+                    // };
+                    const pos = worldCoords;
                     aConn.end = pos;
                 }
             });
@@ -519,17 +537,20 @@ const FlowyCanvas = class {
         }
         else if (this._activeNode && this._activeNodeDragging) {
             const aNode = this._activeNode;
+            const worldCoords = this.camera.toWorldCoords(loc);
             // requestAnimationFrame(() => {
             // const loc = getEventLocation(event);
             const aNodeOldPos = aNode.position;
-            const newX = loc.x / this.camera.zoom -
-                this._activeNodeDragStart.x -
-                this.camera.pos.x;
-            const newY = loc.y / this.camera.zoom -
-                this._activeNodeDragStart.y -
-                this.camera.pos.y;
-            // const newX = worldCoords.x - this._activeNodeDragStart.x;
-            // const newY = worldCoords.y - this._activeNodeDragStart.y;
+            // const newX =
+            //   loc.x / this.camera.zoom -
+            //   this._activeNodeDragStart.x -
+            //   this.camera.pos.x;
+            // const newY =
+            //   loc.y / this.camera.zoom -
+            //   this._activeNodeDragStart.y -
+            //   this.camera.pos.y;
+            const newX = worldCoords.x - this._activeNodeDragStart.x;
+            const newY = worldCoords.y - this._activeNodeDragStart.y;
             // update connections
             const connectors = aNode.querySelectorAll('logic-connector');
             // requestAnimationFrame(() => {
@@ -542,7 +563,7 @@ const FlowyCanvas = class {
                 const connId = connector.getAttribute('id');
                 // update connections
                 // update rect
-                let rect = global().connectorRects[connId];
+                let rect = Object.assign({}, global().connectorRects[connId]);
                 rect = {
                     left: rect.left + delta.x,
                     top: rect.top + delta.y,
@@ -677,7 +698,7 @@ const FlowyCanvas = class {
         this._contentEl.style.display = cdisplay;
     }
     render() {
-        return (h(Host, { key: '7836b94db570097b6ce737f3e9c08e72d08c335b', id: this._uid }, h("div", { key: '2d7450e801d01b4a59fc5b5b25c3dab470fae03c', class: "flowy-canvas" }, h("canvas", { key: '67adb12354d3fc1cf3487bc8ab01b442d482d95a', class: "flowy-grid" }), h("div", { key: 'db2f38ea52cbd93191a30f7abea9379ac5bb68d9', class: "flowy-content" }, h("slot", { key: '1d0183736da0643327402ebfe7dd5f58e420e14a' })))));
+        return (h(Host, { key: '0a478e1c87d0f9fb000432d117eb80b6dbb15126', id: this._uid }, h("div", { key: 'dafce906f10b79dea1da50ee900f1bb70835e621', class: "flowy-canvas" }, h("canvas", { key: 'cceee0991483ffb9bccf845f25de8b503d032425', class: "flowy-grid" }), h("div", { key: '4076c2f295c9482793adedc7fbb4c463f3fef7db', class: "flowy-content" }, h("slot", { key: '1779f9676a1730575d7bc3ed65a79d1b57711b15' })))));
     }
     get el() { return getElement(this); }
 };

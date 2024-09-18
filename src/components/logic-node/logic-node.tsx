@@ -60,7 +60,7 @@ export class LogicNode {
   onPositionChange() {
     // update transform
     this.updateTransform();
-    this._updateConnectorQuadtreeDebounced();
+    // this._updateConnectorQuadtreeDebounced();
   }
 
   updateTransform() {

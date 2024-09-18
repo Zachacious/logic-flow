@@ -306,14 +306,14 @@ export class FlowyCanvas {
       // this._activeNode.parentNode.appendChild(this._activeNode);
       // const rect = this._activeNode.getBoundingClientRect();
       const pos = this._activeNode.position;
-      this._activeNodeDragStart = {
-        x: loc.x / this.camera.zoom - pos.x - this.camera.pos.x,
-        y: loc.y / this.camera.zoom - pos.y - this.camera.pos.y,
-      };
       // this._activeNodeDragStart = {
-      //   x: worldCoords.x - pos.x,
-      //   y: worldCoords.y - pos.y,
+      //   x: loc.x / this.camera.zoom - pos.x - this.camera.pos.x,
+      //   y: loc.y / this.camera.zoom - pos.y - this.camera.pos.y,
       // };
+      this._activeNodeDragStart = {
+        x: worldCoords.x - pos.x,
+        y: worldCoords.y - pos.y,
+      };
       this._activeNodeDragging = true;
 
       return;
@@ -321,10 +321,11 @@ export class FlowyCanvas {
 
     this._isDragging = true;
 
-    this._dragStart = {
-      x: loc.x / this.camera.zoom - this.camera.pos.x,
-      y: loc.y / this.camera.zoom - this.camera.pos.y,
-    };
+    // this._dragStart = {
+    //   x: loc.x / this.camera.zoom - this.camera.pos.x,
+    //   y: loc.y / this.camera.zoom - this.camera.pos.y,
+    // };
+    this._dragStart = worldCoords;
     // this._dragStart = this.camera.toScreenCoords(loc);
     // console.log(
     //   'drag start',
@@ -423,6 +424,24 @@ export class FlowyCanvas {
       }
       this._activeConnector = null;
       this._activeConnection = null;
+    } else if (this._activeNode && this._activeNodeDragging) {
+      this._activeNodeDragging = false;
+      // update connector in quadtree
+      const connectors = this._activeNode.querySelectorAll(
+        'logic-connector',
+      ) as NodeListOf<HTMLLogicConnectorElement>;
+
+      for (let i = 0; i < connectors.length; i++) {
+        const connector = connectors[i];
+        const connectorId = connector.getAttribute('id');
+        const rect = global().connectorRects[connectorId];
+        this._quadtree.remove(connectorId);
+        this._quadtree.insert({
+          x: rect.left + rect.width / 2,
+          y: rect.top + rect.height / 2,
+          id: connectorId,
+        });
+      }
     }
 
     this._isDragging = false;
@@ -434,10 +453,10 @@ export class FlowyCanvas {
 
   onPointerMove(event: MouseEvent | TouchEvent) {
     const loc = getEventLocation(event);
-    const worldCoords = this.camera.toWorldCoords(loc);
 
     if (this._activeConnector && this._activeConnection) {
       const aConn = this._activeConnection;
+      const worldCoords = this.camera.toWorldCoords(loc);
       requestAnimationFrame(() => {
         const snappableConnector = this._quadtree.checkNearby(
           loc.x,
@@ -456,29 +475,31 @@ export class FlowyCanvas {
         } else {
           // const pos = worldCoords;
           // const pos = this.camera.toScreenCoords(loc);
-          const pos = {
-            x: loc.x / this.camera.zoom - this.camera.pos.x,
-            y: loc.y / this.camera.zoom - this.camera.pos.y,
-          };
+          // const pos = {
+          //   x: loc.x / this.camera.zoom - this.camera.pos.x,
+          //   y: loc.y / this.camera.zoom - this.camera.pos.y,
+          // };
+          const pos = worldCoords;
           aConn.end = pos;
         }
       });
       return;
     } else if (this._activeNode && this._activeNodeDragging) {
       const aNode = this._activeNode;
+      const worldCoords = this.camera.toWorldCoords(loc);
       // requestAnimationFrame(() => {
       // const loc = getEventLocation(event);
       const aNodeOldPos = aNode.position;
-      const newX =
-        loc.x / this.camera.zoom -
-        this._activeNodeDragStart.x -
-        this.camera.pos.x;
-      const newY =
-        loc.y / this.camera.zoom -
-        this._activeNodeDragStart.y -
-        this.camera.pos.y;
-      // const newX = worldCoords.x - this._activeNodeDragStart.x;
-      // const newY = worldCoords.y - this._activeNodeDragStart.y;
+      // const newX =
+      //   loc.x / this.camera.zoom -
+      //   this._activeNodeDragStart.x -
+      //   this.camera.pos.x;
+      // const newY =
+      //   loc.y / this.camera.zoom -
+      //   this._activeNodeDragStart.y -
+      //   this.camera.pos.y;
+      const newX = worldCoords.x - this._activeNodeDragStart.x;
+      const newY = worldCoords.y - this._activeNodeDragStart.y;
 
       // update connections
       const connectors = aNode.querySelectorAll(
@@ -496,7 +517,7 @@ export class FlowyCanvas {
 
         // update connections
         // update rect
-        let rect = global().connectorRects[connId];
+        let rect = { ...global().connectorRects[connId] };
         rect = {
           left: rect.left + delta.x,
           top: rect.top + delta.y,
