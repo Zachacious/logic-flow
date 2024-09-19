@@ -35,7 +35,7 @@ const getEventLocation = (e) => {
 };
 
 class Quadtree {
-    constructor(boundary, capacity) {
+    constructor(boundary, capacity, camera) {
         this.boundary = boundary;
         this.capacity = capacity;
         this.points = [];
@@ -44,20 +44,21 @@ class Quadtree {
         this.northwest = null;
         this.southeast = null;
         this.southwest = null;
+        this.camera = camera;
     }
     subdivide() {
         const { x, y, width, height } = this.boundary;
         const halfWidth = width / 2;
         const halfHeight = height / 2;
-        this.northeast = new Quadtree({ x: x + halfWidth, y: y, width: halfWidth, height: halfHeight }, this.capacity);
-        this.northwest = new Quadtree({ x: x, y: y, width: halfWidth, height: halfHeight }, this.capacity);
+        this.northeast = new Quadtree({ x: x + halfWidth, y: y, width: halfWidth, height: halfHeight }, this.capacity, this.camera);
+        this.northwest = new Quadtree({ x: x, y: y, width: halfWidth, height: halfHeight }, this.capacity, this.camera);
         this.southeast = new Quadtree({
             x: x + halfWidth,
             y: y + halfHeight,
             width: halfWidth,
             height: halfHeight,
-        }, this.capacity);
-        this.southwest = new Quadtree({ x: x, y: y + halfHeight, width: halfWidth, height: halfHeight }, this.capacity);
+        }, this.capacity, this.camera);
+        this.southwest = new Quadtree({ x: x, y: y + halfHeight, width: halfWidth, height: halfHeight }, this.capacity, this.camera);
         this.divided = true;
     }
     insert(point) {
@@ -151,14 +152,14 @@ class Quadtree {
             range.y > y + height ||
             range.y + range.height < y);
     }
-    checkNearby(x, y, range, pan, zoom) {
+    checkNearby(x, y, range) {
         const bounds = {
             x: x - range / 2,
             y: y - range / 2,
             width: range,
             height: range,
         };
-        const nearby = this.query(bounds, [], pan, zoom);
+        const nearby = this.query(bounds, [], this.camera.pos, this.camera.zoom);
         if (nearby.length > 0) {
             const nearest = nearby[0];
             return nearest;
@@ -256,7 +257,6 @@ class ViewContext {
         this.registerConnector = (connector) => {
             const id = nanoid();
             connector.id = id;
-            const el = document.getElementById(id);
             this.connectors.set(id, connector);
             const connectorEl = connector.querySelector('.connector');
             const rect = connectorEl.getBoundingClientRect();
@@ -426,7 +426,7 @@ const FlowyCanvas = class {
         this._elWheel = (e) => this.handleWheel(e);
         this.renderGrid = true;
         this.gridSize = 20;
-        this.gridBgColor = '#f3f3f3';
+        this.gridBgColor = '#f7f7f7';
         this.gridLineColor = '#555555';
         this.maxZoom = 3;
         this.minZoom = 0.2;
@@ -465,8 +465,7 @@ const FlowyCanvas = class {
             width: this._canvasRect.width,
             height: this._canvasRect.height,
         };
-        this._quadtree = new Quadtree(boundary, 4);
-        // global().setViewportQuadtree(this._uid, this._quadtree);
+        this._quadtree = new Quadtree(boundary, 4, this.camera);
         this.ctx.quadtree = this._quadtree;
         // Handle resize events
         this._resizeObserver = new ResizeObserver(() => this._debouncedResize());
@@ -597,7 +596,11 @@ const FlowyCanvas = class {
             if (event instanceof TouchEvent) {
                 target = document.elementFromPoint(loc.x, loc.y);
             }
-            const targetConnector = target.closest('logic-connector .connector');
+            let targetConnector = target.closest('logic-connector .connector');
+            const snappedConnector = this._quadtree.checkNearby(loc.x, loc.y, this._connectorSnapDistance * this.camera.zoom);
+            if (snappedConnector) {
+                targetConnector = this.ctx.connectors.get(snappedConnector.id);
+            }
             if (targetConnector) {
                 let aConn = this._activeConnector.closest('logic-connector');
                 let tConn = targetConnector.closest('logic-connector');
@@ -685,7 +688,7 @@ const FlowyCanvas = class {
             const aConn = this._activeConnection;
             const worldCoords = this.camera.toWorldCoords(loc);
             requestAnimationFrame(() => {
-                const snappableConnector = this._quadtree.checkNearby(loc.x, loc.y, this._connectorSnapDistance * this.camera.zoom, this.camera.pos, this.camera.zoom);
+                const snappableConnector = this._quadtree.checkNearby(loc.x, loc.y, this._connectorSnapDistance * this.camera.zoom);
                 if (snappableConnector) {
                     const rect = this.ctx.connectorRects[snappableConnector.id];
                     const pos = {
@@ -852,7 +855,7 @@ const FlowyCanvas = class {
         this._contentEl.style.display = cdisplay;
     }
     render() {
-        return (h(Host, { key: '778c2ecec667ec5715c3ed4d5dd263119d94f40b' }, h("div", { key: '2261a5b416acfe22aeb22aa237290e99148d6d55', class: "flowy-canvas" }, h("canvas", { key: '2fd2257d2d65c27584f3a7e5297259ee5756e82d', class: "flowy-grid" }), h("div", { key: 'e76f737a88641bc503886813e19998eb76455f9e', class: "flowy-content" }, h("slot", { key: '945ad69f63b2a908cffdad6855d8071f40b2b110' })))));
+        return (h(Host, { key: 'd3e47ba4998f76284bdd260d828430cc45617aa2' }, h("div", { key: '70a5cde047e30b63dbf22d6357a94cce05047a73', class: "flowy-canvas" }, h("canvas", { key: '4df1813fab27397e45d60443a9af867106df4c36', class: "flowy-grid" }), h("div", { key: '86692c0a738fcf02d114d38ffbc9e626119fb4f8', class: "flowy-content" }, h("slot", { key: '3618bbbc5a50bebcff7fde22c97a80705d3fb5ee' })))));
     }
     get el() { return getElement(this); }
 };

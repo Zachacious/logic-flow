@@ -103,7 +103,6 @@ export class ViewContext {
   registerConnector = (connector: HTMLLogicConnectorElement) => {
     const id = nanoid();
     connector.id = id;
-    const el = document.getElementById(id);
     this.connectors.set(id, connector);
     const connectorEl = connector.querySelector('.connector');
     const rect = connectorEl.getBoundingClientRect();

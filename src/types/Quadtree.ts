@@ -1,3 +1,5 @@
+import { Camera } from './Camera';
+
 interface Point {
   x: number;
   y: number;
@@ -20,8 +22,9 @@ export class Quadtree {
   northwest: Quadtree | null;
   southeast: Quadtree | null;
   southwest: Quadtree | null;
+  camera: Camera;
 
-  constructor(boundary: BoundingBox, capacity: number) {
+  constructor(boundary: BoundingBox, capacity: number, camera: Camera) {
     this.boundary = boundary;
     this.capacity = capacity;
     this.points = [];
@@ -30,6 +33,7 @@ export class Quadtree {
     this.northwest = null;
     this.southeast = null;
     this.southwest = null;
+    this.camera = camera;
   }
 
   subdivide() {
@@ -40,10 +44,12 @@ export class Quadtree {
     this.northeast = new Quadtree(
       { x: x + halfWidth, y: y, width: halfWidth, height: halfHeight },
       this.capacity,
+      this.camera,
     );
     this.northwest = new Quadtree(
       { x: x, y: y, width: halfWidth, height: halfHeight },
       this.capacity,
+      this.camera,
     );
     this.southeast = new Quadtree(
       {
@@ -53,10 +59,12 @@ export class Quadtree {
         height: halfHeight,
       },
       this.capacity,
+      this.camera,
     );
     this.southwest = new Quadtree(
       { x: x, y: y + halfHeight, width: halfWidth, height: halfHeight },
       this.capacity,
+      this.camera,
     );
 
     this.divided = true;
@@ -190,8 +198,8 @@ export class Quadtree {
     x: number,
     y: number,
     range: number,
-    pan: { x: number; y: number },
-    zoom: number,
+    // pan: { x: number; y: number },
+    // zoom: number,
   ) {
     const bounds = {
       x: x - range / 2,
@@ -200,7 +208,7 @@ export class Quadtree {
       height: range,
     };
 
-    const nearby = this.query(bounds, [], pan, zoom);
+    const nearby = this.query(bounds, [], this.camera.pos, this.camera.zoom);
 
     if (nearby.length > 0) {
       const nearest = nearby[0];

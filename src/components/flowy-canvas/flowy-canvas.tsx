@@ -17,7 +17,7 @@ export class FlowyCanvas {
 
   @Prop() renderGrid: boolean = true;
   @Prop() gridSize: number = 20;
-  @Prop() gridBgColor: string = '#f3f3f3';
+  @Prop() gridBgColor: string = '#f7f7f7';
   @Prop() gridLineColor: string = '#555555';
   @Prop() maxZoom: number = 3;
   @Prop() minZoom: number = 0.2;
@@ -109,8 +109,7 @@ export class FlowyCanvas {
       height: this._canvasRect.height,
     };
 
-    this._quadtree = new Quadtree(boundary, 4);
-    // global().setViewportQuadtree(this._uid, this._quadtree);
+    this._quadtree = new Quadtree(boundary, 4, this.camera);
     this.ctx.quadtree = this._quadtree;
 
     // Handle resize events
@@ -278,9 +277,18 @@ export class FlowyCanvas {
         target = document.elementFromPoint(loc.x, loc.y) as HTMLElement;
       }
 
-      const targetConnector = target.closest(
+      let targetConnector = target.closest(
         'logic-connector .connector',
       ) as HTMLLogicConnectorElement;
+
+      const snappedConnector = this._quadtree.checkNearby(
+        loc.x,
+        loc.y,
+        this._connectorSnapDistance * this.camera.zoom,
+      );
+      if (snappedConnector) {
+        targetConnector = this.ctx.connectors.get(snappedConnector.id);
+      }
 
       if (targetConnector) {
         let aConn = this._activeConnector.closest(
@@ -392,8 +400,8 @@ export class FlowyCanvas {
           loc.x,
           loc.y,
           this._connectorSnapDistance * this.camera.zoom,
-          this.camera.pos,
-          this.camera.zoom,
+          // this.camera.pos,
+          // this.camera.zoom,
         );
         if (snappableConnector) {
           const rect = this.ctx.connectorRects[snappableConnector.id];
