@@ -9,15 +9,10 @@ const LogicConnector = class {
         this.connectingConnector = null;
         this.connections = [];
     }
-    // private _uid: string;
-    // @Method()
-    // async getUid() {
-    //   return this._uid;
-    // }
     render() {
         const sideClass = this.type === 'input' ? 'left-connector' : 'right-connector';
         const typeClass = this.type === 'input' ? 'input-connector' : 'output-connector';
-        return (h(Host, { key: 'e49d756656746a19d4a1ba20bf4a51f364bb7c79', class: `logic-connector ${typeClass}` }, h("div", { key: 'cc3a413de6fca4c3717d6c3a8f5139dedfdcd6a0', class: `connector ${sideClass} ${this.connections.length > 0 && 'connected'}` }), h("div", { key: 'e0db3a2a3ac83c8559eb3c8636c59385aa204de9', class: `connector-content ${sideClass}` }, h("slot", { key: 'e284a2d1cb86199553d7ba1eec133cfb4b6bc7df' }))));
+        return (h(Host, { key: '9a1f79f664819ef215fba595deb00ae7c06fa37e', class: `logic-connector ${typeClass}` }, h("div", { key: '83b80ca6f8b21c733b08b9fb5e7608e194321ce5', class: `connector ${sideClass} ${this.connections.length > 0 && 'connected'}` }), h("div", { key: '0ffc305c187cbffe60dfa1d27aab64facfb504ae', class: `connector-content ${sideClass}` }, h("slot", { key: '72408476e452f136f567b8343fbb9ab3ab6dfafa' }))));
     }
     get el() { return getElement(this); }
 };

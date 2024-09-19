@@ -10,47 +10,20 @@ const LogicNode = class {
         this.position = { x: 0, y: 0 };
         this.isDragging = false;
     }
-    // private _uid: string = global().registerNode(this);
-    // private _updateConnectorQuadtreeDebounced = debounce(
-    //   () => this.updateConnectorQuadtree(),
-    //   100,
-    // );
-    // @Method()
-    // async getUid() {
-    //   return this._uid;
-    // }
-    // @Method()
-    // async destroy() {
-    //   global().unregisterNode(this._uid);
-    // }
     componentWillLoad() {
         //  set initial size
         this.updateTransform();
-        // const rect = this.el.getBoundingClientRect();
-        // this.size = { width: rect.width, height: rect.height };
         this.position = { x: this.position.x, y: this.position.y };
     }
-    // disconnectedCallback() {
-    //   global().unregisterNode(this._uid);
-    // }
     onPositionChange() {
         // update transform
         this.updateTransform();
-        // this._updateConnectorQuadtreeDebounced();
     }
     updateTransform() {
-        // requestAnimationFrame(() => {
         this.el.style.transform = `translate(${this.position.x}px, ${this.position.y}px )`;
-        // });
     }
-    // updateConnectorQuadtree() {
-    //   const connectors = this.el.querySelectorAll('logic-connector');
-    //   connectors.forEach((connector: HTMLLogicConnectorElement) => {
-    //     connector.updateQuadtree();
-    //   });
-    // }
     render() {
-        return (h(Host, { key: 'cb3e953855b4c6e447c099a3e82eb88d847c3b91', class: "flowy-node" }, h("div", { key: '826c7ab9bcac44568585d6d750d7cceb5a3f1d82', class: "flowy-node-header" }, this.title, h("slot", { key: '47b32bf61335cb330f2067bc5ed1616250dc3e67', name: "header" })), h("slot", { key: 'c220f31369dde126bedc2f56e3d024fd01873ffd' }), h("div", { key: 'b5229c22d9c01f856dc759444fd10498295294b8', class: "flowy-node-footer" }, h("slot", { key: '52fd5938a7dbab59af69ade2da4d8ae26a7459b6', name: "footer" }))));
+        return (h(Host, { key: '6285b4d2289695a4c0ca377d75b2e21685530ef9', class: "flowy-node" }, h("div", { key: 'e0b1b02a1d80511a9b32fd8d9cbf63940cd82b82', class: "flowy-node-header" }, this.title, h("slot", { key: 'a31e0b8cc559c509bdb3014b885fb56d7764b7c0', name: "header" })), h("slot", { key: 'bd6a651c1ae63150e86f9948b8352203109ae94b' }), h("div", { key: 'a54a6a8dec99776d1c3245c3037e39c97ea51a2b', class: "flowy-node-footer" }, h("slot", { key: 'b7e9e614e1b25f9edadf9120d9abdd6ea487c45a', name: "footer" }))));
     }
     get el() { return getElement(this); }
     static get watchers() { return {

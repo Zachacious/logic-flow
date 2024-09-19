@@ -5,7 +5,6 @@ const logicConnectionCss = ":host{display:block}";
 const LogicConnection = class {
     constructor(hostRef) {
         registerInstance(this, hostRef);
-        // private _uid: string = global().registerConnection(this);
         this._capRadius = 5;
         this.start = { x: 0, y: 0 };
         this.end = { x: 0, y: 0 };
@@ -21,17 +20,6 @@ const LogicConnection = class {
             this._capRadius = parseInt(style.width) / 2;
         }
     }
-    // disconnectedCallback() {
-    //   global().unregisterConnection(this._uid);
-    // }
-    // @Method()
-    // async getUid() {
-    //   return this._uid;
-    // }
-    // @Method()
-    // async destroy() {
-    //   global().unregisterConnection(this._uid);
-    // }
     updatePath() {
         const delta = {
             x: this.end.x - this.start.x,
@@ -73,7 +61,7 @@ const LogicConnection = class {
         }
     }
     render() {
-        return (h(Host, { key: 'aaef39b3062099e142bf63ea602940356a76f370', class: "logic-connection" }, h("svg", { key: 'aeb7356d108fd930c3eb61cd9682b4ae37fe30b1', class: "connection" }, h("path", { key: '9637b22e1cfeebd94138481448547995f0d9f870', class: "connection-line", d: this.path }), h("circle", { key: '3be14b227adaabab87578043da016c6101853fec', cx: this.start.x, cy: this.start.y, r: "1px", class: "connection-cap start-cap" }), h("circle", { key: 'dbfdf1869dcd33fe061c709fe2e64c9a7c54b7ae', cx: this.end.x, cy: this.end.y, r: "1px", class: "connection-cap end-cap" }))));
+        return (h(Host, { key: '3b5b56d759b11a762a2556e2591496913e502894', class: "logic-connection" }, h("svg", { key: 'e9312fc767de2645b42adc0a56d3d9f22958e9ac', class: "connection" }, h("path", { key: '68d5e53887c5b127aa7005f2ffcc72121a32d483', class: "connection-line", d: this.path }), h("circle", { key: 'a9df74cf0526c67a9b19dd99cc0c642cc9fe80c9', cx: this.start.x, cy: this.start.y, r: "1px", class: "connection-cap start-cap" }), h("circle", { key: '6cfa786d37f054502e98d06e4470be305b9d0d8b', cx: this.end.x, cy: this.end.y, r: "1px", class: "connection-cap end-cap" }))));
     }
     static get watchers() { return {
         "start": ["updatePath"],

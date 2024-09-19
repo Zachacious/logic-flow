@@ -5,19 +5,16 @@ import { Camera } from './Camera';
 
 type EntityType = 'node' | 'connector' | 'connection' | 'viewport';
 
-export class ViewportData {
-  static instances = new Map<string, ViewportData>();
+export class ViewContext {
+  static instances = new Map<string, ViewContext>();
 
   uid: string;
-  // viewport: HTMLFlowyCanvasElement;
 
-  // viewports = new Map<string, FlowyCanvas>();
   nodes = new Map<string, HTMLLogicNodeElement>();
   connectors = new Map<string, HTMLLogicConnectorElement>();
   connections = new Map<string, HTMLLogicConnectionElement>();
 
   connectorRects = <Record<string, Rect>>{};
-  // connectorQuadTrees = new Map<string, Quadtree>();
   quadtree: Quadtree;
 
   camera = new Camera();
@@ -26,19 +23,16 @@ export class ViewportData {
   observer: MutationObserver;
 
   constructor(viewport: HTMLFlowyCanvasElement) {
-    // const viewport = document.getElementById(
-    //   viewportId,
-    // ) as HTMLFlowyCanvasElement;
     const id = nanoid();
     viewport.id = id;
     const viewportId = id;
-    if (ViewportData.instances.has(viewportId)) {
-      return ViewportData.instances.get(viewportId);
+    if (ViewContext.instances.has(viewportId)) {
+      return ViewContext.instances.get(viewportId);
     }
     this.uid = viewportId;
-    ViewportData.instances.set(this.uid, this);
+    ViewContext.instances.set(this.uid, this);
 
-    ViewportData.initializeViewport(viewport);
+    ViewContext.initializeViewport(viewport);
 
     this.observer = new MutationObserver(this.viewportMutation);
     this.observer.observe(viewport, {
@@ -48,26 +42,14 @@ export class ViewportData {
   }
 
   destroy() {
-    // for (const [id] of this.nodes) {
-    //   this.unregisterNode(id);
-    // }
-
-    // for (const [id] of this.connectors) {
-    //   this.unregisterConnector(id);
-    // }
-
-    // for (const [id] of this.connections) {
-    //   this.unregisterConnection(id);
-    // }
-
     this.observer.disconnect();
 
-    ViewportData.instances.delete(this.uid);
+    ViewContext.instances.delete(this.uid);
   }
 
   static seekAndDestroy = (type: EntityType, id: string) => {
     // search and destroy in all instances
-    for (const [, instance] of ViewportData.instances) {
+    for (const [, instance] of ViewContext.instances) {
       switch (type) {
         case 'node':
           instance.unregisterNode(id);
@@ -125,7 +107,6 @@ export class ViewportData {
     this.connectors.set(id, connector);
     const connectorEl = connector.querySelector('.connector');
     const rect = connectorEl.getBoundingClientRect();
-    // const rect = connector.getBoundingClientRect();
     this.connectorRects[id] = {
       left: rect.x,
       top: rect.y,
@@ -156,11 +137,6 @@ export class ViewportData {
     }
     this.connections.delete(id);
   };
-
-  // getViewport = (id: string) => this.viewports.get(id);
-  // getNode = (id: string) => this.nodes.get(id);
-  // getConnector = (id: string) => this.connectors.get(id);
-  // getConnection = (id: string) => this.connections.get(id);
 
   // mutation observer callback
   // when elements are added or removed from the dom
@@ -208,28 +184,11 @@ export class ViewportData {
     // that are already in the dom
 
     const id = viewport.id;
-    const instance = ViewportData.instances.get(id);
+    const instance = ViewContext.instances.get(id);
 
     const contentEl = viewport.querySelector('.flowy-content');
     const children = contentEl.children;
 
-    // for (let i = 0; i < children.length; i++) {
-    //   const child = children[i];
-    //   if (child instanceof HTMLElement) {
-    //     if (child.tagName === 'LOGIC-NODE') {
-    //       const logicNode = child as HTMLLogicNodeElement;
-    //       instance.registerNode(logicNode);
-    //     } else if (child.tagName === 'LOGIC-CONNECTOR') {
-    //       const logicConnector = child as HTMLLogicConnectorElement;
-    //       instance.registerConnector(logicConnector);
-    //     } else if (child.tagName === 'LOGIC-CONNECTION') {
-    //       const logicConnection = child as HTMLLogicConnectionElement;
-    //       instance.registerConnection(logicConnection);
-    //     }
-    //   }
-    // }
-
-    // need to do the above for all children recursively
     const traverse = (el: HTMLElement) => {
       if (el.tagName === 'LOGIC-NODE') {
         const logicNode = el as HTMLLogicNodeElement;

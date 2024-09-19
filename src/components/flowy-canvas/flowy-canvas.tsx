@@ -3,10 +3,9 @@ import { Coords } from '../../types/Coords';
 import { debounce } from '../../utils/debounce';
 import { throttle } from '../../utils/throttle';
 import { getEventLocation } from '../../utils/getEventLocation';
-// import { global } from '../../global';
 import { Quadtree } from '../../types/Quadtree';
 import { Camera } from '../../types/Camera';
-import { ViewportData } from '../../types/ViewportData';
+import { ViewContext } from '../../types/ViewContext';
 
 @Component({
   tag: 'flowy-canvas',
@@ -24,12 +23,9 @@ export class FlowyCanvas {
   @Prop() minZoom: number = 0.2;
   @Prop() zoomSpeed: number = 0.08;
 
-  // @State() zoom: number = 1;
-  // @State() pan: Coords = { x: 0, y: 0 };
   camera: Camera;
-  vData: ViewportData;
+  ctx: ViewContext;
 
-  // private _uid: string = global().registerViewport(this);
   private _initialPinchDistance: number = 0;
   private _isDragging: boolean = false;
   private _dragStart: Coords = { x: 0, y: 0 };
@@ -70,18 +66,8 @@ export class FlowyCanvas {
 
   private _elWheel = (e: WheelEvent) => this.handleWheel(e);
 
-  // @Method()
-  // async getUid() {
-  //   return this._uid;
-  // }
-
-  // @Method()
-  // async destroy() {
-  //   global().unregisterViewport(this._uid);
-  // }
-
   componentDidLoad() {
-    this.vData = new ViewportData(this.el);
+    this.ctx = new ViewContext(this.el);
 
     this._canvasEl = this.el.querySelector('.flowy-canvas') as HTMLDivElement;
     this._contentEl = this.el.querySelector('.flowy-content') as HTMLDivElement;
@@ -89,7 +75,7 @@ export class FlowyCanvas {
 
     this._canvasRect = this._canvasEl.getBoundingClientRect();
 
-    this.camera = this.vData.camera;
+    this.camera = this.ctx.camera;
 
     const canvasEl = this._canvasEl;
     this.renderGridLines();
@@ -125,7 +111,7 @@ export class FlowyCanvas {
 
     this._quadtree = new Quadtree(boundary, 4);
     // global().setViewportQuadtree(this._uid, this._quadtree);
-    this.vData.quadtree = this._quadtree;
+    this.ctx.quadtree = this._quadtree;
 
     // Handle resize events
     this._resizeObserver = new ResizeObserver(() => this._debouncedResize());
@@ -152,22 +138,8 @@ export class FlowyCanvas {
 
     // global().unregisterViewport(this._uid);
 
-    this.vData.destroy();
+    this.ctx.destroy();
   }
-
-  // @Watch('zoom')
-  // zoomChanged() {
-  //   this._needsRedraw = true;
-  //   // this.updateScreen();
-  //   this._debouncedUpdateScreen();
-  // }
-
-  // @Watch('pan')
-  // panChanged() {
-  //   this._needsRedraw = true;
-  //   // this.updateScreen();
-  //   this._debouncedUpdateScreen();
-  // }
 
   scheduleComponentUpdate() {
     this._needsRedraw = true;
@@ -244,28 +216,12 @@ export class FlowyCanvas {
     });
   }
 
-  // // get location from event data for mouse or touch
-  // getEventLocation(event: MouseEvent | TouchEvent) {
-  //   if (event instanceof TouchEvent) {
-  //     if (event.touches && event.touches[0]) {
-  //       return { x: event.touches[0].clientX, y: event.touches[0].clientY };
-  //     }
-  //   } else {
-  //     return { x: event.clientX, y: event.clientY };
-  //   }
-  // }
-
   onPointerDown(event: MouseEvent | TouchEvent) {
-    // if(event.target.hasPointerCapture(event.pointerId)) {
-    //   event.target.releasePointerCapture(event.pointerId);
-    // }
     const loc = getEventLocation(event);
     const worldCoords = this.camera.toWorldCoords(loc);
 
     let target = event.target as HTMLElement;
-    // if (event instanceof TouchEvent) {
     target = document.elementFromPoint(loc.x, loc.y) as HTMLElement;
-    // }
 
     if (target.closest('.logic-connector .connector')) {
       this._activeConnector = target.closest(
@@ -274,12 +230,8 @@ export class FlowyCanvas {
       const parentConn = this._activeConnector.closest(
         'logic-connector',
       ) as HTMLLogicConnectorElement;
-      // this._activeConnector.isDrawing = true;
-      // const rect = this._activeConnector.getBoundingClientRect();
       const aConnId = parentConn.id;
-      const rect = this.vData.connectorRects[aConnId];
-      // const node = this._activeConnector.closest('logic-node') as HTMLLogicNodeElement;
-      // const nodeRect = node.getBoundingClientRect();
+      const rect = this.ctx.connectorRects[aConnId];
       // account for node position and find center of connector
       this._activeConnectorStartPos = {
         x: rect.left + rect.width / 2,
@@ -296,18 +248,13 @@ export class FlowyCanvas {
       this._contentEl.appendChild(connection);
       this._activeConnection = connection;
       // Associate the connection with the connector
-      // this._activeConnector.connection = connection;
       return;
     } else if (target.closest('logic-node')) {
       this._activeNode = target.closest('logic-node') as HTMLLogicNodeElement;
       // bring active node to front by moving element to the end of the parent
-      // this._activeNode.parentNode.appendChild(this._activeNode);
-      // const rect = this._activeNode.getBoundingClientRect();
+
       const pos = this._activeNode.position;
-      // this._activeNodeDragStart = {
-      //   x: loc.x / this.camera.zoom - pos.x - this.camera.pos.x,
-      //   y: loc.y / this.camera.zoom - pos.y - this.camera.pos.y,
-      // };
+
       this._activeNodeDragStart = {
         x: worldCoords.x - pos.x,
         y: worldCoords.y - pos.y,
@@ -319,17 +266,7 @@ export class FlowyCanvas {
 
     this._isDragging = true;
 
-    // this._dragStart = {
-    //   x: loc.x / this.camera.zoom - this.camera.pos.x,
-    //   y: loc.y / this.camera.zoom - this.camera.pos.y,
-    // };
     this._dragStart = worldCoords;
-    // this._dragStart = this.camera.toScreenCoords(loc);
-    // console.log(
-    //   'drag start',
-    //   this._dragStart,
-    //   this.camera.toScreenCoords({ ...loc }),
-    // );
   }
 
   onPointerUp(event: MouseEvent | TouchEvent) {
@@ -338,13 +275,9 @@ export class FlowyCanvas {
       const loc = getEventLocation(event);
       let target = event.target as HTMLElement;
       if (event instanceof TouchEvent) {
-        // console.log('touch event', event.changedTouches);
         target = document.elementFromPoint(loc.x, loc.y) as HTMLElement;
       }
-      // const target = document.elementFromPoint(
-      //   event.clientX,
-      //   event.clientY,
-      // ) as HTMLElement;
+
       const targetConnector = target.closest(
         'logic-connector .connector',
       ) as HTMLLogicConnectorElement;
@@ -392,7 +325,7 @@ export class FlowyCanvas {
         }
 
         // const targRect = targetConnector.getBoundingClientRect();
-        const targRect = this.vData.connectorRects[tConn.getAttribute('id')];
+        const targRect = this.ctx.connectorRects[tConn.getAttribute('id')];
 
         // like above but if went from input to output, then start is the target and end is the active
         // treat as though drawn from target to active
@@ -432,7 +365,7 @@ export class FlowyCanvas {
       for (let i = 0; i < connectors.length; i++) {
         const connector = connectors[i];
         const connectorId = connector.getAttribute('id');
-        const rect = this.vData.connectorRects[connectorId];
+        const rect = this.ctx.connectorRects[connectorId];
         this._quadtree.remove(connectorId);
         this._quadtree.insert({
           x: rect.left + rect.width / 2,
@@ -446,9 +379,6 @@ export class FlowyCanvas {
 
     this._isDragging = false;
     this._initialPinchDistance = 0;
-    // this._lastZoom = this.camera.zoom;
-    // this._activeNode = null;
-    // this._activeNodeDragging = false;
   }
 
   onPointerMove(event: MouseEvent | TouchEvent) {
@@ -466,19 +396,13 @@ export class FlowyCanvas {
           this.camera.zoom,
         );
         if (snappableConnector) {
-          const rect = this.vData.connectorRects[snappableConnector.id];
+          const rect = this.ctx.connectorRects[snappableConnector.id];
           const pos = {
             x: rect.left + rect.width / 2,
             y: rect.top + rect.height / 2,
           };
           aConn.end = pos;
         } else {
-          // const pos = worldCoords;
-          // const pos = this.camera.toScreenCoords(loc);
-          // const pos = {
-          //   x: loc.x / this.camera.zoom - this.camera.pos.x,
-          //   y: loc.y / this.camera.zoom - this.camera.pos.y,
-          // };
           const pos = worldCoords;
           aConn.end = pos;
         }
@@ -487,17 +411,8 @@ export class FlowyCanvas {
     } else if (this._activeNode && this._activeNodeDragging) {
       const aNode = this._activeNode;
       const worldCoords = this.camera.toWorldCoords(loc);
-      // requestAnimationFrame(() => {
-      // const loc = getEventLocation(event);
       const aNodeOldPos = aNode.position;
-      // const newX =
-      //   loc.x / this.camera.zoom -
-      //   this._activeNodeDragStart.x -
-      //   this.camera.pos.x;
-      // const newY =
-      //   loc.y / this.camera.zoom -
-      //   this._activeNodeDragStart.y -
-      //   this.camera.pos.y;
+
       const newX = worldCoords.x - this._activeNodeDragStart.x;
       const newY = worldCoords.y - this._activeNodeDragStart.y;
 
@@ -506,7 +421,6 @@ export class FlowyCanvas {
         'logic-connector',
       ) as NodeListOf<HTMLLogicConnectorElement>;
 
-      // requestAnimationFrame(() => {
       for (let i = 0; i < connectors.length; i++) {
         const connector = connectors[i];
         const delta = {
@@ -517,14 +431,14 @@ export class FlowyCanvas {
 
         // update connections
         // update rect
-        let rect = { ...this.vData.connectorRects[connId] };
+        let rect = { ...this.ctx.connectorRects[connId] };
         rect = {
           left: rect.left + delta.x,
           top: rect.top + delta.y,
           width: rect.width,
           height: rect.height,
         };
-        this.vData.connectorRects[connId] = rect;
+        this.ctx.connectorRects[connId] = rect;
 
         if (connector.connections.length) {
           const pos = {
@@ -532,7 +446,6 @@ export class FlowyCanvas {
             y: rect.top + rect.height / 2,
           };
 
-          // reg for loop
           for (let i = 0; i < connector.connections.length; i++) {
             const connection = connector.connections[i];
             if (connector.type === 'input') {

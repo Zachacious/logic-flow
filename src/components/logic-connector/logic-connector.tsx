@@ -13,13 +13,6 @@ export class LogicConnector {
   @Prop() connectingConnector: LogicConnector | null = null;
   @Prop() connections: LogicConnection[] = [];
 
-  // private _uid: string;
-
-  // @Method()
-  // async getUid() {
-  //   return this._uid;
-  // }
-
   render() {
     const sideClass =
       this.type === 'input' ? 'left-connector' : 'right-connector';

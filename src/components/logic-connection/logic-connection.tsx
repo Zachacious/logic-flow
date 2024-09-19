@@ -12,7 +12,6 @@ export class LogicConnection {
   @Prop() type: 'input' | 'output' = 'input';
 
   path: string;
-  // private _uid: string = global().registerConnection(this);
   private _capRadius = 5;
 
   componentWillLoad() {
@@ -25,20 +24,6 @@ export class LogicConnection {
       this._capRadius = parseInt(style.width) / 2;
     }
   }
-
-  // disconnectedCallback() {
-  //   global().unregisterConnection(this._uid);
-  // }
-
-  // @Method()
-  // async getUid() {
-  //   return this._uid;
-  // }
-
-  // @Method()
-  // async destroy() {
-  //   global().unregisterConnection(this._uid);
-  // }
 
   @Watch('start')
   @Watch('end')
