@@ -1,4 +1,4 @@
-import { r as registerInstance, h, a as Host, g as getElement } from './index-c090f9ce.js';
+import { r as registerInstance, h, a as Host, g as getElement } from './index-d2e5e60a.js';
 import { d as debounce } from './debounce-25523ff8.js';
 
 var commonjsGlobal = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};

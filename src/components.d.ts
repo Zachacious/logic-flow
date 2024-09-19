@@ -7,14 +7,10 @@
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
 import { Coords } from "./types/Coords";
 import { LogicConnection } from "./components/logic-connection/logic-connection";
-import { Size } from "./types/Size";
 export { Coords } from "./types/Coords";
 export { LogicConnection } from "./components/logic-connection/logic-connection";
-export { Size } from "./types/Size";
 export namespace Components {
     interface FlowyCanvas {
-        "destroy": () => Promise<void>;
-        "getUid": () => Promise<string>;
         "gridBgColor": string;
         "gridLineColor": string;
         "gridSize": number;
@@ -33,25 +29,17 @@ export namespace Components {
         "zoomSpeed": number;
     }
     interface LogicConnection {
-        "destroy": () => Promise<void>;
         "end": Coords;
-        "getUid": () => Promise<string>;
         "start": Coords;
         "type": 'input' | 'output';
     }
     interface LogicConnector {
         "connectingConnector": LogicConnector | null;
         "connections": LogicConnection[];
-        "destroy": () => Promise<void>;
-        "getUid": () => Promise<string>;
         "type": 'input' | 'output';
-        "updateQuadtree": () => Promise<void>;
     }
     interface LogicNode {
-        "destroy": () => Promise<void>;
-        "getUid": () => Promise<string>;
         "position": Coords;
-        "size": Size;
         "title": string;
         "type": string;
     }
@@ -147,7 +135,6 @@ declare namespace LocalJSX {
     }
     interface LogicNode {
         "position"?: Coords;
-        "size"?: Size;
         "title"?: string;
         "type"?: string;
     }

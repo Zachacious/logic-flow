@@ -1,20 +1,12 @@
-import {
-  Component,
-  Host,
-  Prop,
-  h,
-  Element,
-  State,
-  Watch,
-  Method,
-} from '@stencil/core';
+import { Component, Host, Prop, h, Element } from '@stencil/core';
 import { Coords } from '../../types/Coords';
 import { debounce } from '../../utils/debounce';
 import { throttle } from '../../utils/throttle';
 import { getEventLocation } from '../../utils/getEventLocation';
-import { global } from '../../global';
+// import { global } from '../../global';
 import { Quadtree } from '../../types/Quadtree';
 import { Camera } from '../../types/Camera';
+import { ViewportData } from '../../types/ViewportData';
 
 @Component({
   tag: 'flowy-canvas',
@@ -22,7 +14,7 @@ import { Camera } from '../../types/Camera';
   shadow: false,
 })
 export class FlowyCanvas {
-  @Element() el: HTMLElement;
+  @Element() el: HTMLFlowyCanvasElement;
 
   @Prop() renderGrid: boolean = true;
   @Prop() gridSize: number = 20;
@@ -35,8 +27,9 @@ export class FlowyCanvas {
   // @State() zoom: number = 1;
   // @State() pan: Coords = { x: 0, y: 0 };
   camera: Camera;
+  vData: ViewportData;
 
-  private _uid: string = global().registerViewport(this);
+  // private _uid: string = global().registerViewport(this);
   private _initialPinchDistance: number = 0;
   private _isDragging: boolean = false;
   private _dragStart: Coords = { x: 0, y: 0 };
@@ -55,7 +48,7 @@ export class FlowyCanvas {
   private _canvasRect: DOMRect;
   private _quadtree: Quadtree;
 
-  private _connectorSnapDistance: number = 20;
+  private _connectorSnapDistance: number = 25;
 
   private _resizeObserver: ResizeObserver;
   private _debouncedResize = debounce(() => this.onResize(), 16);
@@ -77,24 +70,26 @@ export class FlowyCanvas {
 
   private _elWheel = (e: WheelEvent) => this.handleWheel(e);
 
-  @Method()
-  async getUid() {
-    return this._uid;
-  }
+  // @Method()
+  // async getUid() {
+  //   return this._uid;
+  // }
 
-  @Method()
-  async destroy() {
-    global().unregisterViewport(this._uid);
-  }
+  // @Method()
+  // async destroy() {
+  //   global().unregisterViewport(this._uid);
+  // }
 
   componentDidLoad() {
+    this.vData = new ViewportData(this.el);
+
     this._canvasEl = this.el.querySelector('.flowy-canvas') as HTMLDivElement;
     this._contentEl = this.el.querySelector('.flowy-content') as HTMLDivElement;
     this._gridEl = this.el.querySelector('.flowy-grid') as HTMLCanvasElement;
 
     this._canvasRect = this._canvasEl.getBoundingClientRect();
 
-    this.camera = global().camera;
+    this.camera = this.vData.camera;
 
     const canvasEl = this._canvasEl;
     this.renderGridLines();
@@ -129,7 +124,8 @@ export class FlowyCanvas {
     };
 
     this._quadtree = new Quadtree(boundary, 4);
-    global().setViewportQuadtree(this._uid, this._quadtree);
+    // global().setViewportQuadtree(this._uid, this._quadtree);
+    this.vData.quadtree = this._quadtree;
 
     // Handle resize events
     this._resizeObserver = new ResizeObserver(() => this._debouncedResize());
@@ -154,7 +150,9 @@ export class FlowyCanvas {
 
     canvasEl.removeEventListener('wheel', this._elWheel);
 
-    global().unregisterViewport(this._uid);
+    // global().unregisterViewport(this._uid);
+
+    this.vData.destroy();
   }
 
   // @Watch('zoom')
@@ -278,8 +276,8 @@ export class FlowyCanvas {
       ) as HTMLLogicConnectorElement;
       // this._activeConnector.isDrawing = true;
       // const rect = this._activeConnector.getBoundingClientRect();
-      const aConnId = parentConn.getAttribute('id');
-      const rect = global().connectorRects[aConnId];
+      const aConnId = parentConn.id;
+      const rect = this.vData.connectorRects[aConnId];
       // const node = this._activeConnector.closest('logic-node') as HTMLLogicNodeElement;
       // const nodeRect = node.getBoundingClientRect();
       // account for node position and find center of connector
@@ -394,7 +392,7 @@ export class FlowyCanvas {
         }
 
         // const targRect = targetConnector.getBoundingClientRect();
-        const targRect = global().connectorRects[tConn.getAttribute('id')];
+        const targRect = this.vData.connectorRects[tConn.getAttribute('id')];
 
         // like above but if went from input to output, then start is the target and end is the active
         // treat as though drawn from target to active
@@ -434,7 +432,7 @@ export class FlowyCanvas {
       for (let i = 0; i < connectors.length; i++) {
         const connector = connectors[i];
         const connectorId = connector.getAttribute('id');
-        const rect = global().connectorRects[connectorId];
+        const rect = this.vData.connectorRects[connectorId];
         this._quadtree.remove(connectorId);
         this._quadtree.insert({
           x: rect.left + rect.width / 2,
@@ -442,13 +440,15 @@ export class FlowyCanvas {
           id: connectorId,
         });
       }
+
+      this._activeNode = null;
     }
 
     this._isDragging = false;
     this._initialPinchDistance = 0;
     // this._lastZoom = this.camera.zoom;
-    this._activeNode = null;
-    this._activeNodeDragging = false;
+    // this._activeNode = null;
+    // this._activeNodeDragging = false;
   }
 
   onPointerMove(event: MouseEvent | TouchEvent) {
@@ -461,12 +461,12 @@ export class FlowyCanvas {
         const snappableConnector = this._quadtree.checkNearby(
           loc.x,
           loc.y,
-          25 * this.camera.zoom,
+          this._connectorSnapDistance * this.camera.zoom,
           this.camera.pos,
           this.camera.zoom,
         );
         if (snappableConnector) {
-          const rect = global().connectorRects[snappableConnector.id];
+          const rect = this.vData.connectorRects[snappableConnector.id];
           const pos = {
             x: rect.left + rect.width / 2,
             y: rect.top + rect.height / 2,
@@ -517,14 +517,14 @@ export class FlowyCanvas {
 
         // update connections
         // update rect
-        let rect = { ...global().connectorRects[connId] };
+        let rect = { ...this.vData.connectorRects[connId] };
         rect = {
           left: rect.left + delta.x,
           top: rect.top + delta.y,
           width: rect.width,
           height: rect.height,
         };
-        global().connectorRects[connId] = rect;
+        this.vData.connectorRects[connId] = rect;
 
         if (connector.connections.length) {
           const pos = {
@@ -695,7 +695,7 @@ export class FlowyCanvas {
 
   render() {
     return (
-      <Host id={this._uid}>
+      <Host>
         {/* <div class="flowy-virtual-area"> */}
         <div class="flowy-canvas">
           <canvas class="flowy-grid"></canvas>

@@ -1,6 +1,5 @@
 import { Component, Host, Method, Prop, Watch, h } from '@stencil/core';
 import { Coords } from '../../types/Coords';
-import { global } from '../../global';
 
 @Component({
   tag: 'logic-connection',
@@ -13,7 +12,7 @@ export class LogicConnection {
   @Prop() type: 'input' | 'output' = 'input';
 
   path: string;
-  private _uid: string = global().registerConnection(this);
+  // private _uid: string = global().registerConnection(this);
   private _capRadius = 5;
 
   componentWillLoad() {
@@ -27,19 +26,19 @@ export class LogicConnection {
     }
   }
 
-  disconnectedCallback() {
-    global().unregisterConnection(this._uid);
-  }
+  // disconnectedCallback() {
+  //   global().unregisterConnection(this._uid);
+  // }
 
-  @Method()
-  async getUid() {
-    return this._uid;
-  }
+  // @Method()
+  // async getUid() {
+  //   return this._uid;
+  // }
 
-  @Method()
-  async destroy() {
-    global().unregisterConnection(this._uid);
-  }
+  // @Method()
+  // async destroy() {
+  //   global().unregisterConnection(this._uid);
+  // }
 
   @Watch('start')
   @Watch('end')
@@ -89,7 +88,7 @@ export class LogicConnection {
 
   render() {
     return (
-      <Host class="logic-connection" id={this._uid}>
+      <Host class="logic-connection">
         <svg class="connection">
           <path class="connection-line" d={this.path}></path>
           {/* Start cap */}
