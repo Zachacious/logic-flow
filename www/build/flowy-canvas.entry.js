@@ -564,6 +564,9 @@ const FlowyCanvas = class {
                 const snapConn = this.ctx.connectors.get(snappableConnector.id);
                 this._activeConnector =
                     snapConn.connectingConnector;
+                this._activeConnector.connections =
+                    this._activeConnector.connections.filter(conn => conn !== this._activeConnection);
+                snapConn.connections = snapConn.connections.filter(conn => conn !== this._activeConnection);
                 // const connData = this.ctx.connectionRefs.get(connection.id);
                 // if selected output connector, swap start and end
                 if (this._activeConnector.type === 'input') {
@@ -687,21 +690,12 @@ const FlowyCanvas = class {
                         x: targRect.left + targRect.width / 2,
                         y: targRect.top + targRect.height / 2,
                     };
-                    // connData.start = tConn;
-                    // connData.end = aConn;
                 }
                 // get parent logic-connector from activeConnector and targetConnector
                 aConn.connectingConnector = tConn;
                 aConn.connections.push(this._activeConnection);
                 tConn.connectingConnector = aConn;
                 tConn.connections.push(this._activeConnection);
-                // this._isReconnectAttempt = false;
-                // const connData = { start: aConn, end: tConn };
-                // this.ctx.connectionRefs.set(this._activeConnection.id, connData);
-                // this.ctx.connectionRefs.set(this._activeConnection.id, {
-                //   start: aConn,
-                //   end: tConn,
-                // });
             }
             else {
                 this._activeConnection.remove();
@@ -902,7 +896,7 @@ const FlowyCanvas = class {
         this._contentEl.style.display = cdisplay;
     }
     render() {
-        return (h(Host, { key: '0adf25cf40ab127877e7e27440632b24486e5cdd' }, h("div", { key: '164b7641279db190f99cd3a35555cb1b26edbb2c', class: "flowy-canvas" }, h("canvas", { key: 'c545c60d9492a39333f0b1430079451116ba8c3b', class: "flowy-grid" }), h("div", { key: '5dd593492e94f532f10d6b5da92284119af5e537', class: "flowy-content" }, h("slot", { key: '3ca225b109be238995fbb1008f32f19c6a9103e5' })))));
+        return (h(Host, { key: '323b6cd76e1e5e6ed909e53b3558d6b8e5cfed38' }, h("div", { key: '152a97d7c694ff3e98285519bdfc658bacd3b649', class: "flowy-canvas" }, h("canvas", { key: '349fda90618f6800be0340effde0d2508deae07c', class: "flowy-grid" }), h("div", { key: '7f94ce279d3daf1de993ab00e71be5cf3982d926', class: "flowy-content" }, h("slot", { key: '915feb349e352b602927bb014db3daa834d96ecf' })))));
     }
     get el() { return getElement(this); }
 };

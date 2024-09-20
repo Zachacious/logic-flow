@@ -240,6 +240,15 @@ export class FlowyCanvas {
         this._activeConnector =
           snapConn.connectingConnector as HTMLLogicConnectorElement;
 
+        this._activeConnector.connections =
+          this._activeConnector.connections.filter(
+            conn => conn !== this._activeConnection,
+          );
+
+        snapConn.connections = snapConn.connections.filter(
+          conn => conn !== this._activeConnection,
+        );
+
         // const connData = this.ctx.connectionRefs.get(connection.id);
 
         // if selected output connector, swap start and end
@@ -401,8 +410,6 @@ export class FlowyCanvas {
             x: targRect.left + targRect.width / 2,
             y: targRect.top + targRect.height / 2,
           };
-          // connData.start = tConn;
-          // connData.end = aConn;
         }
 
         // get parent logic-connector from activeConnector and targetConnector
@@ -411,14 +418,6 @@ export class FlowyCanvas {
         aConn.connections.push(this._activeConnection);
         tConn.connectingConnector = aConn;
         tConn.connections.push(this._activeConnection);
-        // this._isReconnectAttempt = false;
-        // const connData = { start: aConn, end: tConn };
-        // this.ctx.connectionRefs.set(this._activeConnection.id, connData);
-
-        // this.ctx.connectionRefs.set(this._activeConnection.id, {
-        //   start: aConn,
-        //   end: tConn,
-        // });
       } else {
         this._activeConnection.remove();
       }
