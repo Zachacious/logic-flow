@@ -222,7 +222,51 @@ export class FlowyCanvas {
     let target = event.target as HTMLElement;
     target = document.elementFromPoint(loc.x, loc.y) as HTMLElement;
 
-    if (target.closest('.logic-connector .connector')) {
+    // if a connection clicked
+    const connection = target.closest('logic-connection');
+    if (connection) {
+      const snappableConnector = this._quadtree.checkNearby(
+        loc.x,
+        loc.y,
+        this._connectorSnapDistance * this.camera.zoom,
+      );
+      if (snappableConnector) {
+        // this._isReconnectAttempt = true;
+        // if connector is close, then disconnect and setup as current dragging connection
+        this._activeConnection = connection as HTMLLogicConnectionElement;
+
+        const snapConn = this.ctx.connectors.get(snappableConnector.id);
+
+        this._activeConnector =
+          snapConn.connectingConnector as HTMLLogicConnectorElement;
+
+        // const connData = this.ctx.connectionRefs.get(connection.id);
+
+        // if selected output connector, swap start and end
+        if (this._activeConnector.type === 'input') {
+          // const temp = connData.start;
+          // connData.start = connData.end;
+          // connData.end = temp;
+
+          // swap positions
+          const tempPos = this._activeConnection.start;
+          this._activeConnection.start = this._activeConnection.end;
+
+          this._activeConnection.end = tempPos;
+
+          // swap type
+          this._activeConnection.type = 'input';
+        }
+
+        // set connectingconnector to null
+        // connData.start.connectingConnector = null;
+        // connData.end.connectingConnector = null;
+        this._activeConnector.connectingConnector = null;
+        snapConn.connectingConnector = null;
+
+        return;
+      }
+    } else if (target.closest('.logic-connector .connector')) {
       this._activeConnector = target.closest(
         'logic-connector .connector',
       ) as HTMLLogicConnectorElement;
@@ -345,11 +389,20 @@ export class FlowyCanvas {
 
           this._activeConnection.end = this._activeConnectorStartPos;
           this._activeConnection.type = 'output';
+
+          // set connection to rect
+          const rect = this.ctx.connectorRects[aConn.id];
+          this._activeConnection.end = {
+            x: rect.left + rect.width / 2,
+            y: rect.top + rect.height / 2,
+          };
         } else {
           this._activeConnection.end = {
             x: targRect.left + targRect.width / 2,
             y: targRect.top + targRect.height / 2,
           };
+          // connData.start = tConn;
+          // connData.end = aConn;
         }
 
         // get parent logic-connector from activeConnector and targetConnector
@@ -358,6 +411,14 @@ export class FlowyCanvas {
         aConn.connections.push(this._activeConnection);
         tConn.connectingConnector = aConn;
         tConn.connections.push(this._activeConnection);
+        // this._isReconnectAttempt = false;
+        // const connData = { start: aConn, end: tConn };
+        // this.ctx.connectionRefs.set(this._activeConnection.id, connData);
+
+        // this.ctx.connectionRefs.set(this._activeConnection.id, {
+        //   start: aConn,
+        //   end: tConn,
+        // });
       } else {
         this._activeConnection.remove();
       }
@@ -395,26 +456,26 @@ export class FlowyCanvas {
     if (this._activeConnector && this._activeConnection) {
       const aConn = this._activeConnection;
       const worldCoords = this.camera.toWorldCoords(loc);
-      requestAnimationFrame(() => {
-        const snappableConnector = this._quadtree.checkNearby(
-          loc.x,
-          loc.y,
-          this._connectorSnapDistance * this.camera.zoom,
-          // this.camera.pos,
-          // this.camera.zoom,
-        );
-        if (snappableConnector) {
-          const rect = this.ctx.connectorRects[snappableConnector.id];
-          const pos = {
-            x: rect.left + rect.width / 2,
-            y: rect.top + rect.height / 2,
-          };
-          aConn.end = pos;
-        } else {
-          const pos = worldCoords;
-          aConn.end = pos;
-        }
-      });
+      // requestAnimationFrame(() => {
+      const snappableConnector = this._quadtree.checkNearby(
+        loc.x,
+        loc.y,
+        this._connectorSnapDistance * this.camera.zoom,
+        // this.camera.pos,
+        // this.camera.zoom,
+      );
+      if (snappableConnector) {
+        const rect = this.ctx.connectorRects[snappableConnector.id];
+        const pos = {
+          x: rect.left + rect.width / 2,
+          y: rect.top + rect.height / 2,
+        };
+        aConn.end = pos;
+      } else {
+        const pos = worldCoords;
+        aConn.end = pos;
+      }
+      // });
       return;
     } else if (this._activeNode && this._activeNodeDragging) {
       const aNode = this._activeNode;
@@ -424,6 +485,11 @@ export class FlowyCanvas {
       const newX = worldCoords.x - this._activeNodeDragStart.x;
       const newY = worldCoords.y - this._activeNodeDragStart.y;
 
+      const delta = {
+        x: newX - aNodeOldPos.x,
+        y: newY - aNodeOldPos.y,
+      };
+
       // update connections
       const connectors = aNode.querySelectorAll(
         'logic-connector',
@@ -431,10 +497,7 @@ export class FlowyCanvas {
 
       for (let i = 0; i < connectors.length; i++) {
         const connector = connectors[i];
-        const delta = {
-          x: newX - aNodeOldPos.x,
-          y: newY - aNodeOldPos.y,
-        };
+
         const connId = connector.getAttribute('id');
 
         // update connections
@@ -617,7 +680,6 @@ export class FlowyCanvas {
   render() {
     return (
       <Host>
-        {/* <div class="flowy-virtual-area"> */}
         <div class="flowy-canvas">
           <canvas class="flowy-grid"></canvas>
           <div class="flowy-content">

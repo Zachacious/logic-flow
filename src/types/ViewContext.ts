@@ -9,17 +9,16 @@ export class ViewContext {
   static instances = new Map<string, ViewContext>();
 
   uid: string;
-
   nodes = new Map<string, HTMLLogicNodeElement>();
   connectors = new Map<string, HTMLLogicConnectorElement>();
   connections = new Map<string, HTMLLogicConnectionElement>();
-
   connectorRects = <Record<string, Rect>>{};
+  // connectionRefs = new Map<
+  //   string,
+  //   { start: HTMLLogicConnectorElement; end: HTMLLogicConnectorElement }
+  // >();
   quadtree: Quadtree;
-
   camera = new Camera();
-
-  // mutation observer
   observer: MutationObserver;
 
   constructor(viewport: HTMLFlowyCanvasElement) {
@@ -210,4 +209,19 @@ export class ViewContext {
       traverse(children[i] as HTMLElement);
     }
   };
+
+  // getOppositeConnector = (connectionId: string, connectorId: string) => {
+  //   const connData = this.connectionRefs.get(connectionId);
+  //   if (!connData) {
+  //     throw new Error('Connection not found');
+  //   }
+
+  //   if (connData) {
+  //     if (connData.start.id === connectorId) {
+  //       return connData.end;
+  //     } else if (connData.end.id === connectorId) {
+  //       return connData.start;
+  //     }
+  //   }
+  // };
 }

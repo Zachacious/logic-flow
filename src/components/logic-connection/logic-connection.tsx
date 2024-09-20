@@ -1,4 +1,4 @@
-import { Component, Host, Method, Prop, Watch, h } from '@stencil/core';
+import { Component, Host, Prop, Watch, h } from '@stencil/core';
 import { Coords } from '../../types/Coords';
 
 @Component({
