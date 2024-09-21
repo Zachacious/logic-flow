@@ -17,6 +17,7 @@ export namespace Components {
         "maxZoom": number;
         "minZoom": number;
         "renderGrid": boolean;
+        "snapToGrid": boolean;
         "zoomSpeed": number;
     }
     interface FlowyCanvasOld {
@@ -112,6 +113,7 @@ declare namespace LocalJSX {
         "maxZoom"?: number;
         "minZoom"?: number;
         "renderGrid"?: boolean;
+        "snapToGrid"?: boolean;
         "zoomSpeed"?: number;
     }
     interface FlowyCanvasOld {

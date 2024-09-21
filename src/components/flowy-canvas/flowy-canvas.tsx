@@ -22,6 +22,7 @@ export class FlowyCanvas {
   @Prop() maxZoom: number = 3;
   @Prop() minZoom: number = 0.2;
   @Prop() zoomSpeed: number = 0.08;
+  @Prop() snapToGrid: boolean = false;
 
   camera: Camera;
   ctx: ViewContext;
@@ -44,7 +45,7 @@ export class FlowyCanvas {
   private _canvasRect: DOMRect;
   private _quadtree: Quadtree;
 
-  private _connectorSnapDistance: number = 25;
+  private _connectorSnapDistance: number = 37;
 
   private _resizeObserver: ResizeObserver;
   private _debouncedResize = debounce(() => this.onResize(), 16);
@@ -231,6 +232,9 @@ export class FlowyCanvas {
         this._connectorSnapDistance * this.camera.zoom,
       );
       if (snappableConnector) {
+        // set mouse cursor to grabbing
+        window.document.body.style.cursor = 'grabbing';
+
         // this._isReconnectAttempt = true;
         // if connector is close, then disconnect and setup as current dragging connection
         this._activeConnection = connection as HTMLLogicConnectionElement;
@@ -248,8 +252,6 @@ export class FlowyCanvas {
         snapConn.connections = snapConn.connections.filter(
           conn => conn !== this._activeConnection,
         );
-
-        // const connData = this.ctx.connectionRefs.get(connection.id);
 
         // if selected output connector, swap start and end
         if (this._activeConnector.type === 'input') {
@@ -276,6 +278,9 @@ export class FlowyCanvas {
         return;
       }
     } else if (target.closest('.logic-connector .connector')) {
+      // set cursor to cell
+      window.document.body.style.cursor = 'grabbing';
+
       this._activeConnector = target.closest(
         'logic-connector .connector',
       ) as HTMLLogicConnectorElement;
@@ -302,6 +307,9 @@ export class FlowyCanvas {
       // Associate the connection with the connector
       return;
     } else if (target.closest('logic-node')) {
+      // set cursor to move
+      window.document.body.style.cursor = 'grabbing';
+
       this._activeNode = target.closest('logic-node') as HTMLLogicNodeElement;
       // bring active node to front by moving element to the end of the parent
 
@@ -315,6 +323,10 @@ export class FlowyCanvas {
 
       return;
     }
+
+    // if nothing clicked, then start panning
+    // set cursor to grabbing
+    window.document.body.style.cursor = 'grabbing';
 
     this._isDragging = true;
 
@@ -447,6 +459,7 @@ export class FlowyCanvas {
 
     this._isDragging = false;
     this._initialPinchDistance = 0;
+    window.document.body.style.cursor = 'auto';
   }
 
   onPointerMove(event: MouseEvent | TouchEvent) {
@@ -481,8 +494,15 @@ export class FlowyCanvas {
       const worldCoords = this.camera.toWorldCoords(loc);
       const aNodeOldPos = aNode.position;
 
-      const newX = worldCoords.x - this._activeNodeDragStart.x;
-      const newY = worldCoords.y - this._activeNodeDragStart.y;
+      let newX = worldCoords.x - this._activeNodeDragStart.x;
+      let newY = worldCoords.y - this._activeNodeDragStart.y;
+
+      // snap to grid
+      if (this.snapToGrid) {
+        const gridSize = this.gridSize;
+        newX = Math.round(newX / gridSize) * gridSize;
+        newY = Math.round(newY / gridSize) * gridSize;
+      }
 
       const delta = {
         x: newX - aNodeOldPos.x,

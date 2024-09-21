@@ -80,14 +80,14 @@ export class LogicConnection {
           <circle
             cx={this.start.x}
             cy={this.start.y}
-            r="1px"
+            r="1.5px"
             class="connection-cap start-cap"
           />
           {/* End cap */}
           <circle
             cx={this.end.x}
             cy={this.end.y}
-            r="1px"
+            r="1.5px"
             class="connection-cap end-cap"
           />
         </svg>

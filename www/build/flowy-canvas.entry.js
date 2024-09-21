@@ -411,7 +411,7 @@ const FlowyCanvas = class {
         this._activeNodeDragStart = { x: 0, y: 0 };
         this._activeConnectorStartPos = { x: 0, y: 0 };
         this._needsRedraw = true;
-        this._connectorSnapDistance = 25;
+        this._connectorSnapDistance = 37;
         this._debouncedResize = debounce(() => this.onResize(), 16);
         this._debouncedUpdateScreen = debounce(() => this.updateScreen(), 1);
         // private _throttledPointerMove = throttle(e => this.onPointerMove(e), 1);
@@ -431,6 +431,7 @@ const FlowyCanvas = class {
         this.maxZoom = 3;
         this.minZoom = 0.2;
         this.zoomSpeed = 0.08;
+        this.snapToGrid = false;
     }
     componentDidLoad() {
         this.ctx = new ViewContext(this.el);
@@ -558,6 +559,8 @@ const FlowyCanvas = class {
         if (connection) {
             const snappableConnector = this._quadtree.checkNearby(loc.x, loc.y, this._connectorSnapDistance * this.camera.zoom);
             if (snappableConnector) {
+                // set mouse cursor to grabbing
+                window.document.body.style.cursor = 'grabbing';
                 // this._isReconnectAttempt = true;
                 // if connector is close, then disconnect and setup as current dragging connection
                 this._activeConnection = connection;
@@ -567,7 +570,6 @@ const FlowyCanvas = class {
                 this._activeConnector.connections =
                     this._activeConnector.connections.filter(conn => conn !== this._activeConnection);
                 snapConn.connections = snapConn.connections.filter(conn => conn !== this._activeConnection);
-                // const connData = this.ctx.connectionRefs.get(connection.id);
                 // if selected output connector, swap start and end
                 if (this._activeConnector.type === 'input') {
                     // const temp = connData.start;
@@ -589,6 +591,8 @@ const FlowyCanvas = class {
             }
         }
         else if (target.closest('.logic-connector .connector')) {
+            // set cursor to cell
+            window.document.body.style.cursor = 'grabbing';
             this._activeConnector = target.closest('logic-connector .connector');
             const parentConn = this._activeConnector.closest('logic-connector');
             const aConnId = parentConn.id;
@@ -610,6 +614,8 @@ const FlowyCanvas = class {
             return;
         }
         else if (target.closest('logic-node')) {
+            // set cursor to move
+            window.document.body.style.cursor = 'grabbing';
             this._activeNode = target.closest('logic-node');
             // bring active node to front by moving element to the end of the parent
             const pos = this._activeNode.position;
@@ -620,6 +626,9 @@ const FlowyCanvas = class {
             this._activeNodeDragging = true;
             return;
         }
+        // if nothing clicked, then start panning
+        // set cursor to grabbing
+        window.document.body.style.cursor = 'grabbing';
         this._isDragging = true;
         this._dragStart = worldCoords;
     }
@@ -722,6 +731,7 @@ const FlowyCanvas = class {
         }
         this._isDragging = false;
         this._initialPinchDistance = 0;
+        window.document.body.style.cursor = 'auto';
     }
     onPointerMove(event) {
         const loc = getEventLocation(event);
@@ -749,8 +759,14 @@ const FlowyCanvas = class {
             const aNode = this._activeNode;
             const worldCoords = this.camera.toWorldCoords(loc);
             const aNodeOldPos = aNode.position;
-            const newX = worldCoords.x - this._activeNodeDragStart.x;
-            const newY = worldCoords.y - this._activeNodeDragStart.y;
+            let newX = worldCoords.x - this._activeNodeDragStart.x;
+            let newY = worldCoords.y - this._activeNodeDragStart.y;
+            // snap to grid
+            if (this.snapToGrid) {
+                const gridSize = this.gridSize;
+                newX = Math.round(newX / gridSize) * gridSize;
+                newY = Math.round(newY / gridSize) * gridSize;
+            }
             const delta = {
                 x: newX - aNodeOldPos.x,
                 y: newY - aNodeOldPos.y,
@@ -896,7 +912,7 @@ const FlowyCanvas = class {
         this._contentEl.style.display = cdisplay;
     }
     render() {
-        return (h(Host, { key: '323b6cd76e1e5e6ed909e53b3558d6b8e5cfed38' }, h("div", { key: '152a97d7c694ff3e98285519bdfc658bacd3b649', class: "flowy-canvas" }, h("canvas", { key: '349fda90618f6800be0340effde0d2508deae07c', class: "flowy-grid" }), h("div", { key: '7f94ce279d3daf1de993ab00e71be5cf3982d926', class: "flowy-content" }, h("slot", { key: '915feb349e352b602927bb014db3daa834d96ecf' })))));
+        return (h(Host, { key: '4ab1cd11eb9a21a4db92bc8cd0e62b1f722b30bf' }, h("div", { key: 'be80d1e791d96528c3c77b2e6efbf2d939bc0822', class: "flowy-canvas" }, h("canvas", { key: 'bc29eeb5f51dabb9e9c8116a8930f5d051a27c3f', class: "flowy-grid" }), h("div", { key: 'ca32ca08e90dd467097a33f0e5061fc2d11be590', class: "flowy-content" }, h("slot", { key: '5aeaa205b206197c5890f5628ceed41c5e630f07' })))));
     }
     get el() { return getElement(this); }
 };
