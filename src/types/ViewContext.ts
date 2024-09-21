@@ -240,18 +240,6 @@ export class ViewContext {
     document.body.style.cursor = 'default';
   }
 
-  createNewConnection(startPos: Coords, type: 'input' | 'output') {
-    const connection = document.createElement(
-      'logic-connection',
-    ) as HTMLLogicConnectionElement;
-    connection.start = startPos;
-    connection.end = startPos;
-    connection.type = type;
-
-    this.activeConnection = connection;
-    this.contentEl.appendChild(connection);
-  }
-
   getRectCenter(rect: DOMRect | Rect) {
     return {
       x: rect.left + rect.width / 2,
@@ -259,35 +247,23 @@ export class ViewContext {
     };
   }
 
-  getConnectorCenter(connectorId: string) {
-    const rect = this.connectorRects[connectorId];
-    return this.getRectCenter(rect);
-  }
-
-  disconnectConnector(
-    connection: HTMLLogicConnectionElement,
-    connector: HTMLLogicConnectorElement,
-    snapConnector: HTMLLogicConnectorElement,
-  ) {
-    connector.connections = connector.connections.filter(c => c !== connection);
-    snapConnector.connections = snapConnector.connections.filter(
-      c => c !== connection,
-    );
-
-    connector.connectingConnector = null;
-    snapConnector.connectingConnector = null;
-  }
-
-  swapConnectionEndpoints(connection: HTMLLogicConnectionElement) {
-    const { start, end } = connection;
-    connection.start = end;
-    connection.end = start;
-  }
-
   startPanning(worldCoords: Coords, cursor = 'grabbing') {
     ViewContext.setCursor(cursor);
     this.isPanning = true;
     this.dragStart = worldCoords;
+  }
+
+  panCamera(loc: Coords) {
+    this.camera.pos = {
+      x: loc.x / this.camera.zoom - this.dragStart.x,
+      y: loc.y / this.camera.zoom - this.dragStart.y,
+    };
+  }
+
+  resetPointerStates() {
+    this.isPanning = false;
+    this.initialPinchDistance = 0;
+    ViewContext.resetCursor();
   }
 
   startNodeDrag(
@@ -312,10 +288,113 @@ export class ViewContext {
     return true;
   }
 
+  updateNodeConnectorPos(aNode: HTMLLogicNodeElement, delta: Coords) {
+    const connectors = aNode.querySelectorAll(
+      'logic-connector',
+    ) as NodeListOf<HTMLLogicConnectorElement>;
+
+    for (let i = 0; i < connectors.length; i++) {
+      const connector = connectors[i];
+      const rect = { ...this.connectorRects[connector.id] };
+      rect.left += delta.x;
+      rect.top += delta.y;
+      this.connectorRects[connector.id] = rect;
+
+      this.updateNodeConnectorConnectionsPos(connector, rect);
+    }
+  }
+
+  updateNodeConnectorConnectionsPos(
+    connector: HTMLLogicConnectorElement,
+    rect: Rect,
+  ) {
+    if (connector.connections.length) {
+      const pos = this.getRectCenter(rect);
+
+      for (let i = 0; i < connector.connections.length; i++) {
+        const connection = connector.connections[i];
+        if (connector.type === 'input') {
+          connection.end = pos;
+        } else {
+          connection.start = pos;
+        }
+      }
+    }
+  }
+
+  snapToGrid(pos: Coords, gridSize: number) {
+    return {
+      x: Math.round(pos.x / gridSize) * gridSize,
+      y: Math.round(pos.y / gridSize) * gridSize,
+    };
+  }
+
+  calcNodePos(worldCoords: Coords) {
+    const pos = {
+      x: worldCoords.x - this.activeNodeDragStart.x,
+      y: worldCoords.y - this.activeNodeDragStart.y,
+    };
+
+    return this.snapToGrid(pos, 10);
+  }
+
+  moveNode(loc: Coords, gridSize: number) {
+    const aNode = this.activeNode;
+    const worldCoords = this.camera.toWorldCoords(loc);
+    const oldPos = aNode.position;
+
+    let newPos = this.calcNodePos(worldCoords);
+
+    // calc new position
+    if (this.snapToGrid) {
+      newPos = this.snapToGrid(newPos, gridSize);
+    }
+
+    const delta = {
+      x: newPos.x - oldPos.x,
+      y: newPos.y - oldPos.y,
+    };
+
+    // update node position and it's connections
+    this.updateNodeConnectorPos(aNode, delta); // ???
+
+    aNode.position = newPos;
+  }
+
   endNodeDrag() {
     this.activeNodeDragging = false;
     this.updateNodeConnectorsQuadtree(this.activeNode);
     this.activeNode = null;
+  }
+
+  createNewConnection(startPos: Coords, type: 'input' | 'output') {
+    const connection = document.createElement(
+      'logic-connection',
+    ) as HTMLLogicConnectionElement;
+    connection.start = startPos;
+    connection.end = startPos;
+    connection.type = type;
+
+    this.activeConnection = connection;
+    this.contentEl.appendChild(connection);
+  }
+
+  moveActiveConnection(loc: Coords, snappingDist: number) {
+    const aConn = this.activeConnection;
+    const worldCoords = this.camera.toWorldCoords(loc);
+
+    const snappableConnector = this.connectorQuadtree.checkNearby(
+      loc.x,
+      loc.y,
+      snappingDist * this.camera.zoom,
+    );
+
+    if (snappableConnector) {
+      const rect = this.connectorRects[snappableConnector.id];
+      aConn.end = this.getRectCenter(rect);
+    } else {
+      aConn.end = worldCoords;
+    }
   }
 
   getTargetConnector(target: HTMLElement, loc: Coords, snappingDist: number) {
@@ -348,7 +427,8 @@ export class ViewContext {
     const parentConn = connEl.closest(
       'logic-connector',
     ) as HTMLLogicConnectorElement;
-    const center = this.getConnectorCenter(parentConn.id);
+    const rect = this.connectorRects[parentConn.id];
+    const center = this.getRectCenter(rect);
 
     this.createNewConnection(center, parentConn.type);
 
@@ -480,10 +560,24 @@ export class ViewContext {
     return true;
   }
 
-  resetPointerStates() {
-    this.isPanning = false;
-    this.initialPinchDistance = 0;
-    ViewContext.resetCursor();
+  disconnectConnector(
+    connection: HTMLLogicConnectionElement,
+    connector: HTMLLogicConnectorElement,
+    snapConnector: HTMLLogicConnectorElement,
+  ) {
+    connector.connections = connector.connections.filter(c => c !== connection);
+    snapConnector.connections = snapConnector.connections.filter(
+      c => c !== connection,
+    );
+
+    connector.connectingConnector = null;
+    snapConnector.connectingConnector = null;
+  }
+
+  swapConnectionEndpoints(connection: HTMLLogicConnectionElement) {
+    const { start, end } = connection;
+    connection.start = end;
+    connection.end = start;
   }
 
   updateNodeConnectorsQuadtree(node: HTMLLogicNodeElement) {
