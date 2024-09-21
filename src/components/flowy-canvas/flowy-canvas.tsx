@@ -6,6 +6,10 @@ import { getEventLocation } from '../../utils/getEventLocation';
 import { Quadtree } from '../../types/Quadtree';
 import { Camera } from '../../types/Camera';
 import { ViewContext } from '../../types/ViewContext';
+import {
+  renderCanvasDotGrid,
+  renderCanvasGrid,
+} from '../../utils/renderCanvasGrid';
 
 @Component({
   tag: 'flowy-canvas',
@@ -15,7 +19,8 @@ import { ViewContext } from '../../types/ViewContext';
 export class FlowyCanvas {
   @Element() el: HTMLFlowyCanvasElement;
 
-  @Prop() renderGrid: boolean = true;
+  @Prop() showGrid: boolean = true;
+  @Prop() showDotGrid: boolean = false;
   @Prop() gridSize: number = 20;
   @Prop() gridBgColor: string = '#f7f7f7';
   @Prop() gridLineColor: string = '#555555';
@@ -23,196 +28,171 @@ export class FlowyCanvas {
   @Prop() minZoom: number = 0.2;
   @Prop() zoomSpeed: number = 0.08;
   @Prop() snapToGrid: boolean = false;
+  @Prop() connectorSnappingDistance: number = 37;
 
-  camera: Camera;
   ctx: ViewContext;
+  camera: Camera;
+  canvasEl: HTMLDivElement;
+  contentEl: HTMLDivElement;
+  gridEl: HTMLCanvasElement;
+  needsRedraw: boolean = true;
+  canvasRect: DOMRect;
+  quadtree: Quadtree;
 
-  private _initialPinchDistance: number = 0;
-  private _isDragging: boolean = false;
-  private _dragStart: Coords = { x: 0, y: 0 };
+  initialPinchDistance: number = 0;
+  isDragging: boolean = false;
+  dragStart: Coords = { x: 0, y: 0 };
 
-  private _activeNode: HTMLLogicNodeElement;
-  private _activeNodeDragging: boolean = false;
-  private _activeNodeDragStart: Coords = { x: 0, y: 0 };
-  private _activeConnector: HTMLLogicConnectorElement;
-  private _activeConnectorStartPos: Coords = { x: 0, y: 0 };
-  private _activeConnection: HTMLLogicConnectionElement;
+  activeNode: HTMLLogicNodeElement;
+  activeNodeDragging: boolean = false;
+  activeNodeDragStart: Coords = { x: 0, y: 0 };
+  activeConnector: HTMLLogicConnectorElement;
+  activeConnectorStartPos: Coords = { x: 0, y: 0 };
+  activeConnection: HTMLLogicConnectionElement;
 
-  private _canvasEl: HTMLDivElement;
-  private _contentEl: HTMLDivElement;
-  private _gridEl: HTMLCanvasElement;
-  private _needsRedraw: boolean = true;
-  private _canvasRect: DOMRect;
-  private _quadtree: Quadtree;
+  resizeObserver: ResizeObserver;
+  debouncedResize = debounce(() => this.onResize(), 16);
+  debouncedUpdateScreen = debounce(() => this.updateScreen(), 1);
+  throttledTouchMove = throttle(e => this.handleTouchMove(e), 1);
+  forceContentReflowDebounced = debounce(() => this.forceContentReflow(), 30);
 
-  private _connectorSnapDistance: number = 37;
+  elMouseDown = (e: MouseEvent | TouchEvent) => this.onPointerDown(e);
+  elMouseUp = (e: MouseEvent | TouchEvent) => this.onPointerUp(e);
+  elMouseMove = (e: MouseEvent | TouchEvent) => this.onPointerMove(e);
 
-  private _resizeObserver: ResizeObserver;
-  private _debouncedResize = debounce(() => this.onResize(), 16);
-  private _debouncedUpdateScreen = debounce(() => this.updateScreen(), 1);
-  // private _throttledPointerMove = throttle(e => this.onPointerMove(e), 1);
-  private _throttledTouchMove = throttle(e => this.handleTouchMove(e), 1);
-  private _forceContentReflowDebounced = debounce(
-    () => this.forceContentReflow(),
-    30,
-  );
+  elTouchStart = (e: TouchEvent) => this.handleTouchStart(e);
+  elTouchMove = (e: TouchEvent) => this.throttledTouchMove(e);
+  elTouchEnd = (e: MouseEvent | TouchEvent) => this.onPointerUp(e);
 
-  private _elMouseDown = (e: MouseEvent | TouchEvent) => this.onPointerDown(e);
-  private _elMouseUp = (e: MouseEvent | TouchEvent) => this.onPointerUp(e);
-  private _elMouseMove = (e: MouseEvent | TouchEvent) => this.onPointerMove(e);
-
-  private _elTouchStart = (e: TouchEvent) => this.handleTouchStart(e);
-  private _elTouchMove = (e: TouchEvent) => this._throttledTouchMove(e);
-  private _elTouchEnd = (e: MouseEvent | TouchEvent) => this.onPointerUp(e);
-
-  private _elWheel = (e: WheelEvent) => this.handleWheel(e);
+  elWheel = (e: WheelEvent) => this.handleWheel(e);
 
   componentDidLoad() {
     this.ctx = new ViewContext(this.el);
-
-    this._canvasEl = this.el.querySelector('.flowy-canvas') as HTMLDivElement;
-    this._contentEl = this.el.querySelector('.flowy-content') as HTMLDivElement;
-    this._gridEl = this.el.querySelector('.flowy-grid') as HTMLCanvasElement;
-
-    this._canvasRect = this._canvasEl.getBoundingClientRect();
-
     this.camera = this.ctx.camera;
 
-    const canvasEl = this._canvasEl;
-    this.renderGridLines();
+    this.canvasEl = this.el.querySelector('.flowy-canvas') as HTMLDivElement;
+    this.contentEl = this.el.querySelector('.flowy-content') as HTMLDivElement;
+    this.gridEl = this.el.querySelector('.flowy-grid') as HTMLCanvasElement;
+    this.canvasRect = this.canvasEl.getBoundingClientRect();
+    this.initialPinchDistance = 0;
 
-    this._initialPinchDistance = 0;
+    const canvasEl = this.canvasEl;
 
     // setup event listeners
-    window.addEventListener('mousedown', this._elMouseDown, {
+    window.addEventListener('mousedown', this.elMouseDown, {
       passive: true,
     });
-    canvasEl.addEventListener('mouseup', this._elMouseUp, { passive: true });
-    canvasEl.addEventListener('mousemove', this._elMouseMove, {
+    canvasEl.addEventListener('mouseup', this.elMouseUp, { passive: true });
+    canvasEl.addEventListener('mousemove', this.elMouseMove, {
       passive: true,
     });
 
-    canvasEl.addEventListener('touchstart', this._elTouchStart, {
+    canvasEl.addEventListener('touchstart', this.elTouchStart, {
       passive: true,
     });
-    canvasEl.addEventListener('touchmove', this._elTouchMove, {
+    canvasEl.addEventListener('touchmove', this.elTouchMove, {
       passive: true,
     });
-    canvasEl.addEventListener('touchend', this._elTouchEnd, { passive: true });
+    canvasEl.addEventListener('touchend', this.elTouchEnd, { passive: true });
 
-    canvasEl.addEventListener('wheel', this._elWheel, { passive: false });
+    canvasEl.addEventListener('wheel', this.elWheel, { passive: false });
 
     //create quadtree
     const boundary = {
       x: 0,
       y: 0,
-      width: this._canvasRect.width,
-      height: this._canvasRect.height,
+      width: this.canvasRect.width,
+      height: this.canvasRect.height,
     };
 
-    this._quadtree = new Quadtree(boundary, 4, this.camera);
-    this.ctx.quadtree = this._quadtree;
+    this.quadtree = new Quadtree(boundary, 4, this.camera);
+    this.ctx.quadtree = this.quadtree;
 
     // Handle resize events
-    this._resizeObserver = new ResizeObserver(() => this._debouncedResize());
-    this._resizeObserver.observe(this._canvasEl);
+    this.resizeObserver = new ResizeObserver(() => this.debouncedResize());
+    this.resizeObserver.observe(this.canvasEl);
+
+    this.renderGrid();
   }
 
   disconnectedCallback() {
     // Clean up resize observer
-    if (this._resizeObserver) {
-      this._resizeObserver.disconnect();
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect();
     }
 
     // Clean up event listeners
-    const canvasEl = this._canvasEl;
-    window.removeEventListener('mousedown', this._elMouseDown);
-    canvasEl.removeEventListener('mouseup', this._elMouseUp);
-    canvasEl.removeEventListener('mousemove', this._elMouseMove);
+    const canvasEl = this.canvasEl;
+    window.removeEventListener('mousedown', this.elMouseDown);
+    canvasEl.removeEventListener('mouseup', this.elMouseUp);
+    canvasEl.removeEventListener('mousemove', this.elMouseMove);
 
-    canvasEl.removeEventListener('touchstart', this._elTouchStart);
-    canvasEl.removeEventListener('touchmove', this._elTouchMove);
-    canvasEl.removeEventListener('touchend', this._elTouchEnd);
+    canvasEl.removeEventListener('touchstart', this.elTouchStart);
+    canvasEl.removeEventListener('touchmove', this.elTouchMove);
+    canvasEl.removeEventListener('touchend', this.elTouchEnd);
 
-    canvasEl.removeEventListener('wheel', this._elWheel);
-
-    // global().unregisterViewport(this._uid);
+    canvasEl.removeEventListener('wheel', this.elWheel);
 
     this.ctx.destroy();
   }
 
   scheduleComponentUpdate() {
-    this._needsRedraw = true;
-    this._debouncedUpdateScreen();
+    this.needsRedraw = true;
+    this.debouncedUpdateScreen();
   }
 
   onResize() {
-    this._needsRedraw = true;
-    this._canvasRect = this._canvasEl.getBoundingClientRect();
-    this.renderGridLines();
+    this.needsRedraw = true;
+    this.canvasRect = this.canvasEl.getBoundingClientRect();
+    this.renderGrid();
     // update quadtree boundary
     const boundary = {
       x: 0,
       y: 0,
-      width: this._canvasRect.width,
-      height: this._canvasRect.height,
+      width: this.canvasRect.width,
+      height: this.canvasRect.height,
     };
-    this._quadtree.boundary = boundary;
+    this.quadtree.boundary = boundary;
   }
 
-  renderGridLines() {
-    if (!this.renderGrid || !this._needsRedraw) return;
+  renderGrid() {
+    if ((!this.showGrid && !this.showDotGrid) || !this.needsRedraw) return;
 
     requestAnimationFrame(() => {
-      const canvasEl = this._gridEl;
-      const ctx = canvasEl.getContext('2d');
-      const width = this._canvasRect.width;
-      const height = this._canvasRect.height;
-      const step = this.gridSize * this.camera.zoom;
-
-      const dpr = window.devicePixelRatio || 1;
-      canvasEl.width = width * dpr;
-      canvasEl.height = height * dpr;
-      ctx.scale(dpr, dpr);
-
-      ctx.strokeStyle = this.gridLineColor;
-      ctx.lineWidth = 1;
-
-      // clear
-      ctx.fillStyle = this.gridBgColor;
-      ctx.fillRect(0, 0, width, height);
-
-      const panOffsetX =
-        (-this.camera.pos.x % this.gridSize) * this.camera.zoom;
-      const panOffsetY =
-        (-this.camera.pos.y % this.gridSize) * this.camera.zoom;
-
-      ctx.beginPath();
-
-      // Draw vertical grid lines (x axis)
-      for (let x = -panOffsetX; x <= width; x += step) {
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, height);
+      if (this.showGrid) {
+        renderCanvasGrid(
+          this.gridEl,
+          this.canvasRect.width,
+          this.canvasRect.height,
+          this.gridSize,
+          this.gridLineColor,
+          this.gridBgColor,
+          this.camera,
+        );
       }
 
-      // Draw horizontal grid lines (y axis)
-      for (let y = -panOffsetY; y <= height; y += step) {
-        ctx.moveTo(0, y);
-        ctx.lineTo(width, y);
+      if (this.showDotGrid) {
+        renderCanvasDotGrid(
+          this.gridEl,
+          this.canvasRect.width,
+          this.canvasRect.height,
+          this.gridSize,
+          this.gridLineColor,
+          this.gridBgColor,
+          this.camera,
+        );
       }
-
-      ctx.stroke();
     });
 
-    this._needsRedraw = false;
+    this.needsRedraw = false;
   }
 
   updateScreen() {
     requestAnimationFrame(() => {
-      const contentEl = this._contentEl;
+      const contentEl = this.contentEl;
       // Apply transformations to the content, aligning with the grid
       contentEl.style.transform = `perspective(1px) scale(${this.camera.zoom}) translate(${this.camera.pos.x}px, ${this.camera.pos.y}px)`;
-      this.renderGridLines();
+      this.renderGrid();
     });
   }
 
@@ -226,53 +206,53 @@ export class FlowyCanvas {
     // if a connection clicked
     const connection = target.closest('logic-connection');
     if (connection) {
-      const snappableConnector = this._quadtree.checkNearby(
+      const snappableConnector = this.quadtree.checkNearby(
         loc.x,
         loc.y,
-        this._connectorSnapDistance * this.camera.zoom,
+        this.connectorSnappingDistance * this.camera.zoom,
       );
       if (snappableConnector) {
         // set mouse cursor to grabbing
         window.document.body.style.cursor = 'grabbing';
 
-        // this._isReconnectAttempt = true;
+        // this.isReconnectAttempt = true;
         // if connector is close, then disconnect and setup as current dragging connection
-        this._activeConnection = connection as HTMLLogicConnectionElement;
+        this.activeConnection = connection as HTMLLogicConnectionElement;
 
         const snapConn = this.ctx.connectors.get(snappableConnector.id);
 
-        this._activeConnector =
+        this.activeConnector =
           snapConn.connectingConnector as HTMLLogicConnectorElement;
 
-        this._activeConnector.connections =
-          this._activeConnector.connections.filter(
-            conn => conn !== this._activeConnection,
+        this.activeConnector.connections =
+          this.activeConnector.connections.filter(
+            conn => conn !== this.activeConnection,
           );
 
         snapConn.connections = snapConn.connections.filter(
-          conn => conn !== this._activeConnection,
+          conn => conn !== this.activeConnection,
         );
 
         // if selected output connector, swap start and end
-        if (this._activeConnector.type === 'input') {
+        if (this.activeConnector.type === 'input') {
           // const temp = connData.start;
           // connData.start = connData.end;
           // connData.end = temp;
 
           // swap positions
-          const tempPos = this._activeConnection.start;
-          this._activeConnection.start = this._activeConnection.end;
+          const tempPos = this.activeConnection.start;
+          this.activeConnection.start = this.activeConnection.end;
 
-          this._activeConnection.end = tempPos;
+          this.activeConnection.end = tempPos;
 
           // swap type
-          this._activeConnection.type = 'input';
+          this.activeConnection.type = 'input';
         }
 
         // set connectingconnector to null
         // connData.start.connectingConnector = null;
         // connData.end.connectingConnector = null;
-        this._activeConnector.connectingConnector = null;
+        this.activeConnector.connectingConnector = null;
         snapConn.connectingConnector = null;
 
         return;
@@ -281,45 +261,45 @@ export class FlowyCanvas {
       // set cursor to cell
       window.document.body.style.cursor = 'grabbing';
 
-      this._activeConnector = target.closest(
+      this.activeConnector = target.closest(
         'logic-connector .connector',
       ) as HTMLLogicConnectorElement;
-      const parentConn = this._activeConnector.closest(
+      const parentConn = this.activeConnector.closest(
         'logic-connector',
       ) as HTMLLogicConnectorElement;
       const aConnId = parentConn.id;
       const rect = this.ctx.connectorRects[aConnId];
       // account for node position and find center of connector
-      this._activeConnectorStartPos = {
+      this.activeConnectorStartPos = {
         x: rect.left + rect.width / 2,
         y: rect.top + rect.height / 2,
       };
 
       // create a new connection element
       const connection = document.createElement('logic-connection');
-      connection.start = this._activeConnectorStartPos;
-      connection.end = this._activeConnectorStartPos;
+      connection.start = this.activeConnectorStartPos;
+      connection.end = this.activeConnectorStartPos;
       // set input or output based on activeconnector parent
 
       connection.type = parentConn.type;
-      this._contentEl.appendChild(connection);
-      this._activeConnection = connection;
+      this.contentEl.appendChild(connection);
+      this.activeConnection = connection;
       // Associate the connection with the connector
       return;
     } else if (target.closest('logic-node')) {
       // set cursor to move
       window.document.body.style.cursor = 'grabbing';
 
-      this._activeNode = target.closest('logic-node') as HTMLLogicNodeElement;
+      this.activeNode = target.closest('logic-node') as HTMLLogicNodeElement;
       // bring active node to front by moving element to the end of the parent
 
-      const pos = this._activeNode.position;
+      const pos = this.activeNode.position;
 
-      this._activeNodeDragStart = {
+      this.activeNodeDragStart = {
         x: worldCoords.x - pos.x,
         y: worldCoords.y - pos.y,
       };
-      this._activeNodeDragging = true;
+      this.activeNodeDragging = true;
 
       return;
     }
@@ -328,14 +308,14 @@ export class FlowyCanvas {
     // set cursor to grabbing
     window.document.body.style.cursor = 'grabbing';
 
-    this._isDragging = true;
+    this.isDragging = true;
 
-    this._dragStart = worldCoords;
+    this.dragStart = worldCoords;
   }
 
   onPointerUp(event: MouseEvent | TouchEvent) {
     // event.stopPropagation();
-    if (this._activeConnector && this._activeConnection) {
+    if (this.activeConnector && this.activeConnection) {
       const loc = getEventLocation(event);
       let target = event.target as HTMLElement;
       if (event instanceof TouchEvent) {
@@ -346,17 +326,17 @@ export class FlowyCanvas {
         'logic-connector .connector',
       ) as HTMLLogicConnectorElement;
 
-      const snappedConnector = this._quadtree.checkNearby(
+      const snappedConnector = this.quadtree.checkNearby(
         loc.x,
         loc.y,
-        this._connectorSnapDistance * this.camera.zoom,
+        this.connectorSnappingDistance * this.camera.zoom,
       );
       if (snappedConnector) {
         targetConnector = this.ctx.connectors.get(snappedConnector.id);
       }
 
       if (targetConnector) {
-        let aConn = this._activeConnector.closest(
+        let aConn = this.activeConnector.closest(
           'logic-connector',
         ) as HTMLLogicConnectorElement;
         let tConn = targetConnector.closest(
@@ -369,31 +349,31 @@ export class FlowyCanvas {
 
         // make sure not already connected to this connector
         if (
-          this._activeConnector.connectingConnector === tConn ||
+          this.activeConnector.connectingConnector === tConn ||
           tConn.connectingConnector === aConn
         ) {
           console.log('already connected');
-          this._activeConnection.remove();
-          this._activeConnector = null;
-          this._activeConnection = null;
+          this.activeConnection.remove();
+          this.activeConnector = null;
+          this.activeConnection = null;
           return;
         }
 
         // make sure not connecting to itself
-        else if (aNode === tNode || this._activeConnector === targetConnector) {
+        else if (aNode === tNode || this.activeConnector === targetConnector) {
           console.log('connecting to itself');
-          this._activeConnection.remove();
-          this._activeConnector = null;
-          this._activeConnection = null;
+          this.activeConnection.remove();
+          this.activeConnector = null;
+          this.activeConnection = null;
           return;
         }
 
         // make sure only input to output or output to input
         else if (aConn.type === tConn.type) {
           console.log('connecting same type');
-          this._activeConnection.remove();
-          this._activeConnector = null;
-          this._activeConnection = null;
+          this.activeConnection.remove();
+          this.activeConnector = null;
+          this.activeConnection = null;
           return;
         }
 
@@ -403,22 +383,22 @@ export class FlowyCanvas {
         // like above but if went from input to output, then start is the target and end is the active
         // treat as though drawn from target to active
         if (aConn.type === 'input') {
-          this._activeConnection.start = {
+          this.activeConnection.start = {
             x: targRect.left + targRect.width / 2,
             y: targRect.top + targRect.height / 2,
           };
 
-          this._activeConnection.end = this._activeConnectorStartPos;
-          this._activeConnection.type = 'output';
+          this.activeConnection.end = this.activeConnectorStartPos;
+          this.activeConnection.type = 'output';
 
           // set connection to rect
           const rect = this.ctx.connectorRects[aConn.id];
-          this._activeConnection.end = {
+          this.activeConnection.end = {
             x: rect.left + rect.width / 2,
             y: rect.top + rect.height / 2,
           };
         } else {
-          this._activeConnection.end = {
+          this.activeConnection.end = {
             x: targRect.left + targRect.width / 2,
             y: targRect.top + targRect.height / 2,
           };
@@ -427,18 +407,18 @@ export class FlowyCanvas {
         // get parent logic-connector from activeConnector and targetConnector
 
         aConn.connectingConnector = tConn;
-        aConn.connections.push(this._activeConnection);
+        aConn.connections.push(this.activeConnection);
         tConn.connectingConnector = aConn;
-        tConn.connections.push(this._activeConnection);
+        tConn.connections.push(this.activeConnection);
       } else {
-        this._activeConnection.remove();
+        this.activeConnection.remove();
       }
-      this._activeConnector = null;
-      this._activeConnection = null;
-    } else if (this._activeNode && this._activeNodeDragging) {
-      this._activeNodeDragging = false;
+      this.activeConnector = null;
+      this.activeConnection = null;
+    } else if (this.activeNode && this.activeNodeDragging) {
+      this.activeNodeDragging = false;
       // update connector in quadtree
-      const connectors = this._activeNode.querySelectorAll(
+      const connectors = this.activeNode.querySelectorAll(
         'logic-connector',
       ) as NodeListOf<HTMLLogicConnectorElement>;
 
@@ -446,33 +426,33 @@ export class FlowyCanvas {
         const connector = connectors[i];
         const connectorId = connector.getAttribute('id');
         const rect = this.ctx.connectorRects[connectorId];
-        this._quadtree.remove(connectorId);
-        this._quadtree.insert({
+        this.quadtree.remove(connectorId);
+        this.quadtree.insert({
           x: rect.left + rect.width / 2,
           y: rect.top + rect.height / 2,
           id: connectorId,
         });
       }
 
-      this._activeNode = null;
+      this.activeNode = null;
     }
 
-    this._isDragging = false;
-    this._initialPinchDistance = 0;
+    this.isDragging = false;
+    this.initialPinchDistance = 0;
     window.document.body.style.cursor = 'auto';
   }
 
   onPointerMove(event: MouseEvent | TouchEvent) {
     const loc = getEventLocation(event);
 
-    if (this._activeConnector && this._activeConnection) {
-      const aConn = this._activeConnection;
+    if (this.activeConnector && this.activeConnection) {
+      const aConn = this.activeConnection;
       const worldCoords = this.camera.toWorldCoords(loc);
       // requestAnimationFrame(() => {
-      const snappableConnector = this._quadtree.checkNearby(
+      const snappableConnector = this.quadtree.checkNearby(
         loc.x,
         loc.y,
-        this._connectorSnapDistance * this.camera.zoom,
+        this.connectorSnappingDistance * this.camera.zoom,
         // this.camera.pos,
         // this.camera.zoom,
       );
@@ -489,13 +469,13 @@ export class FlowyCanvas {
       }
       // });
       return;
-    } else if (this._activeNode && this._activeNodeDragging) {
-      const aNode = this._activeNode;
+    } else if (this.activeNode && this.activeNodeDragging) {
+      const aNode = this.activeNode;
       const worldCoords = this.camera.toWorldCoords(loc);
       const aNodeOldPos = aNode.position;
 
-      let newX = worldCoords.x - this._activeNodeDragStart.x;
-      let newY = worldCoords.y - this._activeNodeDragStart.y;
+      let newX = worldCoords.x - this.activeNodeDragStart.x;
+      let newY = worldCoords.y - this.activeNodeDragStart.y;
 
       // snap to grid
       if (this.snapToGrid) {
@@ -553,12 +533,12 @@ export class FlowyCanvas {
       return;
     }
 
-    if (this._isDragging) {
-      // this._lastPan = this.camera.pos;
+    if (this.isDragging) {
+      // this.lastPan = this.camera.pos;
       const loc = getEventLocation(event);
       this.camera.pos = {
-        x: loc.x / this.camera.zoom - this._dragStart.x,
-        y: loc.y / this.camera.zoom - this._dragStart.y,
+        x: loc.x / this.camera.zoom - this.dragStart.x,
+        y: loc.y / this.camera.zoom - this.dragStart.y,
       };
       this.scheduleComponentUpdate();
     }
@@ -567,7 +547,7 @@ export class FlowyCanvas {
   handleWheel(event: WheelEvent) {
     event.preventDefault();
 
-    const canvasRect = this._canvasRect;
+    const canvasRect = this.canvasRect;
     const mouseX = event.clientX - canvasRect.left;
     const mouseY = event.clientY - canvasRect.top;
 
@@ -589,15 +569,15 @@ export class FlowyCanvas {
 
     // Update pan and zoom
     this.camera.pos = { x: newPanX / newZoom, y: newPanY / newZoom };
-    // this._lastZoom = this.camera.zoom;
+    // this.lastZoom = this.camera.zoom;
     this.camera.zoom = newZoom;
 
     // if zooming in, force a reflow to prevent blurry text
     if (zoomDelta > 0) {
-      this._forceContentReflowDebounced();
+      this.forceContentReflowDebounced();
     }
 
-    // this._needsRedraw = true;
+    // this.needsRedraw = true;
     this.scheduleComponentUpdate();
   }
 
@@ -607,7 +587,7 @@ export class FlowyCanvas {
       this.onPointerDown(event);
     } else if (event.touches.length === 2) {
       // Multi-touch -> start pinch zoom
-      this._initialPinchDistance = 0; // Reset initial pinch distance
+      this.initialPinchDistance = 0; // Reset initial pinch distance
       this.handlePinch(event); // Start pinch gesture
     }
   }
@@ -639,12 +619,12 @@ export class FlowyCanvas {
         (touch1.clientY - touch2.clientY) ** 2,
     );
 
-    if (this._initialPinchDistance === 0) {
+    if (this.initialPinchDistance === 0) {
       // If it's the start of the pinch, initialize the pinch distance
-      this._initialPinchDistance = distance;
+      this.initialPinchDistance = distance;
     } else {
       // Calculate the scale factor based on the distance change
-      const scaleFactor = distance / this._initialPinchDistance;
+      const scaleFactor = distance / this.initialPinchDistance;
 
       // Calculate the midpoint between the two fingers (the pinch center)
       const pinchCenterX = (touch1.clientX + touch2.clientX) / 2;
@@ -654,7 +634,7 @@ export class FlowyCanvas {
       this.adjustZoomOnPinch(scaleFactor, pinchCenterX, pinchCenterY);
 
       // Update the initial pinch distance for the next move
-      this._initialPinchDistance = distance;
+      this.initialPinchDistance = distance;
     }
   }
 
@@ -685,15 +665,15 @@ export class FlowyCanvas {
     this.camera.zoom = newZoom;
 
     // Trigger a screen redraw
-    this._debouncedUpdateScreen();
+    this.debouncedUpdateScreen();
   }
 
   forceContentReflow() {
     // force repaint the content
-    const cdisplay = this._contentEl.style.display;
-    this._contentEl.style.display = 'none';
-    this._contentEl.offsetHeight; // trigger reflow
-    this._contentEl.style.display = cdisplay;
+    const cdisplay = this.contentEl.style.display;
+    this.contentEl.style.display = 'none';
+    this.contentEl.offsetHeight; // trigger reflow
+    this.contentEl.style.display = cdisplay;
   }
 
   render() {

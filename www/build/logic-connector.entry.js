@@ -12,7 +12,7 @@ const LogicConnector = class {
     render() {
         const sideClass = this.type === 'input' ? 'left-connector' : 'right-connector';
         const typeClass = this.type === 'input' ? 'input-connector' : 'output-connector';
-        return (h(Host, { key: '79b6a99f25eeb0868972391e83b1ef53b92c3ebb', class: `logic-connector ${typeClass}` }, h("div", { key: '6af6a03b11467cfa56b729e57a69316a22c94f0b', class: `connector ${sideClass} ${this.connections.length > 0 && 'connected'}` }), h("div", { key: '0d60a93a1497719e2a1f3622b329f6f39feaa2d7', class: `connector-content ${sideClass}` }, h("slot", { key: 'afe2bab11ea38acb4c531416fc1aa916a3a91af9' }))));
+        return (h(Host, { key: '9c07b7612ab1ce2d26906c47b138bae337dc98c7', class: `logic-connector ${typeClass}` }, h("div", { key: 'dbd8bc6514732bf38ee6c8c3f8b2e10b8320129e', class: `connector ${sideClass} ${this.connections.length > 0 && 'connected'}` }), h("div", { key: 'e0441495eb4e4bd54bb05c3dbe4bb3230ba8e1d5', class: `connector-content ${sideClass}` }, h("slot", { key: '1b13e20f8c8682c7225dbbee60fbf28616c8a4fb' }))));
     }
     get el() { return getElement(this); }
 };

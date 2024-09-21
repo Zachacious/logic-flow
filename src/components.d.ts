@@ -11,12 +11,14 @@ export { Coords } from "./types/Coords";
 export { LogicConnection } from "./components/logic-connection/logic-connection";
 export namespace Components {
     interface FlowyCanvas {
+        "connectorSnappingDistance": number;
         "gridBgColor": string;
         "gridLineColor": string;
         "gridSize": number;
         "maxZoom": number;
         "minZoom": number;
-        "renderGrid": boolean;
+        "showDotGrid": boolean;
+        "showGrid": boolean;
         "snapToGrid": boolean;
         "zoomSpeed": number;
     }
@@ -107,12 +109,14 @@ declare global {
 }
 declare namespace LocalJSX {
     interface FlowyCanvas {
+        "connectorSnappingDistance"?: number;
         "gridBgColor"?: string;
         "gridLineColor"?: string;
         "gridSize"?: number;
         "maxZoom"?: number;
         "minZoom"?: number;
-        "renderGrid"?: boolean;
+        "showDotGrid"?: boolean;
+        "showGrid"?: boolean;
         "snapToGrid"?: boolean;
         "zoomSpeed"?: number;
     }

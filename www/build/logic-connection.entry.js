@@ -61,7 +61,7 @@ const LogicConnection = class {
         }
     }
     render() {
-        return (h(Host, { key: '5ddc971fd94a5c63cc7b00d75c74ba443545fadd', class: "logic-connection" }, h("svg", { key: '9ad44da4b722a64f1058ab7c1e0b3e26db08a0da', class: "connection" }, h("path", { key: '406da1c627a3076b9d07f831585b0b370fc89b4d', class: "connection-line", d: this.path }), h("circle", { key: 'c4d724e60aac8c5883d1733fb4c50ee536f7b12d', cx: this.start.x, cy: this.start.y, r: "1.5px", class: "connection-cap start-cap" }), h("circle", { key: 'd0df869bd4e8a3b47fefa75a1454e951d54ef623', cx: this.end.x, cy: this.end.y, r: "1.5px", class: "connection-cap end-cap" }))));
+        return (h(Host, { key: 'fb427e93fbe887aa8648d7f942d7bb43b9693450', class: "logic-connection" }, h("svg", { key: '79b1ef074387d64d2ccff462da280c158477d808', class: "connection" }, h("path", { key: 'f448cbbbe56c860f12ec4a2c5716a514ed58c444', class: "connection-line", d: this.path }), h("circle", { key: '96b262d6e45e05ee6acc521a90b80e8a3bca49fe', cx: this.start.x, cy: this.start.y, r: "1.5px", class: "connection-cap start-cap" }), h("circle", { key: '2f38bccbbc7754b6fd6eb89a42c2a29b650b25bd', cx: this.end.x, cy: this.end.y, r: "1.5px", class: "connection-cap end-cap" }))));
     }
     static get watchers() { return {
         "start": ["updatePath"],
