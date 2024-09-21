@@ -126,7 +126,7 @@ body {
 }
 
 .logic-connector .connected {
-  /* background: #333; */
+  background: #333;
 }
 
 .logic-connector .connection-layer {

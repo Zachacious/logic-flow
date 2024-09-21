@@ -12,6 +12,7 @@ export { LogicConnection } from "./components/logic-connection/logic-connection"
 export namespace Components {
     interface FlowyCanvas {
         "connectorSnappingDistance": number;
+        "cursors": Record<string, string>;
         "gridBgColor": string;
         "gridLineColor": string;
         "gridSize": number;
@@ -110,6 +111,7 @@ declare global {
 declare namespace LocalJSX {
     interface FlowyCanvas {
         "connectorSnappingDistance"?: number;
+        "cursors"?: Record<string, string>;
         "gridBgColor"?: string;
         "gridLineColor"?: string;
         "gridSize"?: number;

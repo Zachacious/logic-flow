@@ -225,110 +225,13 @@ class ViewContext {
         this.connections = new Map();
         this.connectorRects = {};
         this.camera = new Camera();
-        this.registerNode = (node) => {
-            const id = nanoid();
-            node.id = id;
-            this.nodes.set(id, node);
-            return id;
-        };
-        this.unregisterNode = (id) => {
-            // remove all connections and connectors associated with the node
-            // get connectors
-            const node = this.nodes.get(id);
-            if (node) {
-                // TODO: not sure if this is necessary with mutation observer
-                // const connectors = node.querySelectorAll('logic-connector');
-                // connectors.forEach((connector: HTMLLogicConnectorElement) => {
-                //   const cid = connector.id;
-                //   // remove connections
-                //   connector.connections.forEach(
-                //     (connection: HTMLLogicConnectionElement) => {
-                //       const id = connection.id;
-                //       if (id) this.unregisterConnection(id);
-                //     },
-                //   );
-                //   // remove connector
-                //   this.unregisterConnector(cid);
-                // });
-                // remove from nodes
-                this.nodes.delete(id);
-            }
-        };
-        this.registerConnector = (connector) => {
-            const id = nanoid();
-            connector.id = id;
-            this.connectors.set(id, connector);
-            const connectorEl = connector.querySelector('.connector');
-            const rect = connectorEl.getBoundingClientRect();
-            this.connectorRects[id] = {
-                left: rect.x,
-                top: rect.y,
-                width: rect.width,
-                height: rect.height,
-            };
-            return id;
-        };
-        this.unregisterConnector = (id) => {
-            this.connectors.delete(id);
-            delete this.connectorRects[id];
-        };
-        this.registerConnection = (connection) => {
-            const id = nanoid();
-            connection.id = id;
-            this.connections.set(id, connection);
-            return id;
-        };
-        this.unregisterConnection = (id) => {
-            // remove from dom
-            const el = document.getElementById(id);
-            if (el) {
-                el.remove();
-            }
-            this.connections.delete(id);
-        };
-        // mutation observer callback
-        // when elements are added or removed from the dom
-        // we need to register or unregister them if they are nodes, connectors or connections
-        this.viewportMutation = (mutations) => {
-            mutations.forEach(mutation => {
-                if (mutation.type === 'childList') {
-                    for (let i = 0; i < mutation.addedNodes.length; i++) {
-                        const node = mutation.addedNodes[i];
-                        if (node instanceof HTMLElement) {
-                            if (node.tagName === 'LOGIC-NODE') {
-                                const logicNode = node;
-                                this.registerNode(logicNode);
-                            }
-                            else if (node.tagName === 'LOGIC-CONNECTOR') {
-                                const logicConnector = node;
-                                this.registerConnector(logicConnector);
-                            }
-                            else if (node.tagName === 'LOGIC-CONNECTION') {
-                                const logicConnection = node;
-                                this.registerConnection(logicConnection);
-                            }
-                        }
-                    }
-                    for (let i = 0; i < mutation.removedNodes.length; i++) {
-                        const node = mutation.removedNodes[i];
-                        if (node instanceof HTMLElement) {
-                            if (node.tagName === 'LOGIC-NODE') {
-                                const logicNode = node;
-                                this.unregisterNode(logicNode.getAttribute('id'));
-                            }
-                            else if (node.tagName === 'LOGIC-CONNECTOR') {
-                                const logicConnector = node;
-                                this.unregisterConnector(logicConnector.getAttribute('id'));
-                            }
-                            else if (node.tagName === 'LOGIC-CONNECTION') {
-                                const logicConnection = node;
-                                this.unregisterConnection(logicConnection.getAttribute('id'));
-                            }
-                        }
-                    }
-                }
-            });
-        };
+        this.needsRedraw = true;
+        this.initialPinchDistance = 0;
+        this.isPanning = false;
+        this.dragStart = { x: 0, y: 0 };
+        this.activeNodeDragging = false;
+        this.activeNodeDragStart = { x: 0, y: 0 };
+        this.activeConnectorStartPos = { x: 0, y: 0 };
         const id = nanoid();
         viewport.id = id;
         const viewportId = id;
@@ -348,56 +251,341 @@ class ViewContext {
         this.observer.disconnect();
         ViewContext.instances.delete(this.uid);
     }
-}
-ViewContext.instances = new Map();
-ViewContext.seekAndDestroy = (type, id) => {
-    // search and destroy in all instances
-    for (const [, instance] of ViewContext.instances) {
-        switch (type) {
-            case 'node':
-                instance.unregisterNode(id);
-                break;
-            case 'connector':
-                instance.unregisterConnector(id);
-                break;
-            case 'connection':
-                instance.unregisterConnection(id);
-                break;
-            case 'viewport':
-                instance.destroy();
-                break;
+    static seekAndDestroy(type, id) {
+        // search and destroy in all instances
+        for (const [, instance] of ViewContext.instances) {
+            switch (type) {
+                case 'node':
+                    instance.unregisterNode(id);
+                    break;
+                case 'connector':
+                    instance.unregisterConnector(id);
+                    break;
+                case 'connection':
+                    instance.unregisterConnection(id);
+                    break;
+                case 'viewport':
+                    instance.destroy();
+                    break;
+            }
         }
     }
-};
-ViewContext.initializeViewport = (viewport) => {
-    // need to register all nodes, connectors and connections
-    // that are already in the dom
-    const id = viewport.id;
-    const instance = ViewContext.instances.get(id);
-    const contentEl = viewport.querySelector('.flowy-content');
-    const children = contentEl.children;
-    const traverse = (el) => {
-        if (el.tagName === 'LOGIC-NODE') {
-            const logicNode = el;
-            instance.registerNode(logicNode);
+    registerNode(node) {
+        const id = nanoid();
+        node.id = id;
+        this.nodes.set(id, node);
+        return id;
+    }
+    unregisterNode(id) {
+        // remove all connections and connectors associated with the node
+        // get connectors
+        const node = this.nodes.get(id);
+        if (node) {
+            // TODO: not sure if this is necessary with mutation observer
+            // const connectors = node.querySelectorAll('logic-connector');
+            // connectors.forEach((connector: HTMLLogicConnectorElement) => {
+            //   const cid = connector.id;
+            //   // remove connections
+            //   connector.connections.forEach(
+            //     (connection: HTMLLogicConnectionElement) => {
+            //       const id = connection.id;
+            //       if (id) this.unregisterConnection(id);
+            //     },
+            //   );
+            //   // remove connector
+            //   this.unregisterConnector(cid);
+            // });
+            // remove from nodes
+            this.nodes.delete(id);
         }
-        else if (el.tagName === 'LOGIC-CONNECTOR') {
-            const logicConnector = el;
-            instance.registerConnector(logicConnector);
+    }
+    registerConnector(connector) {
+        const id = nanoid();
+        connector.id = id;
+        this.connectors.set(id, connector);
+        const connectorEl = connector.querySelector('.connector');
+        const rect = connectorEl.getBoundingClientRect();
+        this.connectorRects[id] = {
+            left: rect.x,
+            top: rect.y,
+            width: rect.width,
+            height: rect.height,
+        };
+        return id;
+    }
+    unregisterConnector(id) {
+        this.connectors.delete(id);
+        delete this.connectorRects[id];
+    }
+    registerConnection(connection) {
+        const id = nanoid();
+        connection.id = id;
+        this.connections.set(id, connection);
+        return id;
+    }
+    unregisterConnection(id) {
+        // remove from dom
+        const el = document.getElementById(id);
+        if (el) {
+            el.remove();
         }
-        else if (el.tagName === 'LOGIC-CONNECTION') {
-            const logicConnection = el;
-            instance.registerConnection(logicConnection);
-        }
-        const children = el.children;
+        this.connections.delete(id);
+    }
+    // mutation observer callback
+    // when elements are added or removed from the dom
+    // we need to register or unregister them if they are nodes, connectors or connections
+    viewportMutation(mutations) {
+        if (!mutations.length)
+            return;
+        // happens whenu using bringNodeToFront
+        // - stop the observer from firing
+        if (!this.registerNode)
+            return;
+        mutations.forEach(mutation => {
+            if (mutation.type === 'childList') {
+                for (let i = 0; i < mutation.addedNodes.length; i++) {
+                    const node = mutation.addedNodes[i];
+                    if (node instanceof HTMLElement) {
+                        if (node.tagName === 'LOGIC-NODE') {
+                            const logicNode = node;
+                            this.registerNode(logicNode);
+                        }
+                        else if (node.tagName === 'LOGIC-CONNECTOR') {
+                            const logicConnector = node;
+                            this.registerConnector(logicConnector);
+                        }
+                        else if (node.tagName === 'LOGIC-CONNECTION') {
+                            const logicConnection = node;
+                            this.registerConnection(logicConnection);
+                        }
+                    }
+                }
+                for (let i = 0; i < mutation.removedNodes.length; i++) {
+                    const node = mutation.removedNodes[i];
+                    if (node instanceof HTMLElement) {
+                        if (node.tagName === 'LOGIC-NODE') {
+                            const logicNode = node;
+                            this.unregisterNode(logicNode.getAttribute('id'));
+                        }
+                        else if (node.tagName === 'LOGIC-CONNECTOR') {
+                            const logicConnector = node;
+                            this.unregisterConnector(logicConnector.getAttribute('id'));
+                        }
+                        else if (node.tagName === 'LOGIC-CONNECTION') {
+                            const logicConnection = node;
+                            this.unregisterConnection(logicConnection.getAttribute('id'));
+                        }
+                    }
+                }
+            }
+        });
+    }
+    static initializeViewport(viewport) {
+        // need to register all nodes, connectors and connections
+        // that are already in the dom
+        const id = viewport.id;
+        const instance = ViewContext.instances.get(id);
+        const contentEl = viewport.querySelector('.flowy-content');
+        const children = contentEl.children;
+        const traverse = (el) => {
+            if (el.tagName === 'LOGIC-NODE') {
+                const logicNode = el;
+                instance.registerNode(logicNode);
+            }
+            else if (el.tagName === 'LOGIC-CONNECTOR') {
+                const logicConnector = el;
+                instance.registerConnector(logicConnector);
+            }
+            else if (el.tagName === 'LOGIC-CONNECTION') {
+                const logicConnection = el;
+                instance.registerConnection(logicConnection);
+            }
+            const children = el.children;
+            for (let i = 0; i < children.length; i++) {
+                traverse(children[i]);
+            }
+        };
         for (let i = 0; i < children.length; i++) {
             traverse(children[i]);
         }
-    };
-    for (let i = 0; i < children.length; i++) {
-        traverse(children[i]);
     }
-};
+    static bringToFront(node) {
+        var _a;
+        (_a = node.parentElement) === null || _a === void 0 ? void 0 : _a.appendChild(node);
+    }
+    static setCursor(cursor) {
+        document.body.style.cursor = cursor;
+    }
+    static resetCursor() {
+        document.body.style.cursor = 'default';
+    }
+    createNewConnection(startPos, type) {
+        const connection = document.createElement('logic-connection');
+        connection.start = startPos;
+        connection.end = startPos;
+        connection.type = type;
+        this.activeConnection = connection;
+        this.contentEl.appendChild(connection);
+    }
+    getRectCenter(rect) {
+        return {
+            x: rect.left + rect.width / 2,
+            y: rect.top + rect.height / 2,
+        };
+    }
+    getConnectorCenter(connectorId) {
+        const rect = this.connectorRects[connectorId];
+        return this.getRectCenter(rect);
+    }
+    disconnectConnector(connection, connector, snapConnector) {
+        connector.connections = connector.connections.filter(c => c !== connection);
+        snapConnector.connections = snapConnector.connections.filter(c => c !== connection);
+        connector.connectingConnector = null;
+        snapConnector.connectingConnector = null;
+    }
+    swapConnectionEndpoints(connection) {
+        const { start, end } = connection;
+        connection.start = end;
+        connection.end = start;
+    }
+    startPanning(worldCoords, cursor = 'grabbing') {
+        ViewContext.setCursor(cursor);
+        this.isPanning = true;
+        this.dragStart = worldCoords;
+    }
+    startNodeDrag(target, worldCoords, cursor = 'grabbing') {
+        const node = target.closest('logic-node');
+        if (!node)
+            return false;
+        ViewContext.setCursor(cursor);
+        this.activeNode = node;
+        ViewContext.bringToFront(node);
+        const pos = this.activeNode.position;
+        this.activeNodeDragging = true;
+        this.activeNodeDragStart = {
+            x: worldCoords.x - pos.x,
+            y: worldCoords.y - pos.y,
+        };
+        return true;
+    }
+    endNodeDrag() {
+        this.activeNodeDragging = false;
+        this.updateNodeConnectorsQuadtree(this.activeNode);
+        this.activeNode = null;
+    }
+    getTargetConnector(target, loc, snappingDist) {
+        let targetConnector = target.closest('logic-connector .connector');
+        const snappedConnector = this.connectorQuadtree.checkNearby(loc.x, loc.y, snappingDist * this.camera.zoom);
+        if (snappedConnector) {
+            targetConnector = this.connectors.get(snappedConnector.id);
+        }
+        return targetConnector;
+    }
+    startNewConnection(target, cursor = 'grabbing') {
+        const connEl = target.closest('logic-connector .connector');
+        if (!connEl)
+            return false;
+        ViewContext.setCursor(cursor);
+        this.activeConnector = connEl;
+        const parentConn = connEl.closest('logic-connector');
+        const center = this.getConnectorCenter(parentConn.id);
+        this.createNewConnection(center, parentConn.type);
+        return true;
+    }
+    processConnection(target) {
+        const aConn = this.activeConnector.closest('logic-connector');
+        const tConn = target.closest('logic-connector');
+        // find parent nodes
+        const aNode = aConn.closest('logic-node');
+        const tNode = tConn.closest('logic-node');
+        // validate connection
+        if (!this.isValidConnection(aConn, tConn, aNode, tNode, target)) {
+            this.activeConnection.remove();
+            return;
+        }
+        this.updateConnectionEndpoints(aConn, tConn);
+        this.finalizeConnection(aConn, tConn);
+    }
+    isValidConnection(aConn, tConn, aNode, tNode, targetConn) {
+        // avoid connecting to self or already connected
+        if (this.activeConnector.connectingConnector === tConn ||
+            tConn.connectingConnector === aConn) {
+            // perhaps send an error event
+            // console.log('already connected');
+            return false;
+        }
+        if (aNode === tNode || this.activeConnector === targetConn) {
+            // connecting to self
+            return false;
+        }
+        // ensure is between input/output not same type
+        if (aConn.type === tConn.type) {
+            // console.log('same type');
+            return false;
+        }
+        return true;
+    }
+    updateConnectionEndpoints(active, target) {
+        const targRect = this.connectorRects[target.id];
+        if (active.type === 'input') {
+            // swap start and end connections
+            this.activeConnection.start = this.getRectCenter(targRect);
+            this.activeConnection.end = this.activeConnectorStartPos;
+            this.activeConnection.type = 'output';
+            const rect = this.connectorRects[active.id];
+            this.activeConnection.end = this.getRectCenter(rect);
+        }
+        else {
+            this.activeConnection.end = this.getRectCenter(targRect);
+        }
+    }
+    finalizeConnection(active, target) {
+        active.connectingConnector = target;
+        active.connections.push(this.activeConnection);
+        target.connectingConnector = active;
+        target.connections.push(this.activeConnection);
+    }
+    startDisconnectConnection(target, loc, snappingDist, cursor = 'grabbing') {
+        const connection = target.closest('logic-connection');
+        if (!connection)
+            return false;
+        ViewContext.bringToFront(connection);
+        const snappableConnector = this.connectorQuadtree.checkNearby(loc.x, loc.y, snappingDist * this.camera.zoom);
+        if (!snappableConnector)
+            return false;
+        ViewContext.setCursor(cursor);
+        this.activeConnection = connection;
+        const snapConnector = this.connectors.get(snappableConnector.id);
+        this.activeConnector =
+            snapConnector.connectingConnector;
+        this.disconnectConnector(this.activeConnection, this.activeConnector, snapConnector);
+        // handle type specific logic
+        if (this.activeConnector.type === 'input') {
+            this.swapConnectionEndpoints(this.activeConnection);
+            this.activeConnection.type = 'input';
+        }
+        return true;
+    }
+    resetPointerStates() {
+        this.isPanning = false;
+        this.initialPinchDistance = 0;
+        ViewContext.resetCursor();
+    }
+    updateNodeConnectorsQuadtree(node) {
+        const connectors = node.querySelectorAll('logic-connector');
+        for (let i = 0; i < connectors.length; i++) {
+            const connector = connectors[i];
+            const rect = this.connectorRects[connector.id];
+            this.connectorQuadtree.remove(connector.id);
+            this.connectorQuadtree.insert({
+                id: connector.id,
+                x: rect.left + rect.width / 2,
+                y: rect.top + rect.height / 2,
+            });
+        }
+    }
+}
+ViewContext.instances = new Map();
 
 const renderCanvasGrid = (canvas, width, height, gridSize, color, bgColor, camera) => {
     const ctx = canvas.getContext('2d');
@@ -473,13 +661,6 @@ const flowyCanvasCss = ":host{display:block}";
 const FlowyCanvas = class {
     constructor(hostRef) {
         registerInstance(this, hostRef);
-        this.needsRedraw = true;
-        this.initialPinchDistance = 0;
-        this.isDragging = false;
-        this.dragStart = { x: 0, y: 0 };
-        this.activeNodeDragging = false;
-        this.activeNodeDragStart = { x: 0, y: 0 };
-        this.activeConnectorStartPos = { x: 0, y: 0 };
         this.debouncedResize = debounce(() => this.onResize(), 16);
         this.debouncedUpdateScreen = debounce(() => this.updateScreen(), 1);
         this.throttledTouchMove = throttle(e => this.handleTouchMove(e), 1);
@@ -501,16 +682,21 @@ const FlowyCanvas = class {
         this.zoomSpeed = 0.08;
         this.snapToGrid = false;
         this.connectorSnappingDistance = 37;
+        this.cursors = {
+            default: 'auto',
+            panning: 'grabbing',
+            moving: 'grabbing',
+        };
     }
     componentDidLoad() {
         this.ctx = new ViewContext(this.el);
-        this.camera = this.ctx.camera;
-        this.canvasEl = this.el.querySelector('.flowy-canvas');
-        this.contentEl = this.el.querySelector('.flowy-content');
-        this.gridEl = this.el.querySelector('.flowy-grid');
-        this.canvasRect = this.canvasEl.getBoundingClientRect();
-        this.initialPinchDistance = 0;
-        const canvasEl = this.canvasEl;
+        // this.ctx.camera = this.ctx.camera;
+        this.ctx.viewportEl = this.el.querySelector('.flowy-canvas');
+        this.ctx.contentEl = this.el.querySelector('.flowy-content');
+        this.ctx.gridEl = this.el.querySelector('.flowy-grid');
+        this.ctx.viewportRect = this.ctx.viewportEl.getBoundingClientRect();
+        this.ctx.initialPinchDistance = 0;
+        const canvasEl = this.ctx.viewportEl;
         // setup event listeners
         window.addEventListener('mousedown', this.elMouseDown, {
             passive: true,
@@ -531,14 +717,14 @@ const FlowyCanvas = class {
         const boundary = {
             x: 0,
             y: 0,
-            width: this.canvasRect.width,
-            height: this.canvasRect.height,
+            width: this.ctx.viewportRect.width,
+            height: this.ctx.viewportRect.height,
         };
-        this.quadtree = new Quadtree(boundary, 4, this.camera);
-        this.ctx.quadtree = this.quadtree;
+        this.ctx.connectorQuadtree = new Quadtree(boundary, 4, this.ctx.camera);
+        this.ctx.connectorQuadtree = this.ctx.connectorQuadtree;
         // Handle resize events
         this.resizeObserver = new ResizeObserver(() => this.debouncedResize());
-        this.resizeObserver.observe(this.canvasEl);
+        this.resizeObserver.observe(this.ctx.viewportEl);
         this.renderGrid();
     }
     disconnectedCallback() {
@@ -547,7 +733,7 @@ const FlowyCanvas = class {
             this.resizeObserver.disconnect();
         }
         // Clean up event listeners
-        const canvasEl = this.canvasEl;
+        const canvasEl = this.ctx.viewportEl;
         window.removeEventListener('mousedown', this.elMouseDown);
         canvasEl.removeEventListener('mouseup', this.elMouseUp);
         canvasEl.removeEventListener('mousemove', this.elMouseMove);
@@ -558,234 +744,303 @@ const FlowyCanvas = class {
         this.ctx.destroy();
     }
     scheduleComponentUpdate() {
-        this.needsRedraw = true;
+        this.ctx.needsRedraw = true;
         this.debouncedUpdateScreen();
     }
     onResize() {
-        this.needsRedraw = true;
-        this.canvasRect = this.canvasEl.getBoundingClientRect();
+        this.ctx.needsRedraw = true;
+        this.ctx.viewportRect = this.ctx.viewportEl.getBoundingClientRect();
         this.renderGrid();
         // update quadtree boundary
         const boundary = {
             x: 0,
             y: 0,
-            width: this.canvasRect.width,
-            height: this.canvasRect.height,
+            width: this.ctx.viewportRect.width,
+            height: this.ctx.viewportRect.height,
         };
-        this.quadtree.boundary = boundary;
+        this.ctx.connectorQuadtree.boundary = boundary;
     }
     renderGrid() {
-        if ((!this.showGrid && !this.showDotGrid) || !this.needsRedraw)
+        if ((!this.showGrid && !this.showDotGrid) || !this.ctx.needsRedraw)
             return;
         requestAnimationFrame(() => {
             if (this.showGrid) {
-                renderCanvasGrid(this.gridEl, this.canvasRect.width, this.canvasRect.height, this.gridSize, this.gridLineColor, this.gridBgColor, this.camera);
+                renderCanvasGrid(this.ctx.gridEl, this.ctx.viewportRect.width, this.ctx.viewportRect.height, this.gridSize, this.gridLineColor, this.gridBgColor, this.ctx.camera);
             }
             if (this.showDotGrid) {
-                renderCanvasDotGrid(this.gridEl, this.canvasRect.width, this.canvasRect.height, this.gridSize, this.gridLineColor, this.gridBgColor, this.camera);
+                renderCanvasDotGrid(this.ctx.gridEl, this.ctx.viewportRect.width, this.ctx.viewportRect.height, this.gridSize, this.gridLineColor, this.gridBgColor, this.ctx.camera);
             }
         });
-        this.needsRedraw = false;
+        this.ctx.needsRedraw = false;
     }
     updateScreen() {
         requestAnimationFrame(() => {
-            const contentEl = this.contentEl;
+            const contentEl = this.ctx.contentEl;
             // Apply transformations to the content, aligning with the grid
-            contentEl.style.transform = `perspective(1px) scale(${this.camera.zoom}) translate(${this.camera.pos.x}px, ${this.camera.pos.y}px)`;
+            contentEl.style.transform = `perspective(1px) scale(${this.ctx.camera.zoom}) translate(${this.ctx.camera.pos.x}px, ${this.ctx.camera.pos.y}px)`;
             this.renderGrid();
         });
     }
+    // onPointerDown(event: MouseEvent | TouchEvent) {
+    //   const loc = getEventLocation(event);
+    //   const worldCoords = this.ctx.camera.toWorldCoords(loc);
+    //   let target = event.target as HTMLElement;
+    //   target = document.elementFromPoint(loc.x, loc.y) as HTMLElement;
+    //   // if a connection clicked
+    //   const connection = target.closest('logic-connection');
+    //   if (connection) {
+    //     const snappableConnector = this.ctx.connectorQuadtree.checkNearby(
+    //       loc.x,
+    //       loc.y,
+    //       this.connectorSnappingDistance * this.ctx.camera.zoom,
+    //     );
+    //     if (snappableConnector) {
+    //       // set mouse cursor to grabbing
+    //       window.document.body.style.cursor = 'grabbing';
+    //       // this.isReconnectAttempt = true;
+    //       // if connector is close, then disconnect and setup as current dragging connection
+    //       this.ctx.activeConnection = connection as HTMLLogicConnectionElement;
+    //       const snapConn = this.ctx.connectors.get(snappableConnector.id);
+    //       this.ctx.activeConnector =
+    //         snapConn.connectingConnector as HTMLLogicConnectorElement;
+    //       this.ctx.activeConnector.connections =
+    //         this.ctx.activeConnector.connections.filter(
+    //           conn => conn !== this.ctx.activeConnection,
+    //         );
+    //       snapConn.connections = snapConn.connections.filter(
+    //         conn => conn !== this.ctx.activeConnection,
+    //       );
+    //       // if selected output connector, swap start and end
+    //       if (this.ctx.activeConnector.type === 'input') {
+    //         // const temp = connData.start;
+    //         // connData.start = connData.end;
+    //         // connData.end = temp;
+    //         // swap positions
+    //         const tempPos = this.ctx.activeConnection.start;
+    //         this.ctx.activeConnection.start = this.ctx.activeConnection.end;
+    //         this.ctx.activeConnection.end = tempPos;
+    //         // swap type
+    //         this.ctx.activeConnection.type = 'input';
+    //       }
+    //       // set connectingconnector to null
+    //       // connData.start.connectingConnector = null;
+    //       // connData.end.connectingConnector = null;
+    //       this.ctx.activeConnector.connectingConnector = null;
+    //       snapConn.connectingConnector = null;
+    //       return;
+    //     }
+    //   } else if (target.closest('.logic-connector .connector')) {
+    //     // set cursor to cell
+    //     window.document.body.style.cursor = 'grabbing';
+    //     this.ctx.activeConnector = target.closest(
+    //       'logic-connector .connector',
+    //     ) as HTMLLogicConnectorElement;
+    //     const parentConn = this.ctx.activeConnector.closest(
+    //       'logic-connector',
+    //     ) as HTMLLogicConnectorElement;
+    //     const aConnId = parentConn.id;
+    //     const rect = this.ctx.connectorRects[aConnId];
+    //     // account for node position and find center of connector
+    //     this.ctx.activeConnectorStartPos = {
+    //       x: rect.left + rect.width / 2,
+    //       y: rect.top + rect.height / 2,
+    //     };
+    //     // create a new connection element
+    //     const connection = document.createElement('logic-connection');
+    //     connection.start = this.ctx.activeConnectorStartPos;
+    //     connection.end = this.ctx.activeConnectorStartPos;
+    //     // set input or output based on activeconnector parent
+    //     connection.type = parentConn.type;
+    //     this.ctx.contentEl.appendChild(connection);
+    //     this.ctx.activeConnection = connection;
+    //     // Associate the connection with the connector
+    //     return;
+    //   } else if (target.closest('logic-node')) {
+    //     // set cursor to move
+    //     window.document.body.style.cursor = 'grabbing';
+    //     this.ctx.activeNode = target.closest(
+    //       'logic-node',
+    //     ) as HTMLLogicNodeElement;
+    //     // bring active node to front by moving element to the end of the parent
+    //     const pos = this.ctx.activeNode.position;
+    //     this.ctx.activeNodeDragStart = {
+    //       x: worldCoords.x - pos.x,
+    //       y: worldCoords.y - pos.y,
+    //     };
+    //     this.ctx.activeNodeDragging = true;
+    //     return;
+    //   }
+    //   // if nothing clicked, then start panning
+    //   // set cursor to grabbing
+    //   window.document.body.style.cursor = 'grabbing';
+    //   this.ctx.isPanning = true;
+    //   this.ctx.dragStart = worldCoords;
+    // }
     onPointerDown(event) {
         const loc = getEventLocation(event);
-        const worldCoords = this.camera.toWorldCoords(loc);
-        let target = event.target;
-        target = document.elementFromPoint(loc.x, loc.y);
+        const worldCoords = this.ctx.camera.toWorldCoords(loc);
+        const target = document.elementFromPoint(loc.x, loc.y);
         // if a connection clicked
-        const connection = target.closest('logic-connection');
-        if (connection) {
-            const snappableConnector = this.quadtree.checkNearby(loc.x, loc.y, this.connectorSnappingDistance * this.camera.zoom);
-            if (snappableConnector) {
-                // set mouse cursor to grabbing
-                window.document.body.style.cursor = 'grabbing';
-                // this.isReconnectAttempt = true;
-                // if connector is close, then disconnect and setup as current dragging connection
-                this.activeConnection = connection;
-                const snapConn = this.ctx.connectors.get(snappableConnector.id);
-                this.activeConnector =
-                    snapConn.connectingConnector;
-                this.activeConnector.connections =
-                    this.activeConnector.connections.filter(conn => conn !== this.activeConnection);
-                snapConn.connections = snapConn.connections.filter(conn => conn !== this.activeConnection);
-                // if selected output connector, swap start and end
-                if (this.activeConnector.type === 'input') {
-                    // const temp = connData.start;
-                    // connData.start = connData.end;
-                    // connData.end = temp;
-                    // swap positions
-                    const tempPos = this.activeConnection.start;
-                    this.activeConnection.start = this.activeConnection.end;
-                    this.activeConnection.end = tempPos;
-                    // swap type
-                    this.activeConnection.type = 'input';
-                }
-                // set connectingconnector to null
-                // connData.start.connectingConnector = null;
-                // connData.end.connectingConnector = null;
-                this.activeConnector.connectingConnector = null;
-                snapConn.connectingConnector = null;
-                return;
-            }
-        }
-        else if (target.closest('.logic-connector .connector')) {
-            // set cursor to cell
-            window.document.body.style.cursor = 'grabbing';
-            this.activeConnector = target.closest('logic-connector .connector');
-            const parentConn = this.activeConnector.closest('logic-connector');
-            const aConnId = parentConn.id;
-            const rect = this.ctx.connectorRects[aConnId];
-            // account for node position and find center of connector
-            this.activeConnectorStartPos = {
-                x: rect.left + rect.width / 2,
-                y: rect.top + rect.height / 2,
-            };
-            // create a new connection element
-            const connection = document.createElement('logic-connection');
-            connection.start = this.activeConnectorStartPos;
-            connection.end = this.activeConnectorStartPos;
-            // set input or output based on activeconnector parent
-            connection.type = parentConn.type;
-            this.contentEl.appendChild(connection);
-            this.activeConnection = connection;
-            // Associate the connection with the connector
+        if (this.ctx.startDisconnectConnection(target, loc, this.connectorSnappingDistance, this.cursors.moving))
             return;
-        }
-        else if (target.closest('logic-node')) {
-            // set cursor to move
-            window.document.body.style.cursor = 'grabbing';
-            this.activeNode = target.closest('logic-node');
-            // bring active node to front by moving element to the end of the parent
-            const pos = this.activeNode.position;
-            this.activeNodeDragStart = {
-                x: worldCoords.x - pos.x,
-                y: worldCoords.y - pos.y,
-            };
-            this.activeNodeDragging = true;
+        // if a connector clicked
+        if (this.ctx.startNewConnection(target))
             return;
-        }
+        // if a node clicked
+        if (this.ctx.startNodeDrag(target, worldCoords))
+            return;
         // if nothing clicked, then start panning
-        // set cursor to grabbing
-        window.document.body.style.cursor = 'grabbing';
-        this.isDragging = true;
-        this.dragStart = worldCoords;
+        this.ctx.startPanning(worldCoords);
     }
+    // onPointerUp(event: MouseEvent | TouchEvent) {
+    //   // event.stopPropagation();
+    //   if (this.ctx.activeConnector && this.ctx.activeConnection) {
+    //     const loc = getEventLocation(event);
+    //     let target = event.target as HTMLElement;
+    //     if (event instanceof TouchEvent) {
+    //       target = document.elementFromPoint(loc.x, loc.y) as HTMLElement;
+    //     }
+    //     let targetConnector = target.closest(
+    //       'logic-connector .connector',
+    //     ) as HTMLLogicConnectorElement;
+    //     const snappedConnector = this.ctx.connectorQuadtree.checkNearby(
+    //       loc.x,
+    //       loc.y,
+    //       this.connectorSnappingDistance * this.ctx.camera.zoom,
+    //     );
+    //     if (snappedConnector) {
+    //       targetConnector = this.ctx.connectors.get(snappedConnector.id);
+    //     }
+    //     if (targetConnector) {
+    //       let aConn = this.ctx.activeConnector.closest(
+    //         'logic-connector',
+    //       ) as HTMLLogicConnectorElement;
+    //       let tConn = targetConnector.closest(
+    //         'logic-connector',
+    //       ) as HTMLLogicConnectorElement;
+    //       // find parent node of each
+    //       const aNode = aConn.closest('logic-node') as HTMLLogicNodeElement;
+    //       const tNode = tConn.closest('logic-node') as HTMLLogicNodeElement;
+    //       // make sure not already connected to this connector
+    //       if (
+    //         this.ctx.activeConnector.connectingConnector === tConn ||
+    //         tConn.connectingConnector === aConn
+    //       ) {
+    //         console.log('already connected');
+    //         this.ctx.activeConnection.remove();
+    //         this.ctx.activeConnector = null;
+    //         this.ctx.activeConnection = null;
+    //         return;
+    //       }
+    //       // make sure not connecting to itself
+    //       else if (
+    //         aNode === tNode ||
+    //         this.ctx.activeConnector === targetConnector
+    //       ) {
+    //         console.log('connecting to itself');
+    //         this.ctx.activeConnection.remove();
+    //         this.ctx.activeConnector = null;
+    //         this.ctx.activeConnection = null;
+    //         return;
+    //       }
+    //       // make sure only input to output or output to input
+    //       else if (aConn.type === tConn.type) {
+    //         console.log('connecting same type');
+    //         this.ctx.activeConnection.remove();
+    //         this.ctx.activeConnector = null;
+    //         this.ctx.activeConnection = null;
+    //         return;
+    //       }
+    //       // const targRect = targetConnector.getBoundingClientRect();
+    //       const targRect = this.ctx.connectorRects[tConn.getAttribute('id')];
+    //       // like above but if went from input to output, then start is the target and end is the active
+    //       // treat as though drawn from target to active
+    //       if (aConn.type === 'input') {
+    //         this.ctx.activeConnection.start = {
+    //           x: targRect.left + targRect.width / 2,
+    //           y: targRect.top + targRect.height / 2,
+    //         };
+    //         this.ctx.activeConnection.end = this.ctx.activeConnectorStartPos;
+    //         this.ctx.activeConnection.type = 'output';
+    //         // set connection to rect
+    //         const rect = this.ctx.connectorRects[aConn.id];
+    //         this.ctx.activeConnection.end = {
+    //           x: rect.left + rect.width / 2,
+    //           y: rect.top + rect.height / 2,
+    //         };
+    //       } else {
+    //         this.ctx.activeConnection.end = {
+    //           x: targRect.left + targRect.width / 2,
+    //           y: targRect.top + targRect.height / 2,
+    //         };
+    //       }
+    //       // get parent logic-connector from activeConnector and targetConnector
+    //       aConn.connectingConnector = tConn;
+    //       aConn.connections.push(this.ctx.activeConnection);
+    //       tConn.connectingConnector = aConn;
+    //       tConn.connections.push(this.ctx.activeConnection);
+    //     } else {
+    //       this.ctx.activeConnection.remove();
+    //     }
+    //     this.ctx.activeConnector = null;
+    //     this.ctx.activeConnection = null;
+    //   } else if (this.ctx.activeNode && this.ctx.activeNodeDragging) {
+    //     this.ctx.activeNodeDragging = false;
+    //     // update connector in quadtree
+    //     const connectors = this.ctx.activeNode.querySelectorAll(
+    //       'logic-connector',
+    //     ) as NodeListOf<HTMLLogicConnectorElement>;
+    //     for (let i = 0; i < connectors.length; i++) {
+    //       const connector = connectors[i];
+    //       const connectorId = connector.getAttribute('id');
+    //       const rect = this.ctx.connectorRects[connectorId];
+    //       this.ctx.connectorQuadtree.remove(connectorId);
+    //       this.ctx.connectorQuadtree.insert({
+    //         x: rect.left + rect.width / 2,
+    //         y: rect.top + rect.height / 2,
+    //         id: connectorId,
+    //       });
+    //     }
+    //     this.ctx.activeNode = null;
+    //   }
+    //   this.ctx.isPanning = false;
+    //   this.ctx.initialPinchDistance = 0;
+    //   window.document.body.style.cursor = 'auto';
+    // }
     onPointerUp(event) {
-        // event.stopPropagation();
-        if (this.activeConnector && this.activeConnection) {
-            const loc = getEventLocation(event);
-            let target = event.target;
-            if (event instanceof TouchEvent) {
-                target = document.elementFromPoint(loc.x, loc.y);
-            }
-            let targetConnector = target.closest('logic-connector .connector');
-            const snappedConnector = this.quadtree.checkNearby(loc.x, loc.y, this.connectorSnappingDistance * this.camera.zoom);
-            if (snappedConnector) {
-                targetConnector = this.ctx.connectors.get(snappedConnector.id);
-            }
-            if (targetConnector) {
-                let aConn = this.activeConnector.closest('logic-connector');
-                let tConn = targetConnector.closest('logic-connector');
-                // find parent node of each
-                const aNode = aConn.closest('logic-node');
-                const tNode = tConn.closest('logic-node');
-                // make sure not already connected to this connector
-                if (this.activeConnector.connectingConnector === tConn ||
-                    tConn.connectingConnector === aConn) {
-                    console.log('already connected');
-                    this.activeConnection.remove();
-                    this.activeConnector = null;
-                    this.activeConnection = null;
-                    return;
-                }
-                // make sure not connecting to itself
-                else if (aNode === tNode || this.activeConnector === targetConnector) {
-                    console.log('connecting to itself');
-                    this.activeConnection.remove();
-                    this.activeConnector = null;
-                    this.activeConnection = null;
-                    return;
-                }
-                // make sure only input to output or output to input
-                else if (aConn.type === tConn.type) {
-                    console.log('connecting same type');
-                    this.activeConnection.remove();
-                    this.activeConnector = null;
-                    this.activeConnection = null;
-                    return;
-                }
-                // const targRect = targetConnector.getBoundingClientRect();
-                const targRect = this.ctx.connectorRects[tConn.getAttribute('id')];
-                // like above but if went from input to output, then start is the target and end is the active
-                // treat as though drawn from target to active
-                if (aConn.type === 'input') {
-                    this.activeConnection.start = {
-                        x: targRect.left + targRect.width / 2,
-                        y: targRect.top + targRect.height / 2,
-                    };
-                    this.activeConnection.end = this.activeConnectorStartPos;
-                    this.activeConnection.type = 'output';
-                    // set connection to rect
-                    const rect = this.ctx.connectorRects[aConn.id];
-                    this.activeConnection.end = {
-                        x: rect.left + rect.width / 2,
-                        y: rect.top + rect.height / 2,
-                    };
-                }
-                else {
-                    this.activeConnection.end = {
-                        x: targRect.left + targRect.width / 2,
-                        y: targRect.top + targRect.height / 2,
-                    };
-                }
-                // get parent logic-connector from activeConnector and targetConnector
-                aConn.connectingConnector = tConn;
-                aConn.connections.push(this.activeConnection);
-                tConn.connectingConnector = aConn;
-                tConn.connections.push(this.activeConnection);
-            }
-            else {
-                this.activeConnection.remove();
-            }
-            this.activeConnector = null;
-            this.activeConnection = null;
+        if (this.ctx.activeConnector && this.ctx.activeConnection) {
+            this.onEndActiveConnection(event);
         }
-        else if (this.activeNode && this.activeNodeDragging) {
-            this.activeNodeDragging = false;
-            // update connector in quadtree
-            const connectors = this.activeNode.querySelectorAll('logic-connector');
-            for (let i = 0; i < connectors.length; i++) {
-                const connector = connectors[i];
-                const connectorId = connector.getAttribute('id');
-                const rect = this.ctx.connectorRects[connectorId];
-                this.quadtree.remove(connectorId);
-                this.quadtree.insert({
-                    x: rect.left + rect.width / 2,
-                    y: rect.top + rect.height / 2,
-                    id: connectorId,
-                });
-            }
-            this.activeNode = null;
+        else if (this.ctx.activeNode && this.ctx.activeNodeDragging) {
+            this.ctx.endNodeDrag();
         }
-        this.isDragging = false;
-        this.initialPinchDistance = 0;
-        window.document.body.style.cursor = 'auto';
+        this.ctx.resetPointerStates();
+    }
+    onEndActiveConnection(event) {
+        const loc = getEventLocation(event);
+        let target = event.target;
+        // For touch events, get the element at the touch point
+        if (event instanceof TouchEvent) {
+            target = document.elementFromPoint(loc.x, loc.y);
+        }
+        let targetConnector = this.ctx.getTargetConnector(target, loc, this.connectorSnappingDistance);
+        if (targetConnector) {
+            this.ctx.processConnection(targetConnector);
+        }
+        else {
+            this.ctx.activeConnection.remove();
+        }
+        // clear active states
+        this.ctx.activeConnector = null;
+        this.ctx.activeConnection = null;
     }
     onPointerMove(event) {
         const loc = getEventLocation(event);
-        if (this.activeConnector && this.activeConnection) {
-            const aConn = this.activeConnection;
-            const worldCoords = this.camera.toWorldCoords(loc);
+        if (this.ctx.activeConnector && this.ctx.activeConnection) {
+            const aConn = this.ctx.activeConnection;
+            const worldCoords = this.ctx.camera.toWorldCoords(loc);
             // requestAnimationFrame(() => {
-            const snappableConnector = this.quadtree.checkNearby(loc.x, loc.y, this.connectorSnappingDistance * this.camera.zoom);
+            const snappableConnector = this.ctx.connectorQuadtree.checkNearby(loc.x, loc.y, this.connectorSnappingDistance * this.ctx.camera.zoom);
             if (snappableConnector) {
                 const rect = this.ctx.connectorRects[snappableConnector.id];
                 const pos = {
@@ -801,12 +1056,12 @@ const FlowyCanvas = class {
             // });
             return;
         }
-        else if (this.activeNode && this.activeNodeDragging) {
-            const aNode = this.activeNode;
-            const worldCoords = this.camera.toWorldCoords(loc);
+        else if (this.ctx.activeNode && this.ctx.activeNodeDragging) {
+            const aNode = this.ctx.activeNode;
+            const worldCoords = this.ctx.camera.toWorldCoords(loc);
             const aNodeOldPos = aNode.position;
-            let newX = worldCoords.x - this.activeNodeDragStart.x;
-            let newY = worldCoords.y - this.activeNodeDragStart.y;
+            let newX = worldCoords.x - this.ctx.activeNodeDragStart.x;
+            let newY = worldCoords.y - this.ctx.activeNodeDragStart.y;
             // snap to grid
             if (this.snapToGrid) {
                 const gridSize = this.gridSize;
@@ -852,38 +1107,40 @@ const FlowyCanvas = class {
             // });
             return;
         }
-        if (this.isDragging) {
-            // this.lastPan = this.camera.pos;
+        if (this.ctx.isPanning) {
+            // this.lastPan = this.ctx.camera.pos;
             const loc = getEventLocation(event);
-            this.camera.pos = {
-                x: loc.x / this.camera.zoom - this.dragStart.x,
-                y: loc.y / this.camera.zoom - this.dragStart.y,
+            this.ctx.camera.pos = {
+                x: loc.x / this.ctx.camera.zoom - this.ctx.dragStart.x,
+                y: loc.y / this.ctx.camera.zoom - this.ctx.dragStart.y,
             };
             this.scheduleComponentUpdate();
         }
     }
     handleWheel(event) {
         event.preventDefault();
-        const canvasRect = this.canvasRect;
+        const canvasRect = this.ctx.viewportRect;
         const mouseX = event.clientX - canvasRect.left;
         const mouseY = event.clientY - canvasRect.top;
         // Calculate the zoom level change
         const zoomDelta = event.deltaY < 0 ? this.zoomSpeed : -this.zoomSpeed;
-        const newZoom = Math.min(this.maxZoom, Math.max(this.minZoom, this.camera.zoom + zoomDelta));
+        const newZoom = Math.min(this.maxZoom, Math.max(this.minZoom, this.ctx.camera.zoom + zoomDelta));
         // Calculate the scale factor
-        const scaleFactor = newZoom / this.camera.zoom;
+        const scaleFactor = newZoom / this.ctx.camera.zoom;
         // Adjust the pan position to keep the same point under the cursor
-        const newPanX = mouseX - (mouseX - this.camera.pos.x * this.camera.zoom) * scaleFactor;
-        const newPanY = mouseY - (mouseY - this.camera.pos.y * this.camera.zoom) * scaleFactor;
+        const newPanX = mouseX -
+            (mouseX - this.ctx.camera.pos.x * this.ctx.camera.zoom) * scaleFactor;
+        const newPanY = mouseY -
+            (mouseY - this.ctx.camera.pos.y * this.ctx.camera.zoom) * scaleFactor;
         // Update pan and zoom
-        this.camera.pos = { x: newPanX / newZoom, y: newPanY / newZoom };
-        // this.lastZoom = this.camera.zoom;
-        this.camera.zoom = newZoom;
+        this.ctx.camera.pos = { x: newPanX / newZoom, y: newPanY / newZoom };
+        // this.lastZoom = this.ctx.camera.zoom;
+        this.ctx.camera.zoom = newZoom;
         // if zooming in, force a reflow to prevent blurry text
         if (zoomDelta > 0) {
             this.forceContentReflowDebounced();
         }
-        // this.needsRedraw = true;
+        // this.ctx.needsRedraw = true;
         this.scheduleComponentUpdate();
     }
     handleTouchStart(event) {
@@ -893,7 +1150,7 @@ const FlowyCanvas = class {
         }
         else if (event.touches.length === 2) {
             // Multi-touch -> start pinch zoom
-            this.initialPinchDistance = 0; // Reset initial pinch distance
+            this.ctx.initialPinchDistance = 0; // Reset initial pinch distance
             this.handlePinch(event); // Start pinch gesture
         }
     }
@@ -918,47 +1175,49 @@ const FlowyCanvas = class {
         // Calculate the distance between the two touch points (pinch)
         const distance = Math.sqrt((touch1.clientX - touch2.clientX) ** 2 +
             (touch1.clientY - touch2.clientY) ** 2);
-        if (this.initialPinchDistance === 0) {
+        if (this.ctx.initialPinchDistance === 0) {
             // If it's the start of the pinch, initialize the pinch distance
-            this.initialPinchDistance = distance;
+            this.ctx.initialPinchDistance = distance;
         }
         else {
             // Calculate the scale factor based on the distance change
-            const scaleFactor = distance / this.initialPinchDistance;
+            const scaleFactor = distance / this.ctx.initialPinchDistance;
             // Calculate the midpoint between the two fingers (the pinch center)
             const pinchCenterX = (touch1.clientX + touch2.clientX) / 2;
             const pinchCenterY = (touch1.clientY + touch2.clientY) / 2;
             // Apply zoom and keep the pinch center fixed
             this.adjustZoomOnPinch(scaleFactor, pinchCenterX, pinchCenterY);
             // Update the initial pinch distance for the next move
-            this.initialPinchDistance = distance;
+            this.ctx.initialPinchDistance = distance;
         }
     }
     adjustZoomOnPinch(scaleFactor, pinchCenterX, pinchCenterY) {
         // Calculate new zoom, ensuring it stays within min/max bounds
-        const newZoom = Math.min(this.maxZoom, Math.max(this.minZoom, this.camera.zoom * scaleFactor));
+        const newZoom = Math.min(this.maxZoom, Math.max(this.minZoom, this.ctx.camera.zoom * scaleFactor));
         // Find the pinch center position relative to the content's current position and zoom
-        const pinchContentX = (pinchCenterX - this.camera.pos.x * this.camera.zoom) / this.camera.zoom;
-        const pinchContentY = (pinchCenterY - this.camera.pos.y * this.camera.zoom) / this.camera.zoom;
+        const pinchContentX = (pinchCenterX - this.ctx.camera.pos.x * this.ctx.camera.zoom) /
+            this.ctx.camera.zoom;
+        const pinchContentY = (pinchCenterY - this.ctx.camera.pos.y * this.ctx.camera.zoom) /
+            this.ctx.camera.zoom;
         // Adjust pan so the pinch center stays fixed after zooming
-        this.camera.pos = {
+        this.ctx.camera.pos = {
             x: pinchCenterX / newZoom - pinchContentX,
             y: pinchCenterY / newZoom - pinchContentY,
         };
         // Apply the new zoom level
-        this.camera.zoom = newZoom;
+        this.ctx.camera.zoom = newZoom;
         // Trigger a screen redraw
         this.debouncedUpdateScreen();
     }
     forceContentReflow() {
         // force repaint the content
-        const cdisplay = this.contentEl.style.display;
-        this.contentEl.style.display = 'none';
-        this.contentEl.offsetHeight; // trigger reflow
-        this.contentEl.style.display = cdisplay;
+        const cdisplay = this.ctx.contentEl.style.display;
+        this.ctx.contentEl.style.display = 'none';
+        this.ctx.contentEl.offsetHeight; // trigger reflow
+        this.ctx.contentEl.style.display = cdisplay;
     }
     render() {
-        return (h(Host, { key: 'd20497011dcd1a3792b59584630f23b5967801e1' }, h("div", { key: 'd412d60bc4ea6466e8ca73c8b0be4c5855ee5e9b', class: "flowy-canvas" }, h("canvas", { key: '28d37eb00242a03ebd45a8e7076d8ca153d127f5', class: "flowy-grid" }), h("div", { key: '5407d7495978874770d2950e1af6d1db995f8c04', class: "flowy-content" }, h("slot", { key: '5907814fd76ecca9ae01386d07a9ec3ed633ed92' })))));
+        return (h(Host, { key: '44c2fbc39d245f1669340c65295549af0c244725' }, h("div", { key: '40b930f57a3838495065d4b6b7888efd04e2b133', class: "flowy-canvas" }, h("canvas", { key: '9fe5624d8ac4eb6aae2bb6766a96d26652cdcd62', class: "flowy-grid" }), h("div", { key: '3bf897ec712cedc6b2766751a537de6f4376c9dd', class: "flowy-content" }, h("slot", { key: 'bb80ffdac0070308367ea66cf728f03ebf143f8e' })))));
     }
     get el() { return getElement(this); }
 };
