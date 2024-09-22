@@ -88,14 +88,14 @@ export class FlowyCanvas {
 
     //create quadtree
     const boundary = {
-      x: 0,
-      y: 0,
+      left: 0,
+      top: 0,
       width: this.ctx.viewportRect.width,
       height: this.ctx.viewportRect.height,
     };
 
     this.ctx.connectorQuadtree = new Quadtree(boundary, 4, this.ctx.camera);
-    this.ctx.connectorQuadtree = this.ctx.connectorQuadtree;
+    this.ctx.viewportQuadtree = new Quadtree(boundary, 4, this.ctx.camera);
 
     // Handle resize events
     this.resizeObserver = new ResizeObserver(() => this.debouncedResize());
@@ -136,8 +136,8 @@ export class FlowyCanvas {
     this.renderGrid();
     // update quadtree boundary
     const boundary = {
-      x: 0,
-      y: 0,
+      left: 0,
+      top: 0,
       width: this.ctx.viewportRect.width,
       height: this.ctx.viewportRect.height,
     };

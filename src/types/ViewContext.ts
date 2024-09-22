@@ -15,6 +15,7 @@ export class ViewContext {
   connections = new Map<string, HTMLLogicConnectionElement>();
   connectorRects = <Record<string, Rect>>{};
   connectorQuadtree: Quadtree;
+  viewportQuadtree: Quadtree;
   camera = new Camera();
   observer: MutationObserver;
 
@@ -384,8 +385,7 @@ export class ViewContext {
     const worldCoords = this.camera.toWorldCoords(loc);
 
     const snappableConnector = this.connectorQuadtree.checkNearby(
-      loc.x,
-      loc.y,
+      loc,
       snappingDist * this.camera.zoom,
     );
 
@@ -403,8 +403,7 @@ export class ViewContext {
     ) as HTMLLogicConnectorElement;
 
     const snappedConnector = this.connectorQuadtree.checkNearby(
-      loc.x,
-      loc.y,
+      loc,
       snappingDist * this.camera.zoom,
     );
 
@@ -531,8 +530,7 @@ export class ViewContext {
     ViewContext.bringToFront(connection);
 
     const snappableConnector = this.connectorQuadtree.checkNearby(
-      loc.x,
-      loc.y,
+      loc,
       snappingDist * this.camera.zoom,
     );
 
