@@ -3,6 +3,8 @@ import { Rect } from './Rect';
 import { Quadtree } from './Quadtree';
 import { Camera } from './Camera';
 import { Coords } from './Coords';
+import { throttle } from '../utils/throttle';
+import { forceUpdate } from '@stencil/core';
 
 type EntityType = 'node' | 'connector' | 'connection' | 'viewport';
 
@@ -16,8 +18,11 @@ export class ViewContext {
   connectorRects = <Record<string, Rect>>{};
   connectorQuadtree: Quadtree;
   viewportQuadtree: Quadtree;
+  nodeRects = <Record<string, Rect>>{};
   camera = new Camera();
   observer: MutationObserver;
+  visibleElements: string[] = [];
+  prevVisibleElements: string[] = [];
 
   // viewport variables
   viewportEl: HTMLDivElement;
@@ -35,6 +40,11 @@ export class ViewContext {
   activeConnectorStartPos: Coords = { x: 0, y: 0 };
   activeConnection: HTMLLogicConnectionElement;
 
+  debouncedUpdateVisibleElements = throttle(
+    () => this.updateVisibleElements(),
+    100,
+  );
+
   constructor(viewport: HTMLFlowyCanvasElement) {
     const id = nanoid();
     viewport.id = id;
@@ -44,6 +54,16 @@ export class ViewContext {
     }
     this.uid = viewportId;
     ViewContext.instances.set(this.uid, this);
+
+    const boundry = {
+      top: 0,
+      left: 0,
+      width: window.innerWidth,
+      height: window.innerHeight,
+    };
+
+    this.connectorQuadtree = new Quadtree(boundry, 4, this.camera);
+    this.viewportQuadtree = new Quadtree(boundry, 4, this.camera);
 
     ViewContext.initializeViewport(viewport);
 
@@ -84,6 +104,23 @@ export class ViewContext {
     const id = nanoid();
     node.id = id;
     this.nodes.set(id, node);
+
+    // set data attribute for the context id
+    node.setAttribute('data-viewport', this.uid);
+
+    // update rect
+    const rect = node.getBoundingClientRect();
+    this.nodeRects[id] = {
+      left: rect.x,
+      top: rect.y,
+      width: rect.width,
+      height: rect.height,
+    };
+
+    // add to quadtree
+    this.updateViewportQuadtree(node);
+    this.updateNodeConnectorsQuadtree(node);
+
     return id;
   }
 
@@ -108,6 +145,10 @@ export class ViewContext {
       //   this.unregisterConnector(cid);
       // });
 
+      // remove from quadtree
+      this.viewportQuadtree.remove(id);
+      node.setAttribute('data-viewport', '');
+
       // remove from nodes
       this.nodes.delete(id);
     }
@@ -131,6 +172,7 @@ export class ViewContext {
 
   unregisterConnector(id: string) {
     this.connectors.delete(id);
+    this.connectorQuadtree.remove(id);
     delete this.connectorRects[id];
   }
 
@@ -138,15 +180,21 @@ export class ViewContext {
     const id = nanoid();
     connection.id = id;
     this.connections.set(id, connection);
+    // set data attribute for the context id
+    connection.setAttribute('data-viewport', this.uid);
+
     return id;
   }
 
   unregisterConnection(id: string) {
+    const connection = this.connections.get(id);
+    connection.setAttribute('data-viewport', '');
     // remove from dom
     const el = document.getElementById(id);
     if (el) {
       el.remove();
     }
+
     this.connections.delete(id);
   }
 
@@ -259,6 +307,8 @@ export class ViewContext {
       x: loc.x / this.camera.zoom - this.dragStart.x,
       y: loc.y / this.camera.zoom - this.dragStart.y,
     };
+
+    this.debouncedUpdateVisibleElements();
   }
 
   resetPointerStates() {
@@ -356,6 +406,14 @@ export class ViewContext {
       y: newPos.y - oldPos.y,
     };
 
+    // update node rect
+    const rect = this.nodeRects[aNode.id];
+    rect.left = newPos.x;
+    rect.top = newPos.y;
+    rect.width = aNode.offsetWidth;
+    rect.height = aNode.offsetHeight;
+    this.nodeRects[aNode.id] = rect;
+
     // update node position and it's connections
     this.updateNodeConnectorPos(aNode, delta); // ???
 
@@ -365,6 +423,7 @@ export class ViewContext {
   endNodeDrag() {
     this.activeNodeDragging = false;
     this.updateNodeConnectorsQuadtree(this.activeNode);
+    this.updateViewportQuadtree(this.activeNode);
     this.activeNode = null;
   }
 
@@ -584,7 +643,18 @@ export class ViewContext {
     ) as NodeListOf<HTMLLogicConnectorElement>;
     for (let i = 0; i < connectors.length; i++) {
       const connector = connectors[i];
-      const rect = this.connectorRects[connector.id];
+      let rect = this.connectorRects[connector.id];
+      if (!rect) {
+        const connectorEl = connector.querySelector('.connector');
+        const r = connectorEl.getBoundingClientRect();
+        this.connectorRects[connector.id] = {
+          left: r.x,
+          top: r.y,
+          width: r.width,
+          height: r.height,
+        };
+        rect = this.connectorRects[connector.id];
+      }
 
       this.connectorQuadtree.remove(connector.id);
       this.connectorQuadtree.insert({
@@ -592,6 +662,55 @@ export class ViewContext {
         x: rect.left + rect.width / 2,
         y: rect.top + rect.height / 2,
       });
+    }
+  }
+
+  updateViewportQuadtree(node: HTMLLogicNodeElement) {
+    const rect = this.nodeRects[node.id];
+    this.viewportQuadtree.remove(node.id);
+    this.viewportQuadtree.insert({
+      id: node.id,
+      left: rect.left,
+      top: rect.top,
+      width: rect.width,
+      height: rect.height,
+    });
+  }
+
+  updateVisibleElements() {
+    // Get visible nodes within the viewport quadtree
+    const rect = this.viewportRect;
+    const visibleNodes = this.viewportQuadtree.query(
+      rect,
+      [],
+      this.camera.pos,
+      this.camera.zoom,
+    );
+
+    const newVisibleElements = visibleNodes.map((node: any) => node.id);
+
+    const allItems = new Set([
+      ...this.prevVisibleElements,
+      ...newVisibleElements,
+    ]);
+
+    // Update the previous visible elements
+    this.prevVisibleElements = newVisibleElements;
+
+    // Update elements that changed visibility
+    for (const id of allItems) {
+      const el = document.getElementById(id);
+      if (el) {
+        const nodeComponent = el as HTMLLogicNodeElement;
+        const curstate = nodeComponent.isVisible;
+        const prevState = this.prevVisibleElements.includes(id);
+        const newstate = newVisibleElements.includes(id);
+        if (prevState === curstate && newstate === curstate) {
+          continue;
+        }
+
+        nodeComponent.isVisible = newVisibleElements.includes(id);
+      }
     }
   }
 }

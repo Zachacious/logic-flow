@@ -65,26 +65,26 @@ export class FlowyCanvas {
     this.ctx.viewportRect = this.ctx.viewportEl.getBoundingClientRect();
     this.ctx.initialPinchDistance = 0;
 
-    const canvasEl = this.ctx.viewportEl;
+    const viewportEl = this.ctx.viewportEl;
 
     // setup event listeners
     window.addEventListener('mousedown', this.elMouseDown, {
       passive: true,
     });
-    canvasEl.addEventListener('mouseup', this.elMouseUp, { passive: true });
-    canvasEl.addEventListener('mousemove', this.elMouseMove, {
+    viewportEl.addEventListener('mouseup', this.elMouseUp, { passive: true });
+    viewportEl.addEventListener('mousemove', this.elMouseMove, {
       passive: true,
     });
 
-    canvasEl.addEventListener('touchstart', this.elTouchStart, {
+    viewportEl.addEventListener('touchstart', this.elTouchStart, {
       passive: true,
     });
-    canvasEl.addEventListener('touchmove', this.elTouchMove, {
+    viewportEl.addEventListener('touchmove', this.elTouchMove, {
       passive: true,
     });
-    canvasEl.addEventListener('touchend', this.elTouchEnd, { passive: true });
+    viewportEl.addEventListener('touchend', this.elTouchEnd, { passive: true });
 
-    canvasEl.addEventListener('wheel', this.elWheel, { passive: false });
+    viewportEl.addEventListener('wheel', this.elWheel, { passive: false });
 
     //create quadtree
     const boundary = {
@@ -94,8 +94,15 @@ export class FlowyCanvas {
       height: this.ctx.viewportRect.height,
     };
 
-    this.ctx.connectorQuadtree = new Quadtree(boundary, 4, this.ctx.camera);
-    this.ctx.viewportQuadtree = new Quadtree(boundary, 4, this.ctx.camera);
+    // get/set viewport rect
+    const viewportRect = this.ctx.viewportEl.getBoundingClientRect();
+    this.ctx.viewportRect = viewportRect;
+
+    this.ctx.connectorQuadtree.boundary = boundary;
+    this.ctx.viewportQuadtree.boundary = viewportRect;
+
+    // this.ctx.connectorQuadtree = new Quadtree(boundary, 4, this.ctx.camera);
+    // this.ctx.viewportQuadtree = new Quadtree(boundary, 4, this.ctx.camera);
 
     // Handle resize events
     this.resizeObserver = new ResizeObserver(() => this.debouncedResize());
@@ -127,6 +134,7 @@ export class FlowyCanvas {
 
   scheduleComponentUpdate() {
     this.ctx.needsRedraw = true;
+    this.ctx.debouncedUpdateVisibleElements();
     this.debouncedUpdateScreen();
   }
 
@@ -141,7 +149,12 @@ export class FlowyCanvas {
       width: this.ctx.viewportRect.width,
       height: this.ctx.viewportRect.height,
     };
+
+    // get set viewport rect
+    this.ctx.viewportRect = this.ctx.viewportEl.getBoundingClientRect();
+
     this.ctx.connectorQuadtree.boundary = boundary;
+    this.ctx.viewportQuadtree.boundary = this.ctx.viewportRect;
   }
 
   renderGrid() {

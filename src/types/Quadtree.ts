@@ -88,10 +88,6 @@ export class Quadtree {
     }
   }
 
-  insertItems(objects: SpatialObject[]): void {
-    objects.forEach(object => this.insert(object));
-  }
-
   remove(id: string): boolean {
     const removeFromNode = (node: Quadtree | null): boolean => {
       if (!node) return false;

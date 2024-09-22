@@ -43,6 +43,7 @@ export namespace Components {
         "type": 'input' | 'output';
     }
     interface LogicNode {
+        "isVisible": boolean;
         "position": Coords;
         "title": string;
         "type": string;
@@ -142,6 +143,7 @@ declare namespace LocalJSX {
         "type"?: 'input' | 'output';
     }
     interface LogicNode {
+        "isVisible"?: boolean;
         "position"?: Coords;
         "title"?: string;
         "type"?: string;
