@@ -1,4 +1,4 @@
-import { r as registerInstance, h, a as Host, g as getElement } from './index-2bf55485.js';
+import { r as registerInstance, h, a as Host, g as getElement } from './index-519b580e.js';
 
 const logicFlowNodeCss = ":host{display:block}";
 
@@ -43,7 +43,7 @@ const LogicFlowNode = class {
     }
     render() {
         console.log('render', this.isVisible);
-        return (h(Host, { key: '8611c6f0ef81e0ea9b3a0543698ff7c71eeb58ea', class: "logic-flow-node", style: this.style }, h("div", { key: 'f556fa2604c90ca5924dbd6df973fb58be5f50e2', class: "logic-flow-node-header" }, this.title, h("slot", { key: '5653b3f15b9d34e0fcf899001ff2950c78d08eb2', name: "header" })), h("slot", { key: '6a37abedddb418d86ec991080becba2c7bc7a6e1' }), h("div", { key: 'cb9888d0c98cf88a5415f01a8fd7ec8db8e11dc9', class: "logic-flow-node-footer" }, h("slot", { key: '996517a2a4a14c4cef040dc4d8f219f81309d5ab', name: "footer" }))));
+        return (h(Host, { key: '00f20a036edb9827ec7688ef9e73f02723557ab1', class: "logic-flow-node", style: this.style }, h("div", { key: '2098d441aa3cb522325123efaa8295c32cb25445', class: "logic-flow-node-header" }, this.title, h("slot", { key: '3d78c4a470397d8a1213f037d3147b0fa4a1810d', name: "header" })), h("slot", { key: '391709f7f86df976ad40abe37aa386ef58fcaeb2' }), h("div", { key: '6331e411be475eedc13f2b130a535fcc1be20c8f', class: "logic-flow-node-footer" }, h("slot", { key: '072729c075dd0e40312d83faf0f4ede986fa99a8', name: "footer" }))));
     }
     get el() { return getElement(this); }
     static get watchers() { return {

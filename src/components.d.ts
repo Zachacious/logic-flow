@@ -39,29 +39,6 @@ export namespace Components {
         "snapToGrid": boolean;
         "zoomSpeed": number;
     }
-    interface LogicFlowViewportOld {
-        "gridBgColor": string;
-        "gridLineColor": string;
-        "gridSize": number;
-        "maxZoom": number;
-        "minZoom": number;
-        "renderGrid": boolean;
-        "zoomSpeed": number;
-    }
-    interface MyComponent {
-        /**
-          * The first name
-         */
-        "first": string;
-        /**
-          * The last name
-         */
-        "last": string;
-        /**
-          * The middle name
-         */
-        "middle": string;
-    }
 }
 declare global {
     interface HTMLLogicFlowConnectionElement extends Components.LogicFlowConnection, HTMLStencilElement {
@@ -88,25 +65,11 @@ declare global {
         prototype: HTMLLogicFlowViewportElement;
         new (): HTMLLogicFlowViewportElement;
     };
-    interface HTMLLogicFlowViewportOldElement extends Components.LogicFlowViewportOld, HTMLStencilElement {
-    }
-    var HTMLLogicFlowViewportOldElement: {
-        prototype: HTMLLogicFlowViewportOldElement;
-        new (): HTMLLogicFlowViewportOldElement;
-    };
-    interface HTMLMyComponentElement extends Components.MyComponent, HTMLStencilElement {
-    }
-    var HTMLMyComponentElement: {
-        prototype: HTMLMyComponentElement;
-        new (): HTMLMyComponentElement;
-    };
     interface HTMLElementTagNameMap {
         "logic-flow-connection": HTMLLogicFlowConnectionElement;
         "logic-flow-connector": HTMLLogicFlowConnectorElement;
         "logic-flow-node": HTMLLogicFlowNodeElement;
         "logic-flow-viewport": HTMLLogicFlowViewportElement;
-        "logic-flow-viewport-old": HTMLLogicFlowViewportOldElement;
-        "my-component": HTMLMyComponentElement;
     }
 }
 declare namespace LocalJSX {
@@ -139,36 +102,11 @@ declare namespace LocalJSX {
         "snapToGrid"?: boolean;
         "zoomSpeed"?: number;
     }
-    interface LogicFlowViewportOld {
-        "gridBgColor"?: string;
-        "gridLineColor"?: string;
-        "gridSize"?: number;
-        "maxZoom"?: number;
-        "minZoom"?: number;
-        "renderGrid"?: boolean;
-        "zoomSpeed"?: number;
-    }
-    interface MyComponent {
-        /**
-          * The first name
-         */
-        "first"?: string;
-        /**
-          * The last name
-         */
-        "last"?: string;
-        /**
-          * The middle name
-         */
-        "middle"?: string;
-    }
     interface IntrinsicElements {
         "logic-flow-connection": LogicFlowConnection;
         "logic-flow-connector": LogicFlowConnector;
         "logic-flow-node": LogicFlowNode;
         "logic-flow-viewport": LogicFlowViewport;
-        "logic-flow-viewport-old": LogicFlowViewportOld;
-        "my-component": MyComponent;
     }
 }
 export { LocalJSX as JSX };
@@ -179,8 +117,6 @@ declare module "@stencil/core" {
             "logic-flow-connector": LocalJSX.LogicFlowConnector & JSXBase.HTMLAttributes<HTMLLogicFlowConnectorElement>;
             "logic-flow-node": LocalJSX.LogicFlowNode & JSXBase.HTMLAttributes<HTMLLogicFlowNodeElement>;
             "logic-flow-viewport": LocalJSX.LogicFlowViewport & JSXBase.HTMLAttributes<HTMLLogicFlowViewportElement>;
-            "logic-flow-viewport-old": LocalJSX.LogicFlowViewportOld & JSXBase.HTMLAttributes<HTMLLogicFlowViewportOldElement>;
-            "my-component": LocalJSX.MyComponent & JSXBase.HTMLAttributes<HTMLMyComponentElement>;
         }
     }
 }

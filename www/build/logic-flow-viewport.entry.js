@@ -1,5 +1,14 @@
-import { r as registerInstance, h, a as Host, g as getElement } from './index-2bf55485.js';
-import { d as debounce } from './debounce-25523ff8.js';
+import { r as registerInstance, h, a as Host, g as getElement } from './index-519b580e.js';
+
+const debounce = (fn, delay) => {
+    let timeout;
+    return (...args) => {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => {
+            fn(...args);
+        }, delay);
+    };
+};
 
 const throttle = (fn, delay) => {
     let lastFunc;
@@ -1354,7 +1363,7 @@ const LogicFlowViewport = class {
         this.ctx.contentEl.style.display = cdisplay;
     }
     render() {
-        return (h(Host, { key: '31ae6328008fa0db1bcf1fd16f394d5cee4791af' }, h("div", { key: 'f2e2d72830302229cf976b5201bb294a3c1acc9d', class: "logic-flow-viewport" }, h("canvas", { key: '2ca982767e80ccb537a0eac3204881339b2230c0', class: "logic-flow-grid" }), h("div", { key: 'ba47b84fda5b3ef489f9b12966b7169b9e6df26d', class: "viewport-content" }, h("slot", { key: 'ffe80a8156118a48d27a35ad2316a602026704bf' })))));
+        return (h(Host, { key: 'e344216fb8f4702aa1aade43d90c5cc006df1278' }, h("div", { key: '9b2d601c93d65b6a2b8007b10f01b91a1e2813de', class: "logic-flow-viewport" }, h("canvas", { key: '8383b711cb70aed2ba9677ef2badcbcc6051d717', class: "logic-flow-grid" }), h("div", { key: '8bb1914fb5125b0186c4e05b75cd1534e156e3fd', class: "viewport-content" }, h("slot", { key: '25cedeecb654fc04ca9480e3b7d99e003fe15b07' })))));
     }
     get el() { return getElement(this); }
     static get watchers() { return {
