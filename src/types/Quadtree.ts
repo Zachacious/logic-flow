@@ -71,7 +71,8 @@ export class Quadtree {
   }
 
   insert(object: SpatialObject): boolean {
-    if (!this.contains(object)) return false;
+    // if (!this.contains(object)) console.log('Object out of bounds');
+    // if (!this.contains(object)) return false;
 
     if (this.objects.length < this.capacity) {
       this.objects.push(object);
@@ -199,8 +200,33 @@ export class Quadtree {
     // Adjust rect position relative to pan and zoom
     const adjLeft = (rect.left + pan.x) * zoom;
     const adjTop = (rect.top + pan.y) * zoom;
+
     const adjRight = adjLeft + rect.width * zoom;
     const adjBottom = adjTop + rect.height * zoom;
+
+    // const screenW = (adjRight - adjLeft) / this.camera.zoom;
+    // const screenH = (adjBottom - adjTop) / this.camera.zoom;
+    // const screenX = adjLeft / this.camera.zoom - pan.x;
+    // const screenY = adjTop / this.camera.zoom - pan.y;
+
+    // const debugDiv2 = document.getElementById('debug2');
+    // debugDiv2.style.width = `${screenW}px`;
+    // debugDiv2.style.height = `${screenH}px`;
+    // debugDiv2.style.left = `${screenX}px`;
+    // debugDiv2.style.top = `${screenY}px`;
+
+    // const screenRange = {
+    //   left: range.left / zoom - pan.x,
+    //   top: range.top / zoom - pan.y,
+    //   width: range.width / zoom,
+    //   height: range.height / zoom,
+    // };
+
+    // const debugDiv = document.getElementById('debug');
+    // debugDiv.style.width = `${screenRange.width}px`;
+    // debugDiv.style.height = `${screenRange.height}px`;
+    // debugDiv.style.left = `${screenRange.left}px`;
+    // debugDiv.style.top = `${screenRange.top}px`;
 
     return !(
       adjRight < range.left ||

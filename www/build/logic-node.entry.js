@@ -43,7 +43,7 @@ const LogicNode = class {
     }
     render() {
         console.log('render', this.isVisible);
-        return (h(Host, { key: 'da34c199ed8f1e19e0c2f94ece60e24dbf130cce', class: "flowy-node", style: this.style }, h("div", { key: 'fea4a28bddb8e1d241e12bed3e76c1e1338c88eb', class: "flowy-node-header" }, this.title, h("slot", { key: '1557a9727e24b0c7ab7a2031d159cd64d8d2ff43', name: "header" })), h("slot", { key: '5d31f84a2086d662122383d2e472d4c8c03af54f' }), h("div", { key: '206e8a98d9da02444904bacc5a5236f4c4b6eca2', class: "flowy-node-footer" }, h("slot", { key: 'c7b74fab13d4a952f31d224cc45c628c5ef40497', name: "footer" }))));
+        return (h(Host, { key: 'b4dfdffc9e32c20ac67d25c7555411cb937bb8c0', class: "flowy-node", style: this.style }, h("div", { key: '0affa285a076a82426c46ce1b292476d1b2a1853', class: "flowy-node-header" }, this.title, h("slot", { key: '94322ddac0bf04235890d34d9eb4377e8cb16e2d', name: "header" })), h("slot", { key: '1c8577e4bc61aa0e079cc41b4561fed8aab16825' }), h("div", { key: 'f9b600a96584f4c8e546081c3e32af2e15d7fb00', class: "flowy-node-footer" }, h("slot", { key: '48450353fead58f6350c8177903a9849b71bbf59', name: "footer" }))));
     }
     get el() { return getElement(this); }
     static get watchers() { return {

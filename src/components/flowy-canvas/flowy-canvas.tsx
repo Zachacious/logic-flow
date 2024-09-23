@@ -1,4 +1,4 @@
-import { Component, Host, Prop, h, Element } from '@stencil/core';
+import { Component, Host, Prop, h, Element, Watch } from '@stencil/core';
 import { debounce } from '../../utils/debounce';
 import { throttle } from '../../utils/throttle';
 import { getEventLocation } from '../../utils/getEventLocation';
@@ -64,6 +64,7 @@ export class FlowyCanvas {
     this.ctx.gridEl = this.el.querySelector('.flowy-grid') as HTMLCanvasElement;
     this.ctx.viewportRect = this.ctx.viewportEl.getBoundingClientRect();
     this.ctx.initialPinchDistance = 0;
+    this.ctx.snapToGrid = this.snapToGrid;
 
     const viewportEl = this.ctx.viewportEl;
 
@@ -130,6 +131,11 @@ export class FlowyCanvas {
     canvasEl.removeEventListener('wheel', this.elWheel);
 
     this.ctx.destroy();
+  }
+
+  @Watch('snapToGrid')
+  onSnapToGridChange() {
+    this.ctx.snapToGrid = this.snapToGrid;
   }
 
   scheduleComponentUpdate() {

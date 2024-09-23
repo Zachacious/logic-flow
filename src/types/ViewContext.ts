@@ -4,7 +4,6 @@ import { Quadtree } from './Quadtree';
 import { Camera } from './Camera';
 import { Coords } from './Coords';
 import { throttle } from '../utils/throttle';
-import { forceUpdate } from '@stencil/core';
 
 type EntityType = 'node' | 'connector' | 'connection' | 'viewport';
 
@@ -29,9 +28,10 @@ export class ViewContext {
   contentEl: HTMLDivElement;
   gridEl: HTMLCanvasElement;
   needsRedraw = true;
-  viewportRect: DOMRect;
+  viewportRect: Rect;
   initialPinchDistance = 0;
   isPanning = false;
+  snapToGrid = false;
   dragStart: Coords = { x: 0, y: 0 };
   activeNode: HTMLLogicNodeElement;
   activeNodeDragging = false;
@@ -111,8 +111,10 @@ export class ViewContext {
     // update rect
     const rect = node.getBoundingClientRect();
     this.nodeRects[id] = {
-      left: rect.x,
-      top: rect.y,
+      // left: rect.x,
+      // top: rect.y,
+      left: node.position.x,
+      top: node.position.y,
       width: rect.width,
       height: rect.height,
     };
@@ -373,7 +375,7 @@ export class ViewContext {
     }
   }
 
-  snapToGrid(pos: Coords, gridSize: number) {
+  calcSnapToGrid(pos: Coords, gridSize: number) {
     return {
       x: Math.round(pos.x / gridSize) * gridSize,
       y: Math.round(pos.y / gridSize) * gridSize,
@@ -386,7 +388,7 @@ export class ViewContext {
       y: worldCoords.y - this.activeNodeDragStart.y,
     };
 
-    return this.snapToGrid(pos, 10);
+    return this.calcSnapToGrid(pos, 10);
   }
 
   moveNode(loc: Coords, gridSize: number) {
@@ -398,7 +400,7 @@ export class ViewContext {
 
     // calc new position
     if (this.snapToGrid) {
-      newPos = this.snapToGrid(newPos, gridSize);
+      newPos = this.calcSnapToGrid(newPos, gridSize);
     }
 
     const delta = {
@@ -410,8 +412,8 @@ export class ViewContext {
     const rect = this.nodeRects[aNode.id];
     rect.left = newPos.x;
     rect.top = newPos.y;
-    rect.width = aNode.offsetWidth;
-    rect.height = aNode.offsetHeight;
+    rect.width = aNode.clientWidth || rect.width;
+    rect.height = aNode.clientHeight || rect.height;
     this.nodeRects[aNode.id] = rect;
 
     // update node position and it's connections
@@ -667,19 +669,33 @@ export class ViewContext {
 
   updateViewportQuadtree(node: HTMLLogicNodeElement) {
     const rect = this.nodeRects[node.id];
+
     this.viewportQuadtree.remove(node.id);
+    // let rect = node.getBoundingClientRect() as Rect;
+
+    // rect = {
+    //   left: node.position.x,
+    //   top: node.position.y,
+    //   width: node.clientWidth,
+    //   height: node.clientHeight,
+    // };
+
     this.viewportQuadtree.insert({
       id: node.id,
-      left: rect.left,
       top: rect.top,
+      left: rect.left,
       width: rect.width,
       height: rect.height,
     });
+
+    // console.log('updateViewportQuadtree', node.id, rect);
+    // console.log('updateViewportQuadtree', this.viewportQuadtree.objects);
   }
 
   updateVisibleElements() {
     // Get visible nodes within the viewport quadtree
     const rect = this.viewportRect;
+
     const visibleNodes = this.viewportQuadtree.query(
       rect,
       [],
@@ -688,6 +704,7 @@ export class ViewContext {
     );
 
     const newVisibleElements = visibleNodes.map((node: any) => node.id);
+    console.log('newVisibleElements', newVisibleElements);
 
     const allItems = new Set([
       ...this.prevVisibleElements,

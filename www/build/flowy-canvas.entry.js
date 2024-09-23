@@ -92,8 +92,8 @@ class Quadtree {
         this.divided = true;
     }
     insert(object) {
-        if (!this.contains(object))
-            return false;
+        // if (!this.contains(object)) console.log('Object out of bounds');
+        // if (!this.contains(object)) return false;
         if (this.objects.length < this.capacity) {
             this.objects.push(object);
             return true;
@@ -192,6 +192,26 @@ class Quadtree {
         const adjTop = (rect.top + pan.y) * zoom;
         const adjRight = adjLeft + rect.width * zoom;
         const adjBottom = adjTop + rect.height * zoom;
+        // const screenW = (adjRight - adjLeft) / this.camera.zoom;
+        // const screenH = (adjBottom - adjTop) / this.camera.zoom;
+        // const screenX = adjLeft / this.camera.zoom - pan.x;
+        // const screenY = adjTop / this.camera.zoom - pan.y;
+        // const debugDiv2 = document.getElementById('debug2');
+        // debugDiv2.style.width = `${screenW}px`;
+        // debugDiv2.style.height = `${screenH}px`;
+        // debugDiv2.style.left = `${screenX}px`;
+        // debugDiv2.style.top = `${screenY}px`;
+        // const screenRange = {
+        //   left: range.left / zoom - pan.x,
+        //   top: range.top / zoom - pan.y,
+        //   width: range.width / zoom,
+        //   height: range.height / zoom,
+        // };
+        // const debugDiv = document.getElementById('debug');
+        // debugDiv.style.width = `${screenRange.width}px`;
+        // debugDiv.style.height = `${screenRange.height}px`;
+        // debugDiv.style.left = `${screenRange.left}px`;
+        // debugDiv.style.top = `${screenRange.top}px`;
         return !(adjRight < range.left ||
             adjLeft > range.left + range.width ||
             adjBottom < range.top ||
@@ -439,6 +459,7 @@ class ViewContext {
         this.needsRedraw = true;
         this.initialPinchDistance = 0;
         this.isPanning = false;
+        this.snapToGrid = false;
         this.dragStart = { x: 0, y: 0 };
         this.activeNodeDragging = false;
         this.activeNodeDragStart = { x: 0, y: 0 };
@@ -499,8 +520,10 @@ class ViewContext {
         // update rect
         const rect = node.getBoundingClientRect();
         this.nodeRects[id] = {
-            left: rect.x,
-            top: rect.y,
+            // left: rect.x,
+            // top: rect.y,
+            left: node.position.x,
+            top: node.position.y,
             width: rect.width,
             height: rect.height,
         };
@@ -723,7 +746,7 @@ class ViewContext {
             }
         }
     }
-    snapToGrid(pos, gridSize) {
+    calcSnapToGrid(pos, gridSize) {
         return {
             x: Math.round(pos.x / gridSize) * gridSize,
             y: Math.round(pos.y / gridSize) * gridSize,
@@ -734,7 +757,7 @@ class ViewContext {
             x: worldCoords.x - this.activeNodeDragStart.x,
             y: worldCoords.y - this.activeNodeDragStart.y,
         };
-        return this.snapToGrid(pos, 10);
+        return this.calcSnapToGrid(pos, 10);
     }
     moveNode(loc, gridSize) {
         const aNode = this.activeNode;
@@ -743,7 +766,7 @@ class ViewContext {
         let newPos = this.calcNodePos(worldCoords);
         // calc new position
         if (this.snapToGrid) {
-            newPos = this.snapToGrid(newPos, gridSize);
+            newPos = this.calcSnapToGrid(newPos, gridSize);
         }
         const delta = {
             x: newPos.x - oldPos.x,
@@ -753,8 +776,8 @@ class ViewContext {
         const rect = this.nodeRects[aNode.id];
         rect.left = newPos.x;
         rect.top = newPos.y;
-        rect.width = aNode.offsetWidth;
-        rect.height = aNode.offsetHeight;
+        rect.width = aNode.clientWidth || rect.width;
+        rect.height = aNode.clientHeight || rect.height;
         this.nodeRects[aNode.id] = rect;
         // update node position and it's connections
         this.updateNodeConnectorPos(aNode, delta); // ???
@@ -918,19 +941,29 @@ class ViewContext {
     updateViewportQuadtree(node) {
         const rect = this.nodeRects[node.id];
         this.viewportQuadtree.remove(node.id);
+        // let rect = node.getBoundingClientRect() as Rect;
+        // rect = {
+        //   left: node.position.x,
+        //   top: node.position.y,
+        //   width: node.clientWidth,
+        //   height: node.clientHeight,
+        // };
         this.viewportQuadtree.insert({
             id: node.id,
-            left: rect.left,
             top: rect.top,
+            left: rect.left,
             width: rect.width,
             height: rect.height,
         });
+        // console.log('updateViewportQuadtree', node.id, rect);
+        // console.log('updateViewportQuadtree', this.viewportQuadtree.objects);
     }
     updateVisibleElements() {
         // Get visible nodes within the viewport quadtree
         const rect = this.viewportRect;
         const visibleNodes = this.viewportQuadtree.query(rect, [], this.camera.pos, this.camera.zoom);
         const newVisibleElements = visibleNodes.map((node) => node.id);
+        console.log('newVisibleElements', newVisibleElements);
         const allItems = new Set([
             ...this.prevVisibleElements,
             ...newVisibleElements,
@@ -1064,6 +1097,7 @@ const FlowyCanvas = class {
         this.ctx.gridEl = this.el.querySelector('.flowy-grid');
         this.ctx.viewportRect = this.ctx.viewportEl.getBoundingClientRect();
         this.ctx.initialPinchDistance = 0;
+        this.ctx.snapToGrid = this.snapToGrid;
         const viewportEl = this.ctx.viewportEl;
         // setup event listeners
         window.addEventListener('mousedown', this.elMouseDown, {
@@ -1115,6 +1149,9 @@ const FlowyCanvas = class {
         canvasEl.removeEventListener('touchend', this.elTouchEnd);
         canvasEl.removeEventListener('wheel', this.elWheel);
         this.ctx.destroy();
+    }
+    onSnapToGridChange() {
+        this.ctx.snapToGrid = this.snapToGrid;
     }
     scheduleComponentUpdate() {
         this.ctx.needsRedraw = true;
@@ -1314,9 +1351,12 @@ const FlowyCanvas = class {
         this.ctx.contentEl.style.display = cdisplay;
     }
     render() {
-        return (h(Host, { key: '2578495477970c6f59cac75bbfe0075bceb54ef4' }, h("div", { key: '3f1f34dd050a72c97c363e626e2212e349ec9a92', class: "flowy-canvas" }, h("canvas", { key: '8fdb46ee2ec7fbd9f2ace251a7865640760a1e4f', class: "flowy-grid" }), h("div", { key: '850b89485988413c316856eeb51868d0c90645ab', class: "flowy-content" }, h("slot", { key: 'b1eea8fb1c2d253b94a18b9ff4a441f9ca955e26' })))));
+        return (h(Host, { key: '5b1e3c912489113a501e38901d7305ed18f5f687' }, h("div", { key: 'db6cf7a6582a1d0501e57472310463a6cee26c43', class: "flowy-canvas" }, h("canvas", { key: 'ed4c8804f1fa71f4b097ec15daec14ac09812fe9', class: "flowy-grid" }), h("div", { key: '69e9bb9af1be0495e8c5ab0ac50d501b58fb6ee5', class: "flowy-content" }, h("slot", { key: '66fde4ff4a87c7a273a51425ffe562ff0941a74f' })))));
     }
     get el() { return getElement(this); }
+    static get watchers() { return {
+        "snapToGrid": ["onSnapToGridChange"]
+    }; }
 };
 FlowyCanvas.style = flowyCanvasCss;
 

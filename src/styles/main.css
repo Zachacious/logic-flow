@@ -171,3 +171,14 @@ flowy-canvas {
   stroke-width: 5;
   stroke: #383838;
 }
+
+.debug {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 100;
+  border: 2px solid #ffffff;
+  border-radius: 5px;
+  color: white;
+  pointer-events: none;
+}
