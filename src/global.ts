@@ -1,16 +1,16 @@
 import { nanoid } from 'nanoid';
-import { LogicConnection } from './components';
-import { FlowyCanvas } from './components/flowy-canvas/flowy-canvas';
-import { LogicConnector } from './components/logic-connector/logic-connector';
-import { LogicNode } from './components/logic-node/logic-node';
+import { LogicFlowConnection } from './components';
+import { LogicFlowViewport } from './components/logic-flow-viewport/logic-flow-viewport';
+import { LogicFlowConnector } from './components/logic-flow-connector/logic-flow-connector';
+import { LogicFlowNode } from './components/logic-flow-node/logic-flow-node';
 import { Rect } from './types/Rect';
 import { Quadtree } from './types/Quadtree';
 import { Camera } from './types/Camera';
 
-const viewports = new Map<string, FlowyCanvas>();
-const nodes = new Map<string, LogicNode>();
-const connectors = new Map<string, LogicConnector>();
-const connections = new Map<string, LogicConnection>();
+const viewports = new Map<string, LogicFlowViewport>();
+const nodes = new Map<string, LogicFlowNode>();
+const connectors = new Map<string, LogicFlowConnector>();
+const connections = new Map<string, LogicFlowConnection>();
 
 const connectorRects = <Record<string, Rect>>{};
 const connectorQuadTrees = new Map<string, Quadtree>();
@@ -18,7 +18,7 @@ const connectorQuadTrees = new Map<string, Quadtree>();
 const camera = new Camera();
 
 export const global = () => {
-  const registerViewport = (canvas: FlowyCanvas) => {
+  const registerViewport = (canvas: LogicFlowViewport) => {
     const id = nanoid();
     viewports.set(id, canvas);
     return id;
@@ -33,7 +33,7 @@ export const global = () => {
     }
   };
 
-  const registerNode = (node: LogicNode) => {
+  const registerNode = (node: LogicFlowNode) => {
     const id = nanoid();
     nodes.set(id, node);
     return id;
@@ -44,12 +44,12 @@ export const global = () => {
     // get connectors
     const node = nodes.get(id);
     if (node) {
-      const connectors = node.el.querySelectorAll('logic-connector');
-      connectors.forEach((connector: HTMLLogicConnectorElement) => {
+      const connectors = node.el.querySelectorAll('logic-flow-connector');
+      connectors.forEach((connector: HTMLLogicFlowConnectorElement) => {
         const cid = connector.getAttribute('id');
         // remove connections
         connector.connections.forEach(
-          (connection: HTMLLogicConnectionElement) => {
+          (connection: HTMLLogicFlowConnectionElement) => {
             const id = connection.getAttribute('id');
             if (id) global().unregisterConnection(id);
           },
@@ -60,7 +60,7 @@ export const global = () => {
     }
   };
 
-  const registerConnector = (connector: LogicConnector) => {
+  const registerConnector = (connector: LogicFlowConnector) => {
     const id = nanoid();
     connectors.set(id, connector);
     connectorRects[id] = { left: 0, top: 0, width: 0, height: 0 };
@@ -72,7 +72,7 @@ export const global = () => {
     delete connectorRects[id];
   };
 
-  const registerConnection = (connection: LogicConnection) => {
+  const registerConnection = (connection: LogicFlowConnection) => {
     const id = nanoid();
     connections.set(id, connection);
     return id;

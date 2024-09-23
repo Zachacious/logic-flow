@@ -6,11 +6,27 @@
  */
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
 import { Coords } from "./types/Coords";
-import { LogicConnection } from "./components/logic-connection/logic-connection";
+import { LogicFlowConnection } from "./components/logic-flow-connection/logic-flow-connection";
 export { Coords } from "./types/Coords";
-export { LogicConnection } from "./components/logic-connection/logic-connection";
+export { LogicFlowConnection } from "./components/logic-flow-connection/logic-flow-connection";
 export namespace Components {
-    interface FlowyCanvas {
+    interface LogicFlowConnection {
+        "end": Coords;
+        "start": Coords;
+        "type": 'input' | 'output';
+    }
+    interface LogicFlowConnector {
+        "connectingConnector": LogicFlowConnector | null;
+        "connections": LogicFlowConnection[];
+        "type": 'input' | 'output';
+    }
+    interface LogicFlowNode {
+        "isVisible": boolean;
+        "position": Coords;
+        "title": string;
+        "type": string;
+    }
+    interface LogicFlowViewport {
         "connectorSnappingDistance": number;
         "cursors": Record<string, string>;
         "gridBgColor": string;
@@ -23,7 +39,7 @@ export namespace Components {
         "snapToGrid": boolean;
         "zoomSpeed": number;
     }
-    interface FlowyCanvasOld {
+    interface LogicFlowViewportOld {
         "gridBgColor": string;
         "gridLineColor": string;
         "gridSize": number;
@@ -31,22 +47,6 @@ export namespace Components {
         "minZoom": number;
         "renderGrid": boolean;
         "zoomSpeed": number;
-    }
-    interface LogicConnection {
-        "end": Coords;
-        "start": Coords;
-        "type": 'input' | 'output';
-    }
-    interface LogicConnector {
-        "connectingConnector": LogicConnector | null;
-        "connections": LogicConnection[];
-        "type": 'input' | 'output';
-    }
-    interface LogicNode {
-        "isVisible": boolean;
-        "position": Coords;
-        "title": string;
-        "type": string;
     }
     interface MyComponent {
         /**
@@ -64,35 +64,35 @@ export namespace Components {
     }
 }
 declare global {
-    interface HTMLFlowyCanvasElement extends Components.FlowyCanvas, HTMLStencilElement {
+    interface HTMLLogicFlowConnectionElement extends Components.LogicFlowConnection, HTMLStencilElement {
     }
-    var HTMLFlowyCanvasElement: {
-        prototype: HTMLFlowyCanvasElement;
-        new (): HTMLFlowyCanvasElement;
+    var HTMLLogicFlowConnectionElement: {
+        prototype: HTMLLogicFlowConnectionElement;
+        new (): HTMLLogicFlowConnectionElement;
     };
-    interface HTMLFlowyCanvasOldElement extends Components.FlowyCanvasOld, HTMLStencilElement {
+    interface HTMLLogicFlowConnectorElement extends Components.LogicFlowConnector, HTMLStencilElement {
     }
-    var HTMLFlowyCanvasOldElement: {
-        prototype: HTMLFlowyCanvasOldElement;
-        new (): HTMLFlowyCanvasOldElement;
+    var HTMLLogicFlowConnectorElement: {
+        prototype: HTMLLogicFlowConnectorElement;
+        new (): HTMLLogicFlowConnectorElement;
     };
-    interface HTMLLogicConnectionElement extends Components.LogicConnection, HTMLStencilElement {
+    interface HTMLLogicFlowNodeElement extends Components.LogicFlowNode, HTMLStencilElement {
     }
-    var HTMLLogicConnectionElement: {
-        prototype: HTMLLogicConnectionElement;
-        new (): HTMLLogicConnectionElement;
+    var HTMLLogicFlowNodeElement: {
+        prototype: HTMLLogicFlowNodeElement;
+        new (): HTMLLogicFlowNodeElement;
     };
-    interface HTMLLogicConnectorElement extends Components.LogicConnector, HTMLStencilElement {
+    interface HTMLLogicFlowViewportElement extends Components.LogicFlowViewport, HTMLStencilElement {
     }
-    var HTMLLogicConnectorElement: {
-        prototype: HTMLLogicConnectorElement;
-        new (): HTMLLogicConnectorElement;
+    var HTMLLogicFlowViewportElement: {
+        prototype: HTMLLogicFlowViewportElement;
+        new (): HTMLLogicFlowViewportElement;
     };
-    interface HTMLLogicNodeElement extends Components.LogicNode, HTMLStencilElement {
+    interface HTMLLogicFlowViewportOldElement extends Components.LogicFlowViewportOld, HTMLStencilElement {
     }
-    var HTMLLogicNodeElement: {
-        prototype: HTMLLogicNodeElement;
-        new (): HTMLLogicNodeElement;
+    var HTMLLogicFlowViewportOldElement: {
+        prototype: HTMLLogicFlowViewportOldElement;
+        new (): HTMLLogicFlowViewportOldElement;
     };
     interface HTMLMyComponentElement extends Components.MyComponent, HTMLStencilElement {
     }
@@ -101,16 +101,32 @@ declare global {
         new (): HTMLMyComponentElement;
     };
     interface HTMLElementTagNameMap {
-        "flowy-canvas": HTMLFlowyCanvasElement;
-        "flowy-canvas-old": HTMLFlowyCanvasOldElement;
-        "logic-connection": HTMLLogicConnectionElement;
-        "logic-connector": HTMLLogicConnectorElement;
-        "logic-node": HTMLLogicNodeElement;
+        "logic-flow-connection": HTMLLogicFlowConnectionElement;
+        "logic-flow-connector": HTMLLogicFlowConnectorElement;
+        "logic-flow-node": HTMLLogicFlowNodeElement;
+        "logic-flow-viewport": HTMLLogicFlowViewportElement;
+        "logic-flow-viewport-old": HTMLLogicFlowViewportOldElement;
         "my-component": HTMLMyComponentElement;
     }
 }
 declare namespace LocalJSX {
-    interface FlowyCanvas {
+    interface LogicFlowConnection {
+        "end"?: Coords;
+        "start"?: Coords;
+        "type"?: 'input' | 'output';
+    }
+    interface LogicFlowConnector {
+        "connectingConnector"?: LogicFlowConnector | null;
+        "connections"?: LogicFlowConnection[];
+        "type"?: 'input' | 'output';
+    }
+    interface LogicFlowNode {
+        "isVisible"?: boolean;
+        "position"?: Coords;
+        "title"?: string;
+        "type"?: string;
+    }
+    interface LogicFlowViewport {
         "connectorSnappingDistance"?: number;
         "cursors"?: Record<string, string>;
         "gridBgColor"?: string;
@@ -123,7 +139,7 @@ declare namespace LocalJSX {
         "snapToGrid"?: boolean;
         "zoomSpeed"?: number;
     }
-    interface FlowyCanvasOld {
+    interface LogicFlowViewportOld {
         "gridBgColor"?: string;
         "gridLineColor"?: string;
         "gridSize"?: number;
@@ -131,22 +147,6 @@ declare namespace LocalJSX {
         "minZoom"?: number;
         "renderGrid"?: boolean;
         "zoomSpeed"?: number;
-    }
-    interface LogicConnection {
-        "end"?: Coords;
-        "start"?: Coords;
-        "type"?: 'input' | 'output';
-    }
-    interface LogicConnector {
-        "connectingConnector"?: LogicConnector | null;
-        "connections"?: LogicConnection[];
-        "type"?: 'input' | 'output';
-    }
-    interface LogicNode {
-        "isVisible"?: boolean;
-        "position"?: Coords;
-        "title"?: string;
-        "type"?: string;
     }
     interface MyComponent {
         /**
@@ -163,11 +163,11 @@ declare namespace LocalJSX {
         "middle"?: string;
     }
     interface IntrinsicElements {
-        "flowy-canvas": FlowyCanvas;
-        "flowy-canvas-old": FlowyCanvasOld;
-        "logic-connection": LogicConnection;
-        "logic-connector": LogicConnector;
-        "logic-node": LogicNode;
+        "logic-flow-connection": LogicFlowConnection;
+        "logic-flow-connector": LogicFlowConnector;
+        "logic-flow-node": LogicFlowNode;
+        "logic-flow-viewport": LogicFlowViewport;
+        "logic-flow-viewport-old": LogicFlowViewportOld;
         "my-component": MyComponent;
     }
 }
@@ -175,11 +175,11 @@ export { LocalJSX as JSX };
 declare module "@stencil/core" {
     export namespace JSX {
         interface IntrinsicElements {
-            "flowy-canvas": LocalJSX.FlowyCanvas & JSXBase.HTMLAttributes<HTMLFlowyCanvasElement>;
-            "flowy-canvas-old": LocalJSX.FlowyCanvasOld & JSXBase.HTMLAttributes<HTMLFlowyCanvasOldElement>;
-            "logic-connection": LocalJSX.LogicConnection & JSXBase.HTMLAttributes<HTMLLogicConnectionElement>;
-            "logic-connector": LocalJSX.LogicConnector & JSXBase.HTMLAttributes<HTMLLogicConnectorElement>;
-            "logic-node": LocalJSX.LogicNode & JSXBase.HTMLAttributes<HTMLLogicNodeElement>;
+            "logic-flow-connection": LocalJSX.LogicFlowConnection & JSXBase.HTMLAttributes<HTMLLogicFlowConnectionElement>;
+            "logic-flow-connector": LocalJSX.LogicFlowConnector & JSXBase.HTMLAttributes<HTMLLogicFlowConnectorElement>;
+            "logic-flow-node": LocalJSX.LogicFlowNode & JSXBase.HTMLAttributes<HTMLLogicFlowNodeElement>;
+            "logic-flow-viewport": LocalJSX.LogicFlowViewport & JSXBase.HTMLAttributes<HTMLLogicFlowViewportElement>;
+            "logic-flow-viewport-old": LocalJSX.LogicFlowViewportOld & JSXBase.HTMLAttributes<HTMLLogicFlowViewportOldElement>;
             "my-component": LocalJSX.MyComponent & JSXBase.HTMLAttributes<HTMLMyComponentElement>;
         }
     }

@@ -11,9 +11,9 @@ export class ViewContext {
   static instances = new Map<string, ViewContext>();
 
   uid: string;
-  nodes = new Map<string, HTMLLogicNodeElement>();
-  connectors = new Map<string, HTMLLogicConnectorElement>();
-  connections = new Map<string, HTMLLogicConnectionElement>();
+  nodes = new Map<string, HTMLLogicFlowNodeElement>();
+  connectors = new Map<string, HTMLLogicFlowConnectorElement>();
+  connections = new Map<string, HTMLLogicFlowConnectionElement>();
   connectorRects = <Record<string, Rect>>{};
   connectorQuadtree: Quadtree;
   viewportQuadtree: Quadtree;
@@ -33,20 +33,20 @@ export class ViewContext {
   isPanning = false;
   snapToGrid = false;
   dragStart: Coords = { x: 0, y: 0 };
-  activeNode: HTMLLogicNodeElement;
+  activeNode: HTMLLogicFlowNodeElement;
   activeNodeDragging = false;
   activeNodeDragStart: Coords = { x: 0, y: 0 };
-  activeConnector: HTMLLogicConnectorElement;
+  activeConnector: HTMLLogicFlowConnectorElement;
   activeConnectorStartPos: Coords = { x: 0, y: 0 };
-  activeConnection: HTMLLogicConnectionElement;
+  activeConnection: HTMLLogicFlowConnectionElement;
 
   debouncedUpdateVisibleElements = throttle(
     () => this.updateVisibleElements(),
     100,
   );
 
-  constructor(viewport: HTMLFlowyCanvasElement) {
-    const id = nanoid();
+  constructor(viewport: HTMLLogicFlowViewportElement) {
+    const id = viewport.id || nanoid();
     viewport.id = id;
     const viewportId = id;
     if (ViewContext.instances.has(viewportId)) {
@@ -100,7 +100,7 @@ export class ViewContext {
     }
   }
 
-  registerNode(node: HTMLLogicNodeElement) {
+  registerNode(node: HTMLLogicFlowNodeElement) {
     const id = nanoid();
     node.id = id;
     this.nodes.set(id, node);
@@ -133,12 +133,12 @@ export class ViewContext {
     if (node) {
       // TODO: not sure if this is necessary with mutation observer
 
-      // const connectors = node.querySelectorAll('logic-connector');
-      // connectors.forEach((connector: HTMLLogicConnectorElement) => {
+      // const connectors = node.querySelectorAll('logic-flow-connector');
+      // connectors.forEach((connector: HTMLLogicFlowConnectorElement) => {
       //   const cid = connector.id;
       //   // remove connections
       //   connector.connections.forEach(
-      //     (connection: HTMLLogicConnectionElement) => {
+      //     (connection: HTMLLogicFlowConnectionElement) => {
       //       const id = connection.id;
       //       if (id) this.unregisterConnection(id);
       //     },
@@ -156,7 +156,7 @@ export class ViewContext {
     }
   }
 
-  registerConnector(connector: HTMLLogicConnectorElement) {
+  registerConnector(connector: HTMLLogicFlowConnectorElement) {
     const id = nanoid();
     connector.id = id;
     this.connectors.set(id, connector);
@@ -178,7 +178,7 @@ export class ViewContext {
     delete this.connectorRects[id];
   }
 
-  registerConnection(connection: HTMLLogicConnectionElement) {
+  registerConnection(connection: HTMLLogicFlowConnectionElement) {
     const id = nanoid();
     connection.id = id;
     this.connections.set(id, connection);
@@ -214,14 +214,14 @@ export class ViewContext {
         for (let i = 0; i < mutation.addedNodes.length; i++) {
           const node = mutation.addedNodes[i];
           if (node instanceof HTMLElement) {
-            if (node.tagName === 'LOGIC-NODE') {
-              const logicNode = node as HTMLLogicNodeElement;
+            if (node.tagName === 'LOGIC-FLOW-NODE') {
+              const logicNode = node as HTMLLogicFlowNodeElement;
               this.registerNode(logicNode);
-            } else if (node.tagName === 'LOGIC-CONNECTOR') {
-              const logicConnector = node as HTMLLogicConnectorElement;
+            } else if (node.tagName === 'LOGIC-FLOW-CONNECTOR') {
+              const logicConnector = node as HTMLLogicFlowConnectorElement;
               this.registerConnector(logicConnector);
-            } else if (node.tagName === 'LOGIC-CONNECTION') {
-              const logicConnection = node as HTMLLogicConnectionElement;
+            } else if (node.tagName === 'LOGIC-FLOW-CONNECTION') {
+              const logicConnection = node as HTMLLogicFlowConnectionElement;
               this.registerConnection(logicConnection);
             }
           }
@@ -230,14 +230,14 @@ export class ViewContext {
         for (let i = 0; i < mutation.removedNodes.length; i++) {
           const node = mutation.removedNodes[i];
           if (node instanceof HTMLElement) {
-            if (node.tagName === 'LOGIC-NODE') {
-              const logicNode = node as HTMLLogicNodeElement;
+            if (node.tagName === 'LOGIC-FLOW-NODE') {
+              const logicNode = node as HTMLLogicFlowNodeElement;
               this.unregisterNode(logicNode.getAttribute('id'));
-            } else if (node.tagName === 'LOGIC-CONNECTOR') {
-              const logicConnector = node as HTMLLogicConnectorElement;
+            } else if (node.tagName === 'LOGIC-FLOW-CONNECTOR') {
+              const logicConnector = node as HTMLLogicFlowConnectorElement;
               this.unregisterConnector(logicConnector.getAttribute('id'));
-            } else if (node.tagName === 'LOGIC-CONNECTION') {
-              const logicConnection = node as HTMLLogicConnectionElement;
+            } else if (node.tagName === 'LOGIC-FLOW-CONNECTION') {
+              const logicConnection = node as HTMLLogicFlowConnectionElement;
               this.unregisterConnection(logicConnection.getAttribute('id'));
             }
           }
@@ -246,25 +246,26 @@ export class ViewContext {
     });
   }
 
-  static initializeViewport(viewport: HTMLFlowyCanvasElement) {
+  static initializeViewport(viewport: HTMLLogicFlowViewportElement) {
     // need to register all nodes, connectors and connections
     // that are already in the dom
 
     const id = viewport.id;
     const instance = ViewContext.instances.get(id);
 
-    const contentEl = viewport.querySelector('.flowy-content');
+    const contentEl = viewport.querySelector('.viewport-content');
     const children = contentEl.children;
 
     const traverse = (el: HTMLElement) => {
-      if (el.tagName === 'LOGIC-NODE') {
-        const logicNode = el as HTMLLogicNodeElement;
+      if (el.tagName === 'LOGIC-FLOW-NODE') {
+        const logicNode = el as HTMLLogicFlowNodeElement;
         instance.registerNode(logicNode);
-      } else if (el.tagName === 'LOGIC-CONNECTOR') {
-        const logicConnector = el as HTMLLogicConnectorElement;
+        console.log('registering node', logicNode.id);
+      } else if (el.tagName === 'LOGIC-FLOW-CONNECTOR') {
+        const logicConnector = el as HTMLLogicFlowConnectorElement;
         instance.registerConnector(logicConnector);
-      } else if (el.tagName === 'LOGIC-CONNECTION') {
-        const logicConnection = el as HTMLLogicConnectionElement;
+      } else if (el.tagName === 'LOGIC-FLOW-CONNECTION') {
+        const logicConnection = el as HTMLLogicFlowConnectionElement;
         instance.registerConnection(logicConnection);
       }
 
@@ -320,11 +321,11 @@ export class ViewContext {
   }
 
   startNodeDrag(
-    target: HTMLLogicNodeElement,
+    target: HTMLLogicFlowNodeElement,
     worldCoords: Coords,
     cursor = 'grabbing',
   ): boolean {
-    const node = target.closest('logic-node') as HTMLLogicNodeElement;
+    const node = target.closest('logic-flow-node') as HTMLLogicFlowNodeElement;
     if (!node) return false;
 
     ViewContext.setCursor(cursor);
@@ -341,10 +342,10 @@ export class ViewContext {
     return true;
   }
 
-  updateNodeConnectorPos(aNode: HTMLLogicNodeElement, delta: Coords) {
+  updateNodeConnectorPos(aNode: HTMLLogicFlowNodeElement, delta: Coords) {
     const connectors = aNode.querySelectorAll(
-      'logic-connector',
-    ) as NodeListOf<HTMLLogicConnectorElement>;
+      'logic-flow-connector',
+    ) as NodeListOf<HTMLLogicFlowConnectorElement>;
 
     for (let i = 0; i < connectors.length; i++) {
       const connector = connectors[i];
@@ -358,7 +359,7 @@ export class ViewContext {
   }
 
   updateNodeConnectorConnectionsPos(
-    connector: HTMLLogicConnectorElement,
+    connector: HTMLLogicFlowConnectorElement,
     rect: Rect,
   ) {
     if (connector.connections.length) {
@@ -433,8 +434,8 @@ export class ViewContext {
 
   createNewConnection(startPos: Coords, type: 'input' | 'output') {
     const connection = document.createElement(
-      'logic-connection',
-    ) as HTMLLogicConnectionElement;
+      'logic-flow-connection',
+    ) as HTMLLogicFlowConnectionElement;
     connection.start = startPos;
     connection.end = startPos;
     connection.type = type;
@@ -462,8 +463,8 @@ export class ViewContext {
 
   getTargetConnector(target: HTMLElement, loc: Coords, snappingDist: number) {
     let targetConnector = target.closest(
-      'logic-connector .connector',
-    ) as HTMLLogicConnectorElement;
+      'logic-flow-connector .connector',
+    ) as HTMLLogicFlowConnectorElement;
 
     const snappedConnector = this.connectorQuadtree.checkNearby(
       loc,
@@ -477,18 +478,21 @@ export class ViewContext {
     return targetConnector;
   }
 
-  startNewConnection(target: HTMLLogicConnectorElement, cursor = 'grabbing') {
+  startNewConnection(
+    target: HTMLLogicFlowConnectorElement,
+    cursor = 'grabbing',
+  ) {
     const connEl = target.closest(
-      'logic-connector .connector',
-    ) as HTMLLogicConnectorElement;
+      'logic-flow-connector .connector',
+    ) as HTMLLogicFlowConnectorElement;
     if (!connEl) return false;
 
     ViewContext.setCursor(cursor);
     this.activeConnector = connEl;
 
     const parentConn = connEl.closest(
-      'logic-connector',
-    ) as HTMLLogicConnectorElement;
+      'logic-flow-connector',
+    ) as HTMLLogicFlowConnectorElement;
     const rect = this.connectorRects[parentConn.id];
     const center = this.getRectCenter(rect);
 
@@ -497,17 +501,17 @@ export class ViewContext {
     return true;
   }
 
-  processConnection(target: HTMLLogicConnectorElement) {
+  processConnection(target: HTMLLogicFlowConnectorElement) {
     const aConn = this.activeConnector.closest(
-      'logic-connector',
-    ) as HTMLLogicConnectorElement;
+      'logic-flow-connector',
+    ) as HTMLLogicFlowConnectorElement;
     const tConn = target.closest(
-      'logic-connector',
-    ) as HTMLLogicConnectorElement;
+      'logic-flow-connector',
+    ) as HTMLLogicFlowConnectorElement;
 
     // find parent nodes
-    const aNode = aConn.closest('logic-node') as HTMLLogicNodeElement;
-    const tNode = tConn.closest('logic-node') as HTMLLogicNodeElement;
+    const aNode = aConn.closest('logic-flow-node') as HTMLLogicFlowNodeElement;
+    const tNode = tConn.closest('logic-flow-node') as HTMLLogicFlowNodeElement;
 
     // validate connection
     if (!this.isValidConnection(aConn, tConn, aNode, tNode, target)) {
@@ -520,11 +524,11 @@ export class ViewContext {
   }
 
   isValidConnection(
-    aConn: HTMLLogicConnectorElement,
-    tConn: HTMLLogicConnectorElement,
-    aNode: HTMLLogicNodeElement,
-    tNode: HTMLLogicNodeElement,
-    targetConn: HTMLLogicConnectorElement,
+    aConn: HTMLLogicFlowConnectorElement,
+    tConn: HTMLLogicFlowConnectorElement,
+    aNode: HTMLLogicFlowNodeElement,
+    tNode: HTMLLogicFlowNodeElement,
+    targetConn: HTMLLogicFlowConnectorElement,
   ) {
     // avoid connecting to self or already connected
     if (
@@ -551,8 +555,8 @@ export class ViewContext {
   }
 
   updateConnectionEndpoints(
-    active: HTMLLogicConnectorElement,
-    target: HTMLLogicConnectorElement,
+    active: HTMLLogicFlowConnectorElement,
+    target: HTMLLogicFlowConnectorElement,
   ) {
     const targRect = this.connectorRects[target.id];
 
@@ -570,8 +574,8 @@ export class ViewContext {
   }
 
   finalizeConnection(
-    active: HTMLLogicConnectorElement,
-    target: HTMLLogicConnectorElement,
+    active: HTMLLogicFlowConnectorElement,
+    target: HTMLLogicFlowConnectorElement,
   ) {
     active.connectingConnector = target;
     active.connections.push(this.activeConnection);
@@ -580,14 +584,14 @@ export class ViewContext {
   }
 
   startDisconnectConnection(
-    target: HTMLLogicConnectionElement,
+    target: HTMLLogicFlowConnectionElement,
     loc: Coords,
     snappingDist: number,
     cursor = 'grabbing',
   ) {
     const connection = target.closest(
-      'logic-connection',
-    ) as HTMLLogicConnectionElement;
+      'logic-flow-connection',
+    ) as HTMLLogicFlowConnectionElement;
     if (!connection) return false;
 
     ViewContext.bringToFront(connection);
@@ -604,7 +608,7 @@ export class ViewContext {
 
     const snapConnector = this.connectors.get(snappableConnector.id);
     this.activeConnector =
-      snapConnector.connectingConnector as HTMLLogicConnectorElement;
+      snapConnector.connectingConnector as HTMLLogicFlowConnectorElement;
 
     this.disconnectConnector(
       this.activeConnection,
@@ -622,9 +626,9 @@ export class ViewContext {
   }
 
   disconnectConnector(
-    connection: HTMLLogicConnectionElement,
-    connector: HTMLLogicConnectorElement,
-    snapConnector: HTMLLogicConnectorElement,
+    connection: HTMLLogicFlowConnectionElement,
+    connector: HTMLLogicFlowConnectorElement,
+    snapConnector: HTMLLogicFlowConnectorElement,
   ) {
     connector.connections = connector.connections.filter(c => c !== connection);
     snapConnector.connections = snapConnector.connections.filter(
@@ -635,16 +639,16 @@ export class ViewContext {
     snapConnector.connectingConnector = null;
   }
 
-  swapConnectionEndpoints(connection: HTMLLogicConnectionElement) {
+  swapConnectionEndpoints(connection: HTMLLogicFlowConnectionElement) {
     const { start, end } = connection;
     connection.start = end;
     connection.end = start;
   }
 
-  updateNodeConnectorsQuadtree(node: HTMLLogicNodeElement) {
+  updateNodeConnectorsQuadtree(node: HTMLLogicFlowNodeElement) {
     const connectors = node.querySelectorAll(
-      'logic-connector',
-    ) as NodeListOf<HTMLLogicConnectorElement>;
+      'logic-flow-connector',
+    ) as NodeListOf<HTMLLogicFlowConnectorElement>;
     for (let i = 0; i < connectors.length; i++) {
       const connector = connectors[i];
       let rect = this.connectorRects[connector.id];
@@ -669,7 +673,7 @@ export class ViewContext {
     }
   }
 
-  updateViewportQuadtree(node: HTMLLogicNodeElement) {
+  updateViewportQuadtree(node: HTMLLogicFlowNodeElement) {
     const rect = this.nodeRects[node.id];
 
     this.viewportQuadtree.remove(node.id);
@@ -720,7 +724,7 @@ export class ViewContext {
     for (const id of allItems) {
       const el = document.getElementById(id);
       if (el) {
-        const nodeComponent = el as HTMLLogicNodeElement;
+        const nodeComponent = el as HTMLLogicFlowNodeElement;
         const curstate = nodeComponent.isVisible;
         const prevState = this.prevVisibleElements.includes(id);
         const newstate = newVisibleElements.includes(id);

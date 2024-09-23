@@ -5,10 +5,10 @@ import { throttle } from '../utils/throttle';
 import interact from 'interactjs';
 
 @Component({
-  tag: 'flowy-canvas-old',
+  tag: 'logic-flow-viewport-old',
   shadow: false,
 })
-export class FlowyCanvasOld {
+export class LogicFlowViewportOld {
   @Element() el: HTMLElement;
 
   @Prop() renderGrid: boolean = true;
@@ -43,9 +43,15 @@ export class FlowyCanvasOld {
   private _debouncedUpdateScreen = debounce(() => this.updateScreen(), 1);
 
   componentDidLoad() {
-    this._canvasEl = this.el.querySelector('.flowy-canvas') as HTMLDivElement;
-    this._contentEl = this.el.querySelector('.flowy-content') as HTMLDivElement;
-    this._gridEl = this.el.querySelector('.flowy-grid') as HTMLCanvasElement;
+    this._canvasEl = this.el.querySelector(
+      '.logic-flow-viewport',
+    ) as HTMLDivElement;
+    this._contentEl = this.el.querySelector(
+      '.viewport-content',
+    ) as HTMLDivElement;
+    this._gridEl = this.el.querySelector(
+      '.logic-flow-grid',
+    ) as HTMLCanvasElement;
 
     const canvasEl = this._canvasEl;
     this.renderGridLines();
@@ -254,7 +260,7 @@ export class FlowyCanvasOld {
   // handleWheel(event: WheelEvent) {
   //   event.preventDefault();
 
-  //   // const canvasEl = this.el.querySelector('.flowy-canvas') as HTMLElement;
+  //   // const canvasEl = this.el.querySelector('.logic-flow-viewport') as HTMLElement;
   //   // const canvasEl = this.getCanvasEl();
   //   const canvasEl = this._canvasEl;
   //   // Calculate the mouse position relative to the canvas
@@ -479,9 +485,9 @@ export class FlowyCanvasOld {
     return (
       <Host>
         {/* <div class="flowy-virtual-area"> */}
-        <div class="flowy-canvas">
-          <canvas class="flowy-grid"></canvas>
-          <div class="flowy-content">
+        <div class="logic-flow-viewport">
+          <canvas class="logic-flow-grid"></canvas>
+          <div class="viewport-content">
             <slot></slot>
           </div>
         </div>

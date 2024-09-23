@@ -11,7 +11,7 @@ body {
   overflow: hidden;
 }
 
-flowy-canvas {
+logic-flow-viewport {
   position: relative;
   width: 100%;
   height: 100%;
@@ -19,7 +19,7 @@ flowy-canvas {
   overflow: hidden;
 }
 
-.flowy-canvas {
+.logic-flow-viewport {
   position: absolute;
   overflow: hidden;
   width: 100%;
@@ -30,7 +30,7 @@ flowy-canvas {
   user-select: none;
 }
 
-.flowy-grid {
+.logic-flow-grid {
   width: 100%;
   height: 100%;
   position: absolute;
@@ -38,7 +38,7 @@ flowy-canvas {
   left: 0;
 }
 
-.flowy-content {
+.viewport-content {
   position: absolute;
   top: 0;
   left: 0;
@@ -50,7 +50,7 @@ flowy-canvas {
   /* transform: translate(-50%, -50%); */
 }
 
-.flowy-node {
+.logic-flow-node {
   position: absolute;
   top: 0;
   left: 0;
@@ -69,7 +69,7 @@ flowy-canvas {
   /* z-index: 10; */
 }
 
-.flowy-node .flowy-node-header {
+.logic-flow-node .logic-flow-node-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -81,11 +81,11 @@ flowy-canvas {
   text-rendering: optimizeSpeed;
 }
 
-.flowy-node .flowy-node-footer {
+.logic-flow-node .logic-flow-node-footer {
   height: 10px;
 }
 
-.logic-connector {
+.logic-flow-connector {
   position: relative;
   /* width: 100%; */
   display: flex;
@@ -93,7 +93,7 @@ flowy-canvas {
   padding: 6px 4px;
 }
 
-.logic-connector .connector {
+.logic-flow-connector .connector {
   width: 13px;
   height: 10px;
   background: #afafaf;
@@ -104,22 +104,22 @@ flowy-canvas {
   cursor: pointer;
 }
 
-.logic-connector .connector:hover {
+.logic-flow-connector .connector:hover {
   background: #777;
   /* border: 2px solid #afafaf; */
 }
 
-.logic-connector .connector-content {
+.logic-flow-connector .connector-content {
   width: 100%;
   font-size: 0.7em;
 }
 
-.logic-connector .left-connector {
+.logic-flow-connector .left-connector {
   position: relative;
   left: -14px;
 }
 
-.logic-connector .right-connector {
+.logic-flow-connector .right-connector {
   position: relative;
   right: -14px;
 }
@@ -133,11 +133,11 @@ flowy-canvas {
   text-align: right;
 }
 
-.logic-connector .connected {
+.logic-flow-connector .connected {
   background: #333;
 }
 
-.logic-connector .connection-layer {
+.logic-flow-connector .connection-layer {
   position: absolute;
   top: 0;
   left: 0;
@@ -150,13 +150,13 @@ flowy-canvas {
   transition: stroke-width 0.2s ease, stroke 0.2s ease;
 } */
 
-.logic-connection .connection {
+.logic-flow-connection .connection {
   position: absolute;
   pointer-events: none;
   overflow: visible;
 }
 
-.logic-connection .connection .connection-line {
+.logic-flow-connection .connection .connection-line {
   stroke: #383838;
   stroke-width: 5;
   stroke-linecap: round;
