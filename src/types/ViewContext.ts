@@ -388,6 +388,8 @@ export class ViewContext {
       y: worldCoords.y - this.activeNodeDragStart.y,
     };
 
+    if (!this.snapToGrid) return pos;
+
     return this.calcSnapToGrid(pos, 10);
   }
 
@@ -704,7 +706,7 @@ export class ViewContext {
     );
 
     const newVisibleElements = visibleNodes.map((node: any) => node.id);
-    console.log('newVisibleElements', newVisibleElements);
+    // console.log('newVisibleElements', newVisibleElements);
 
     const allItems = new Set([
       ...this.prevVisibleElements,

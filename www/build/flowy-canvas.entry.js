@@ -757,6 +757,8 @@ class ViewContext {
             x: worldCoords.x - this.activeNodeDragStart.x,
             y: worldCoords.y - this.activeNodeDragStart.y,
         };
+        if (!this.snapToGrid)
+            return pos;
         return this.calcSnapToGrid(pos, 10);
     }
     moveNode(loc, gridSize) {
@@ -963,7 +965,7 @@ class ViewContext {
         const rect = this.viewportRect;
         const visibleNodes = this.viewportQuadtree.query(rect, [], this.camera.pos, this.camera.zoom);
         const newVisibleElements = visibleNodes.map((node) => node.id);
-        console.log('newVisibleElements', newVisibleElements);
+        // console.log('newVisibleElements', newVisibleElements);
         const allItems = new Set([
             ...this.prevVisibleElements,
             ...newVisibleElements,
