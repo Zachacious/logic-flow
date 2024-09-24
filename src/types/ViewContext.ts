@@ -4,6 +4,7 @@ import { Quadtree } from './Quadtree';
 import { Camera } from './Camera';
 import { Coords } from './Coords';
 import { throttle } from '../utils/throttle';
+import { Offset } from './Offset';
 
 type EntityType = 'node' | 'connector' | 'connection' | 'viewport';
 
@@ -13,6 +14,7 @@ export class ViewContext {
   uid: string;
   nodes = new Map<string, HTMLLogicFlowNodeElement>();
   connectors = new Map<string, HTMLLogicFlowConnectorElement>();
+  connectorSnapDistance = 10;
   connections = new Map<string, HTMLLogicFlowConnectionElement>();
   connectorRects = <Record<string, Rect>>{};
   connectorQuadtree: Quadtree;
@@ -39,6 +41,7 @@ export class ViewContext {
   activeConnector: HTMLLogicFlowConnectorElement;
   activeConnectorStartPos: Coords = { x: 0, y: 0 };
   activeConnection: HTMLLogicFlowConnectionElement;
+  viewportOffset: Offset = { top: 0, left: 0 };
 
   debouncedUpdateVisibleElements = throttle(
     () => this.updateVisibleElements(),
@@ -55,11 +58,25 @@ export class ViewContext {
     this.uid = viewportId;
     ViewContext.instances.set(this.uid, this);
 
+    if (!this.viewportRect) {
+      const rect = viewport.getBoundingClientRect();
+      this.viewportOffset = {
+        top: rect.top,
+        left: rect.left,
+      };
+      this.viewportRect = {
+        left: rect.left - rect.left,
+        top: rect.top - rect.top,
+        width: rect.width - rect.left,
+        height: rect.height - rect.top,
+      };
+    }
+
     const boundry = {
-      top: 0,
-      left: 0,
-      width: window.innerWidth,
-      height: window.innerHeight,
+      left: this.viewportRect.left,
+      top: this.viewportRect.top,
+      width: this.viewportRect.width,
+      height: this.viewportRect.height,
     };
 
     this.connectorQuadtree = new Quadtree(boundry, 4, this.camera);
@@ -111,8 +128,6 @@ export class ViewContext {
     // update rect
     const rect = node.getBoundingClientRect();
     this.nodeRects[id] = {
-      // left: rect.x,
-      // top: rect.y,
       left: node.position.x,
       top: node.position.y,
       width: rect.width,
@@ -163,8 +178,8 @@ export class ViewContext {
     const connectorEl = connector.querySelector('.connector');
     const rect = connectorEl.getBoundingClientRect();
     this.connectorRects[id] = {
-      left: rect.x,
-      top: rect.y,
+      left: rect.x - this.viewportOffset.left,
+      top: rect.y - this.viewportOffset.top,
       width: rect.width,
       height: rect.height,
     };
@@ -391,7 +406,7 @@ export class ViewContext {
 
     if (!this.snapToGrid) return pos;
 
-    return this.calcSnapToGrid(pos, 10);
+    return this.calcSnapToGrid(pos, this.connectorSnapDistance);
   }
 
   moveNode(loc: Coords, gridSize: number) {
@@ -446,7 +461,10 @@ export class ViewContext {
 
   moveActiveConnection(loc: Coords, snappingDist: number) {
     const aConn = this.activeConnection;
-    const worldCoords = this.camera.toWorldCoords(loc);
+    const worldCoords = this.camera.toWorldCoords({
+      x: loc.x - this.viewportOffset.left,
+      y: loc.y - this.viewportOffset.top,
+    });
 
     const snappableConnector = this.connectorQuadtree.checkNearby(
       loc,
@@ -667,8 +685,8 @@ export class ViewContext {
       this.connectorQuadtree.remove(connector.id);
       this.connectorQuadtree.insert({
         id: connector.id,
-        x: rect.left + rect.width / 2,
-        y: rect.top + rect.height / 2,
+        x: rect.left + this.viewportOffset.left + rect.width / 2,
+        y: rect.top + this.viewportOffset.top + rect.height / 2,
       });
     }
   }
@@ -700,7 +718,13 @@ export class ViewContext {
 
   updateVisibleElements() {
     // Get visible nodes within the viewport quadtree
-    const rect = this.viewportRect;
+    let rect = this.viewportRect;
+    rect = {
+      left: rect.left,
+      top: rect.top,
+      width: rect.width,
+      height: rect.height,
+    };
 
     const visibleNodes = this.viewportQuadtree.query(
       rect,

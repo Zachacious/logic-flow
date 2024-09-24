@@ -43,7 +43,7 @@ const LogicFlowNode = class {
     }
     render() {
         console.log('render', this.isVisible);
-        return (h(Host, { key: '00f20a036edb9827ec7688ef9e73f02723557ab1', class: "logic-flow-node", style: this.style }, h("div", { key: '2098d441aa3cb522325123efaa8295c32cb25445', class: "logic-flow-node-header" }, this.title, h("slot", { key: '3d78c4a470397d8a1213f037d3147b0fa4a1810d', name: "header" })), h("slot", { key: '391709f7f86df976ad40abe37aa386ef58fcaeb2' }), h("div", { key: '6331e411be475eedc13f2b130a535fcc1be20c8f', class: "logic-flow-node-footer" }, h("slot", { key: '072729c075dd0e40312d83faf0f4ede986fa99a8', name: "footer" }))));
+        return (h(Host, { key: '13015bdf221f15ee0f9514337eff5f20ecfdca1b', class: "logic-flow-node", style: this.style }, h("div", { key: '62c5b21931a50195407abef866e4b87ecab83b44', class: "logic-flow-node-header" }, this.title, h("slot", { key: '2d4eb743fcdf36eb48c3828acac2cdb21ed10203', name: "header" })), h("slot", { key: '24df37415368f6ead75e489026f3a01a8793b298' }), h("div", { key: '64619bcdba3c925e71b3e8ce5fb4540fa7d0e1ac', class: "logic-flow-node-footer" }, h("slot", { key: 'cfc4a5698b21173a0f56d3f06e4bcafe0aaa90ca', name: "footer" }))));
     }
     get el() { return getElement(this); }
     static get watchers() { return {

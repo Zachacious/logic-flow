@@ -459,6 +459,7 @@ class ViewContext {
     constructor(viewport) {
         this.nodes = new Map();
         this.connectors = new Map();
+        this.connectorSnapDistance = 10;
         this.connections = new Map();
         this.connectorRects = {};
         this.nodeRects = {};
@@ -473,6 +474,7 @@ class ViewContext {
         this.activeNodeDragging = false;
         this.activeNodeDragStart = { x: 0, y: 0 };
         this.activeConnectorStartPos = { x: 0, y: 0 };
+        this.viewportOffset = { top: 0, left: 0 };
         this.debouncedUpdateVisibleElements = throttle(() => this.updateVisibleElements(), 100);
         const id = viewport.id || nanoid();
         viewport.id = id;
@@ -482,11 +484,24 @@ class ViewContext {
         }
         this.uid = viewportId;
         ViewContext.instances.set(this.uid, this);
+        if (!this.viewportRect) {
+            const rect = viewport.getBoundingClientRect();
+            this.viewportOffset = {
+                top: rect.top,
+                left: rect.left,
+            };
+            this.viewportRect = {
+                left: rect.left - rect.left,
+                top: rect.top - rect.top,
+                width: rect.width - rect.left,
+                height: rect.height - rect.top,
+            };
+        }
         const boundry = {
-            top: 0,
-            left: 0,
-            width: window.innerWidth,
-            height: window.innerHeight,
+            left: this.viewportRect.left,
+            top: this.viewportRect.top,
+            width: this.viewportRect.width,
+            height: this.viewportRect.height,
         };
         this.connectorQuadtree = new Quadtree(boundry, 4, this.camera);
         this.viewportQuadtree = new Quadtree(boundry, 4, this.camera);
@@ -529,8 +544,6 @@ class ViewContext {
         // update rect
         const rect = node.getBoundingClientRect();
         this.nodeRects[id] = {
-            // left: rect.x,
-            // top: rect.y,
             left: node.position.x,
             top: node.position.y,
             width: rect.width,
@@ -574,8 +587,8 @@ class ViewContext {
         const connectorEl = connector.querySelector('.connector');
         const rect = connectorEl.getBoundingClientRect();
         this.connectorRects[id] = {
-            left: rect.x,
-            top: rect.y,
+            left: rect.x - this.viewportOffset.left,
+            top: rect.y - this.viewportOffset.top,
             width: rect.width,
             height: rect.height,
         };
@@ -769,7 +782,7 @@ class ViewContext {
         };
         if (!this.snapToGrid)
             return pos;
-        return this.calcSnapToGrid(pos, 10);
+        return this.calcSnapToGrid(pos, this.connectorSnapDistance);
     }
     moveNode(loc, gridSize) {
         const aNode = this.activeNode;
@@ -811,7 +824,10 @@ class ViewContext {
     }
     moveActiveConnection(loc, snappingDist) {
         const aConn = this.activeConnection;
-        const worldCoords = this.camera.toWorldCoords(loc);
+        const worldCoords = this.camera.toWorldCoords({
+            x: loc.x - this.viewportOffset.left,
+            y: loc.y - this.viewportOffset.top,
+        });
         const snappableConnector = this.connectorQuadtree.checkNearby(loc, snappingDist * this.camera.zoom);
         if (snappableConnector) {
             const rect = this.connectorRects[snappableConnector.id];
@@ -945,8 +961,8 @@ class ViewContext {
             this.connectorQuadtree.remove(connector.id);
             this.connectorQuadtree.insert({
                 id: connector.id,
-                x: rect.left + rect.width / 2,
-                y: rect.top + rect.height / 2,
+                x: rect.left + this.viewportOffset.left + rect.width / 2,
+                y: rect.top + this.viewportOffset.top + rect.height / 2,
             });
         }
     }
@@ -972,7 +988,13 @@ class ViewContext {
     }
     updateVisibleElements() {
         // Get visible nodes within the viewport quadtree
-        const rect = this.viewportRect;
+        let rect = this.viewportRect;
+        rect = {
+            left: rect.left,
+            top: rect.top,
+            width: rect.width,
+            height: rect.height,
+        };
         const visibleNodes = this.viewportQuadtree.query(rect, [], this.camera.pos, this.camera.zoom);
         const newVisibleElements = visibleNodes.map((node) => node.id);
         // console.log('newVisibleElements', newVisibleElements);
@@ -1107,9 +1129,10 @@ const LogicFlowViewport = class {
         this.ctx.viewportEl = this.el.querySelector('.logic-flow-viewport');
         this.ctx.contentEl = this.el.querySelector('.viewport-content');
         this.ctx.gridEl = this.el.querySelector('.logic-flow-grid');
-        this.ctx.viewportRect = this.ctx.viewportEl.getBoundingClientRect();
+        // this.ctx.viewportRect = this.ctx.viewportEl.getBoundingClientRect();
         this.ctx.initialPinchDistance = 0;
         this.ctx.snapToGrid = this.snapToGrid;
+        this.ctx.connectorSnapDistance = this.connectorSnappingDistance;
         const viewportEl = this.ctx.viewportEl;
         // setup event listeners
         window.addEventListener('mousedown', this.elMouseDown, {
@@ -1128,19 +1151,18 @@ const LogicFlowViewport = class {
         viewportEl.addEventListener('touchend', this.elTouchEnd, { passive: true });
         viewportEl.addEventListener('wheel', this.elWheel, { passive: false });
         //create quadtree
-        const boundary = {
-            left: 0,
-            top: 0,
-            width: this.ctx.viewportRect.width,
-            height: this.ctx.viewportRect.height,
-        };
+        // const boundary = {
+        //   left: this.ctx.viewportRect.left,
+        //   top: this.ctx.viewportRect.top,
+        //   width: this.ctx.viewportRect.width,
+        //   height: this.ctx.viewportRect.height,
+        // };
         // get/set viewport rect
-        const viewportRect = this.ctx.viewportEl.getBoundingClientRect();
-        this.ctx.viewportRect = viewportRect;
-        this.ctx.connectorQuadtree.boundary = boundary;
-        this.ctx.viewportQuadtree.boundary = viewportRect;
-        // this.ctx.connectorQuadtree = new Quadtree(boundary, 4, this.ctx.camera);
-        // this.ctx.viewportQuadtree = new Quadtree(boundary, 4, this.ctx.camera);
+        // const viewportRect = this.ctx.viewportEl.getBoundingClientRect();
+        // this.ctx.viewportRect = viewportRect;
+        // console.log('viewportRect', viewportRect);
+        // this.ctx.connectorQuadtree.boundary = viewportRect;
+        // this.ctx.viewportQuadtree.boundary = viewportRect;
         // Handle resize events
         this.resizeObserver = new ResizeObserver(() => this.debouncedResize());
         this.resizeObserver.observe(this.ctx.viewportEl);
@@ -1173,17 +1195,21 @@ const LogicFlowViewport = class {
     onResize() {
         this.ctx.needsRedraw = true;
         this.ctx.viewportRect = this.ctx.viewportEl.getBoundingClientRect();
+        this.ctx.viewportOffset = {
+            top: this.ctx.viewportRect.top,
+            left: this.ctx.viewportRect.left,
+        };
         this.renderGrid();
         // update quadtree boundary
         const boundary = {
-            left: 0,
-            top: 0,
+            left: this.ctx.viewportRect.left - this.ctx.viewportRect.left,
+            top: this.ctx.viewportRect.top - this.ctx.viewportRect.top,
             width: this.ctx.viewportRect.width,
-            height: this.ctx.viewportRect.height,
+            height: this.ctx.viewportRect.height - this.ctx.viewportRect.top,
         };
         // get set viewport rect
-        this.ctx.viewportRect = this.ctx.viewportEl.getBoundingClientRect();
-        this.ctx.connectorQuadtree.boundary = boundary;
+        this.ctx.viewportRect = boundary;
+        this.ctx.connectorQuadtree.boundary = this.ctx.viewportRect;
         this.ctx.viewportQuadtree.boundary = this.ctx.viewportRect;
     }
     renderGrid() {
@@ -1363,7 +1389,7 @@ const LogicFlowViewport = class {
         this.ctx.contentEl.style.display = cdisplay;
     }
     render() {
-        return (h(Host, { key: 'e344216fb8f4702aa1aade43d90c5cc006df1278' }, h("div", { key: '9b2d601c93d65b6a2b8007b10f01b91a1e2813de', class: "logic-flow-viewport" }, h("canvas", { key: '8383b711cb70aed2ba9677ef2badcbcc6051d717', class: "logic-flow-grid" }), h("div", { key: '8bb1914fb5125b0186c4e05b75cd1534e156e3fd', class: "viewport-content" }, h("slot", { key: '25cedeecb654fc04ca9480e3b7d99e003fe15b07' })))));
+        return (h(Host, { key: 'f7ee9987824d25c65511c38759890966e743d3bd' }, h("div", { key: '805107d9022121036d2d3231cbb8d18b689b99de', class: "logic-flow-viewport" }, h("canvas", { key: '6c54ecf10b2043250b5169b0d484c977ed859b03', class: "logic-flow-grid" }), h("div", { key: '45b7ec0ab04d7172a9ee3b3ea2c89804e8851865', class: "viewport-content" }, h("slot", { key: 'fa6c611e84c49a3239374e8cda7d71d421b081c2' })))));
     }
     get el() { return getElement(this); }
     static get watchers() { return {

@@ -13,20 +13,51 @@
     <script type="module" src="/build/flowy.esm.js"></script>
     <script nomodule src="/build/flowy.js"></script>
   </head>
+
+  <style>
+    .page-head {
+      background-color: #1f1f1f;
+      height: 50px;
+      width: 100%;
+      box-shadow: 0 0 10px 0 #00000088;
+    }
+
+    .wrapper {
+      display: flex;
+      justify-content: start;
+      align-items: center;
+      height: 100%;
+    }
+
+    .sidebar {
+      background-color: #1f1f1f;
+      height: 100%;
+      width: 200px;
+      box-shadow: 0 0 10px 0 #00000088;
+    }
+  </style>
   <body>
     <!-- <div style="width: 500px; height: 500px; overflow: hidden"> -->
-    <logic-flow-viewport grid-size="20" grid-bg-color="#00000088" snap-to-grid>
-      <logic-flow-node title="Test Node">
-        <logic-flow-connector>input 1</logic-flow-connector>
-        <logic-flow-connector type="output">output</logic-flow-connector>
-      </logic-flow-node>
-      <logic-flow-node title="Test Node 2">
-        <logic-flow-connector type="output">output</logic-flow-connector>
-        <logic-flow-connector type="output">output2</logic-flow-connector>
-      </logic-flow-node>
-      <!-- <div id="debug" class="debug"></div>
+    <div class="page-head"></div>
+    <div class="wrapper">
+      <div class="sidebar"></div>
+      <logic-flow-viewport
+        grid-size="20"
+        grid-bg-color="#00000088"
+        snap-to-grid
+      >
+        <logic-flow-node title="Test Node">
+          <logic-flow-connector>input 1</logic-flow-connector>
+          <logic-flow-connector type="output">output</logic-flow-connector>
+        </logic-flow-node>
+        <logic-flow-node title="Test Node 2">
+          <logic-flow-connector type="output">output</logic-flow-connector>
+          <logic-flow-connector type="output">output2</logic-flow-connector>
+        </logic-flow-node>
+        <!-- <div id="debug" class="debug"></div>
       <div id="debug2" class="debug"></div> -->
-    </logic-flow-viewport>
+      </logic-flow-viewport>
+    </div>
     <!-- </div> -->
   </body>
 </html>

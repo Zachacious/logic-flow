@@ -2,7 +2,6 @@ import { Component, Host, Prop, h, Element, Watch } from '@stencil/core';
 import { debounce } from '../../utils/debounce';
 import { throttle } from '../../utils/throttle';
 import { getEventLocation } from '../../utils/getEventLocation';
-import { Quadtree } from '../../types/Quadtree';
 import { ViewContext } from '../../types/ViewContext';
 import {
   renderCanvasDotGrid,
@@ -64,9 +63,10 @@ export class LogicFlowViewport {
     this.ctx.gridEl = this.el.querySelector(
       '.logic-flow-grid',
     ) as HTMLCanvasElement;
-    this.ctx.viewportRect = this.ctx.viewportEl.getBoundingClientRect();
+    // this.ctx.viewportRect = this.ctx.viewportEl.getBoundingClientRect();
     this.ctx.initialPinchDistance = 0;
     this.ctx.snapToGrid = this.snapToGrid;
+    this.ctx.connectorSnapDistance = this.connectorSnappingDistance;
 
     const viewportEl = this.ctx.viewportEl;
 
@@ -90,22 +90,20 @@ export class LogicFlowViewport {
     viewportEl.addEventListener('wheel', this.elWheel, { passive: false });
 
     //create quadtree
-    const boundary = {
-      left: 0,
-      top: 0,
-      width: this.ctx.viewportRect.width,
-      height: this.ctx.viewportRect.height,
-    };
+    // const boundary = {
+    //   left: this.ctx.viewportRect.left,
+    //   top: this.ctx.viewportRect.top,
+    //   width: this.ctx.viewportRect.width,
+    //   height: this.ctx.viewportRect.height,
+    // };
 
     // get/set viewport rect
-    const viewportRect = this.ctx.viewportEl.getBoundingClientRect();
-    this.ctx.viewportRect = viewportRect;
+    // const viewportRect = this.ctx.viewportEl.getBoundingClientRect();
+    // this.ctx.viewportRect = viewportRect;
+    // console.log('viewportRect', viewportRect);
 
-    this.ctx.connectorQuadtree.boundary = boundary;
-    this.ctx.viewportQuadtree.boundary = viewportRect;
-
-    // this.ctx.connectorQuadtree = new Quadtree(boundary, 4, this.ctx.camera);
-    // this.ctx.viewportQuadtree = new Quadtree(boundary, 4, this.ctx.camera);
+    // this.ctx.connectorQuadtree.boundary = viewportRect;
+    // this.ctx.viewportQuadtree.boundary = viewportRect;
 
     // Handle resize events
     this.resizeObserver = new ResizeObserver(() => this.debouncedResize());
@@ -149,19 +147,25 @@ export class LogicFlowViewport {
   onResize() {
     this.ctx.needsRedraw = true;
     this.ctx.viewportRect = this.ctx.viewportEl.getBoundingClientRect();
+
+    this.ctx.viewportOffset = {
+      top: this.ctx.viewportRect.top,
+      left: this.ctx.viewportRect.left,
+    };
+
     this.renderGrid();
     // update quadtree boundary
     const boundary = {
-      left: 0,
-      top: 0,
+      left: this.ctx.viewportRect.left - this.ctx.viewportRect.left,
+      top: this.ctx.viewportRect.top - this.ctx.viewportRect.top,
       width: this.ctx.viewportRect.width,
-      height: this.ctx.viewportRect.height,
+      height: this.ctx.viewportRect.height - this.ctx.viewportRect.top,
     };
 
     // get set viewport rect
-    this.ctx.viewportRect = this.ctx.viewportEl.getBoundingClientRect();
+    this.ctx.viewportRect = boundary;
 
-    this.ctx.connectorQuadtree.boundary = boundary;
+    this.ctx.connectorQuadtree.boundary = this.ctx.viewportRect;
     this.ctx.viewportQuadtree.boundary = this.ctx.viewportRect;
   }
 
