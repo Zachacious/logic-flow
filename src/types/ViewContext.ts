@@ -340,6 +340,8 @@ export class ViewContext {
     worldCoords: Coords,
     cursor = 'grabbing',
   ): boolean {
+    if (!target) return false;
+
     const node = target.closest('logic-flow-node') as HTMLLogicFlowNodeElement;
     if (!node) return false;
 
@@ -467,7 +469,10 @@ export class ViewContext {
     });
 
     const snappableConnector = this.connectorQuadtree.checkNearby(
-      loc,
+      {
+        x: loc.x - this.viewportOffset.left,
+        y: loc.y - this.viewportOffset.top,
+      },
       snappingDist * this.camera.zoom,
     );
 
@@ -485,7 +490,10 @@ export class ViewContext {
     ) as HTMLLogicFlowConnectorElement;
 
     const snappedConnector = this.connectorQuadtree.checkNearby(
-      loc,
+      {
+        x: loc.x - this.viewportOffset.left,
+        y: loc.y - this.viewportOffset.top,
+      },
       snappingDist * this.camera.zoom,
     );
 
@@ -500,6 +508,8 @@ export class ViewContext {
     target: HTMLLogicFlowConnectorElement,
     cursor = 'grabbing',
   ) {
+    if (!target) return false;
+
     const connEl = target.closest(
       'logic-flow-connector .connector',
     ) as HTMLLogicFlowConnectorElement;
@@ -607,6 +617,8 @@ export class ViewContext {
     snappingDist: number,
     cursor = 'grabbing',
   ) {
+    if (!target) return false;
+
     const connection = target.closest(
       'logic-flow-connection',
     ) as HTMLLogicFlowConnectionElement;
@@ -615,7 +627,10 @@ export class ViewContext {
     ViewContext.bringToFront(connection);
 
     const snappableConnector = this.connectorQuadtree.checkNearby(
-      loc,
+      {
+        x: loc.x - this.viewportOffset.left,
+        y: loc.y - this.viewportOffset.top,
+      },
       snappingDist * this.camera.zoom,
     );
 
@@ -685,8 +700,8 @@ export class ViewContext {
       this.connectorQuadtree.remove(connector.id);
       this.connectorQuadtree.insert({
         id: connector.id,
-        x: rect.left + this.viewportOffset.left + rect.width / 2,
-        y: rect.top + this.viewportOffset.top + rect.height / 2,
+        x: rect.left + rect.width / 2,
+        y: rect.top + rect.height / 2,
       });
     }
   }

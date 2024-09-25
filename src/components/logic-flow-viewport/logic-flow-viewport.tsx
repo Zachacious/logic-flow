@@ -159,7 +159,7 @@ export class LogicFlowViewport {
       left: this.ctx.viewportRect.left - this.ctx.viewportRect.left,
       top: this.ctx.viewportRect.top - this.ctx.viewportRect.top,
       width: this.ctx.viewportRect.width,
-      height: this.ctx.viewportRect.height - this.ctx.viewportRect.top,
+      height: this.ctx.viewportRect.height,
     };
 
     // get set viewport rect
@@ -214,6 +214,15 @@ export class LogicFlowViewport {
     const loc = getEventLocation(event);
     const worldCoords = this.ctx.camera.toWorldCoords(loc);
     const target = document.elementFromPoint(loc.x, loc.y) as HTMLElement;
+
+    // if mouseclicked on srollbar, return
+    // if viewport is full width/height  with scrollbar
+    if (
+      loc.x > this.ctx.viewportRect.width ||
+      loc.y > this.ctx.viewportRect.height
+    ) {
+      return;
+    }
 
     // if a connection clicked
     if (
@@ -291,8 +300,9 @@ export class LogicFlowViewport {
     event.preventDefault();
 
     const canvasRect = this.ctx.viewportRect;
-    const mouseX = event.clientX - canvasRect.left;
-    const mouseY = event.clientY - canvasRect.top;
+    const mouseX =
+      event.clientX - canvasRect.left - this.ctx.viewportOffset.left;
+    const mouseY = event.clientY - canvasRect.top - this.ctx.viewportOffset.top;
 
     // Calculate the zoom level change
     const zoomDelta = event.deltaY < 0 ? this.zoomSpeed : -this.zoomSpeed;
@@ -308,12 +318,14 @@ export class LogicFlowViewport {
     const newPanX =
       mouseX -
       (mouseX - this.ctx.camera.pos.x * this.ctx.camera.zoom) * scaleFactor;
+
     const newPanY =
       mouseY -
       (mouseY - this.ctx.camera.pos.y * this.ctx.camera.zoom) * scaleFactor;
 
     // Update pan and zoom
     this.ctx.camera.pos = { x: newPanX / newZoom, y: newPanY / newZoom };
+
     // this.lastZoom = this.ctx.camera.zoom;
     this.ctx.camera.zoom = newZoom;
 

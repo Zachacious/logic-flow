@@ -190,6 +190,26 @@ class Quadtree {
         // Adjust point position relative to pan and zoom
         const adjX = (point.x + pan.x) * zoom;
         const adjY = (point.y + pan.y) * zoom;
+        // const screenX = adjX / zoom - pan.x;
+        // const screenY = adjY / zoom - pan.y;
+        // // show debug
+        // const debugDiv = document.getElementById('debug');
+        // debugDiv.style.left = `${screenX}px`;
+        // debugDiv.style.top = `${screenY}px`;
+        // debugDiv.style.width = '10px';
+        // debugDiv.style.height = '10px';
+        // // show debug range
+        // const screenRange = {
+        //   left: range.left / zoom - pan.x,
+        //   top: range.top / zoom - pan.y,
+        //   width: range.width / zoom,
+        //   height: range.height / zoom,
+        // };
+        // const debugDiv2 = document.getElementById('debug2');
+        // debugDiv2.style.left = `${screenRange.left}px`;
+        // debugDiv2.style.top = `${screenRange.top}px`;
+        // debugDiv2.style.width = `${screenRange.width}px`;
+        // debugDiv2.style.height = `${screenRange.height}px`;
         return (adjX >= range.left &&
             adjX < range.left + range.width &&
             adjY >= range.top &&
@@ -730,6 +750,8 @@ class ViewContext {
         ViewContext.resetCursor();
     }
     startNodeDrag(target, worldCoords, cursor = 'grabbing') {
+        if (!target)
+            return false;
         const node = target.closest('logic-flow-node');
         if (!node)
             return false;
@@ -828,7 +850,10 @@ class ViewContext {
             x: loc.x - this.viewportOffset.left,
             y: loc.y - this.viewportOffset.top,
         });
-        const snappableConnector = this.connectorQuadtree.checkNearby(loc, snappingDist * this.camera.zoom);
+        const snappableConnector = this.connectorQuadtree.checkNearby({
+            x: loc.x - this.viewportOffset.left,
+            y: loc.y - this.viewportOffset.top,
+        }, snappingDist * this.camera.zoom);
         if (snappableConnector) {
             const rect = this.connectorRects[snappableConnector.id];
             aConn.end = this.getRectCenter(rect);
@@ -839,13 +864,18 @@ class ViewContext {
     }
     getTargetConnector(target, loc, snappingDist) {
         let targetConnector = target.closest('logic-flow-connector .connector');
-        const snappedConnector = this.connectorQuadtree.checkNearby(loc, snappingDist * this.camera.zoom);
+        const snappedConnector = this.connectorQuadtree.checkNearby({
+            x: loc.x - this.viewportOffset.left,
+            y: loc.y - this.viewportOffset.top,
+        }, snappingDist * this.camera.zoom);
         if (snappedConnector) {
             targetConnector = this.connectors.get(snappedConnector.id);
         }
         return targetConnector;
     }
     startNewConnection(target, cursor = 'grabbing') {
+        if (!target)
+            return false;
         const connEl = target.closest('logic-flow-connector .connector');
         if (!connEl)
             return false;
@@ -911,11 +941,16 @@ class ViewContext {
         target.connections.push(this.activeConnection);
     }
     startDisconnectConnection(target, loc, snappingDist, cursor = 'grabbing') {
+        if (!target)
+            return false;
         const connection = target.closest('logic-flow-connection');
         if (!connection)
             return false;
         ViewContext.bringToFront(connection);
-        const snappableConnector = this.connectorQuadtree.checkNearby(loc, snappingDist * this.camera.zoom);
+        const snappableConnector = this.connectorQuadtree.checkNearby({
+            x: loc.x - this.viewportOffset.left,
+            y: loc.y - this.viewportOffset.top,
+        }, snappingDist * this.camera.zoom);
         if (!snappableConnector)
             return false;
         ViewContext.setCursor(cursor);
@@ -961,8 +996,8 @@ class ViewContext {
             this.connectorQuadtree.remove(connector.id);
             this.connectorQuadtree.insert({
                 id: connector.id,
-                x: rect.left + this.viewportOffset.left + rect.width / 2,
-                y: rect.top + this.viewportOffset.top + rect.height / 2,
+                x: rect.left + rect.width / 2,
+                y: rect.top + rect.height / 2,
             });
         }
     }
@@ -1205,7 +1240,7 @@ const LogicFlowViewport = class {
             left: this.ctx.viewportRect.left - this.ctx.viewportRect.left,
             top: this.ctx.viewportRect.top - this.ctx.viewportRect.top,
             width: this.ctx.viewportRect.width,
-            height: this.ctx.viewportRect.height - this.ctx.viewportRect.top,
+            height: this.ctx.viewportRect.height,
         };
         // get set viewport rect
         this.ctx.viewportRect = boundary;
@@ -1237,6 +1272,12 @@ const LogicFlowViewport = class {
         const loc = getEventLocation(event);
         const worldCoords = this.ctx.camera.toWorldCoords(loc);
         const target = document.elementFromPoint(loc.x, loc.y);
+        // if mouseclicked on srollbar, return
+        // if viewport is full width/height  with scrollbar
+        if (loc.x > this.ctx.viewportRect.width ||
+            loc.y > this.ctx.viewportRect.height) {
+            return;
+        }
         // if a connection clicked
         if (this.ctx.startDisconnectConnection(target, loc, this.connectorSnappingDistance, this.cursors.moving))
             return;
@@ -1292,8 +1333,8 @@ const LogicFlowViewport = class {
     handleWheel(event) {
         event.preventDefault();
         const canvasRect = this.ctx.viewportRect;
-        const mouseX = event.clientX - canvasRect.left;
-        const mouseY = event.clientY - canvasRect.top;
+        const mouseX = event.clientX - canvasRect.left - this.ctx.viewportOffset.left;
+        const mouseY = event.clientY - canvasRect.top - this.ctx.viewportOffset.top;
         // Calculate the zoom level change
         const zoomDelta = event.deltaY < 0 ? this.zoomSpeed : -this.zoomSpeed;
         const newZoom = Math.min(this.maxZoom, Math.max(this.minZoom, this.ctx.camera.zoom + zoomDelta));
@@ -1389,7 +1430,7 @@ const LogicFlowViewport = class {
         this.ctx.contentEl.style.display = cdisplay;
     }
     render() {
-        return (h(Host, { key: 'f7ee9987824d25c65511c38759890966e743d3bd' }, h("div", { key: '805107d9022121036d2d3231cbb8d18b689b99de', class: "logic-flow-viewport" }, h("canvas", { key: '6c54ecf10b2043250b5169b0d484c977ed859b03', class: "logic-flow-grid" }), h("div", { key: '45b7ec0ab04d7172a9ee3b3ea2c89804e8851865', class: "viewport-content" }, h("slot", { key: 'fa6c611e84c49a3239374e8cda7d71d421b081c2' })))));
+        return (h(Host, { key: 'dbde4e10eb5254bf355920921407958976eb3087' }, h("div", { key: '82b535c15eab095e32d8e80499acd8da0acccc6e', class: "logic-flow-viewport" }, h("canvas", { key: '8b654d7f3ca5e09f8746380a5806669094efb4aa', class: "logic-flow-grid" }), h("div", { key: 'aa822fc24560f949236f41184ad920851101b2b0', class: "viewport-content" }, h("slot", { key: '13e0e3737c7777499a8889a625e513e715f19761' })))));
     }
     get el() { return getElement(this); }
     static get watchers() { return {

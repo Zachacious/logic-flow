@@ -188,6 +188,30 @@ export class Quadtree {
     const adjX = (point.x + pan.x) * zoom;
     const adjY = (point.y + pan.y) * zoom;
 
+    // const screenX = adjX / zoom - pan.x;
+    // const screenY = adjY / zoom - pan.y;
+
+    // // show debug
+    // const debugDiv = document.getElementById('debug');
+    // debugDiv.style.left = `${screenX}px`;
+    // debugDiv.style.top = `${screenY}px`;
+    // debugDiv.style.width = '10px';
+    // debugDiv.style.height = '10px';
+
+    // // show debug range
+    // const screenRange = {
+    //   left: range.left / zoom - pan.x,
+    //   top: range.top / zoom - pan.y,
+    //   width: range.width / zoom,
+    //   height: range.height / zoom,
+    // };
+
+    // const debugDiv2 = document.getElementById('debug2');
+    // debugDiv2.style.left = `${screenRange.left}px`;
+    // debugDiv2.style.top = `${screenRange.top}px`;
+    // debugDiv2.style.width = `${screenRange.width}px`;
+    // debugDiv2.style.height = `${screenRange.height}px`;
+
     return (
       adjX >= range.left &&
       adjX < range.left + range.width &&
