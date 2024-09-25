@@ -1,4 +1,4 @@
-import { r as registerInstance, h, a as Host, g as getElement } from './index-519b580e.js';
+import { r as registerInstance, h, a as Host, g as getElement } from './index-b0f06aeb.js';
 
 const debounce = (fn, delay) => {
     let timeout;
@@ -1430,7 +1430,7 @@ const LogicFlowViewport = class {
         this.ctx.contentEl.style.display = cdisplay;
     }
     render() {
-        return (h(Host, { key: 'fbeecec18c154e4d246a7cf70405fb5085506d67' }, h("div", { key: 'fe0fee5900c324ec7f37b7cd0b66c802fb93308a', class: "logic-flow-viewport" }, h("canvas", { key: 'fda664b80454a37c3cf970074d0802802536843a', class: "logic-flow-grid" }), h("div", { key: 'e37639ae8a66bfe346bb1ee7f06b6ffc6d04540c', class: "viewport-content" }, h("slot", { key: 'cee1d653eccee6c99e4c73189ade4fa95f503172' })))));
+        return (h(Host, { key: '650348718ca1166bbc65c6db6e720b67281a0755' }, h("div", { key: '096dfa2a81f28711fffd4e476e3baab45e17b9f2', class: "logic-flow-viewport" }, h("canvas", { key: '807d70d664eb8268809566d0576a63975d8a09eb', class: "logic-flow-grid" }), h("div", { key: 'e160a05cae6e553c268b8489d4bc2047ccc4b300', class: "viewport-content" }, h("slot", { key: '7436b72b2cf18f60f5e68b02c8209eb12baf2682' })))));
     }
     get el() { return getElement(this); }
     static get watchers() { return {

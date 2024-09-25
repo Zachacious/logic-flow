@@ -1,4 +1,4 @@
-import { r as registerInstance, h, a as Host, g as getElement } from './index-519b580e.js';
+import { r as registerInstance, h, a as Host, g as getElement } from './index-b0f06aeb.js';
 
 const logicFlowConnectorCss = ":host{display:block}";
 
@@ -12,7 +12,7 @@ const LogicFlowConnector = class {
     render() {
         const sideClass = this.type === 'input' ? 'left-connector' : 'right-connector';
         const typeClass = this.type === 'input' ? 'input-connector' : 'output-connector';
-        return (h(Host, { key: 'c12ae0873dd6319a983f53f57244635d96b380d5', class: `logic-flow-connector ${typeClass}` }, h("div", { key: 'c058a8fafac8014aedd0274bad45c5a72e317997', class: `connector ${sideClass} ${this.connections.length > 0 && 'connected'}` }), h("div", { key: '91999bf05d2bce28e671f48fdab16acdecb188aa', class: `connector-content ${sideClass}` }, h("slot", { key: '818e7c38b0f845add900699d3eb57be80ea47524' }))));
+        return (h(Host, { key: 'aafadd77c06f2590c38558a4f5f7e7d883d78f1c', class: `logic-flow-connector ${typeClass}` }, h("div", { key: '613fc23eb2ca71e7becc7048be12cb6e7dd2d893', class: `connector ${sideClass} ${this.connections.length > 0 && 'connected'}` }), h("div", { key: '7f878cc9f641d0d3e331f18fa58516fed5d7c0a7', class: `connector-content ${sideClass}` }, h("slot", { key: '583028291f911011c4d8016862b9bb5cb11e745a' }))));
     }
     get el() { return getElement(this); }
 };

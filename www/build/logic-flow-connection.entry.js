@@ -1,4 +1,4 @@
-import { r as registerInstance, h, a as Host } from './index-519b580e.js';
+import { r as registerInstance, h, a as Host } from './index-b0f06aeb.js';
 
 const logicFlowConnectionCss = ":host{display:block}";
 
@@ -61,7 +61,7 @@ const LogicFlowConnection = class {
         }
     }
     render() {
-        return (h(Host, { key: 'c61725f25826ac9e581105f1d514769c98a65cf9', class: "logic-flow-connection" }, h("svg", { key: '01ed8395c5e38154414a855804df764bc9758c08', class: "connection" }, h("path", { key: '12686c778ad2bc67d00f3e1ed9b27aa2bd992f07', class: "connection-line", d: this.path }), h("circle", { key: '4a7b36983c2273cbb3b5d4d51103e31f5053431c', cx: this.start.x, cy: this.start.y, r: "1.5px", class: "connection-cap start-cap" }), h("circle", { key: 'db72971975cb9a6692bb99e011e82e2a12aa4142', cx: this.end.x, cy: this.end.y, r: "1.5px", class: "connection-cap end-cap" }))));
+        return (h(Host, { key: 'e9292d1ae3df3baab2731498734a2f4dff04338e', class: "logic-flow-connection" }, h("svg", { key: '0802bcbb5157ff140feefbf553ddb9b5538fd0e8', class: "connection" }, h("path", { key: 'cd832159f118e83dd2efab55ea5c9f76d77a31ec', class: "connection-line", d: this.path }), h("circle", { key: 'db76f49a0823d1d19d00ce489e1763d9a4919954', cx: this.start.x, cy: this.start.y, r: "1.5px", class: "connection-cap start-cap" }), h("circle", { key: '246f196f375be626863897c3710e65e5fe25142c', cx: this.end.x, cy: this.end.y, r: "1.5px", class: "connection-cap end-cap" }))));
     }
     static get watchers() { return {
         "start": ["updatePath"],

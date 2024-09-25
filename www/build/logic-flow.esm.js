@@ -1,5 +1,5 @@
-import { B as BUILD, c as consoleDevInfo, H, d as doc, N as NAMESPACE, p as promiseResolve, b as bootstrapLazy } from './index-519b580e.js';
-export { s as setNonce } from './index-519b580e.js';
+import { B as BUILD, c as consoleDevInfo, H, d as doc, N as NAMESPACE, p as promiseResolve, b as bootstrapLazy } from './index-b0f06aeb.js';
+export { s as setNonce } from './index-b0f06aeb.js';
 import { g as globalScripts } from './app-globals-0f993ce5.js';
 
 /*
@@ -46,4 +46,4 @@ patchBrowser().then(async (options) => {
   return bootstrapLazy([["logic-flow-connection",[[0,"logic-flow-connection",{"start":[16],"end":[16],"type":[1]},null,{"start":["updatePath"],"end":["updatePath"],"type":["updatePath"]}]]],["logic-flow-connector",[[4,"logic-flow-connector",{"type":[1],"connectingConnector":[16],"connections":[16]}]]],["logic-flow-node",[[4,"logic-flow-node",{"type":[1],"title":[1],"position":[1040],"isVisible":[1028,"is-visible"],"isDragging":[32]},null,{"position":["onPositionChange"]}]]],["logic-flow-viewport",[[4,"logic-flow-viewport",{"showGrid":[4,"show-grid"],"showDotGrid":[4,"show-dot-grid"],"gridSize":[2,"grid-size"],"gridBgColor":[1,"grid-bg-color"],"gridLineColor":[1,"grid-line-color"],"maxZoom":[2,"max-zoom"],"minZoom":[2,"min-zoom"],"zoomSpeed":[2,"zoom-speed"],"snapToGrid":[4,"snap-to-grid"],"connectorSnappingDistance":[2,"connector-snapping-distance"],"cursors":[16]},null,{"snapToGrid":["onSnapToGridChange"]}]]]], options);
 });
 
-//# sourceMappingURL=flowy.esm.js.map
+//# sourceMappingURL=logic-flow.esm.js.map

@@ -7,11 +7,11 @@
   "types": "dist/types/index.d.ts",
   "collection": "dist/collection/collection-manifest.json",
   "collection:main": "dist/collection/index.js",
-  "unpkg": "dist/flowy/flowy.esm.js",
+  "unpkg": "dist/logic-flow/logic-flow.esm.js",
   "exports": {
     ".": {
-      "import": "./dist/flowy/flowy.esm.js",
-      "require": "./dist/flowy/flowy.cjs.js"
+      "import": "./dist/logic-flow/logic-flow.esm.js",
+      "require": "./dist/logic-flow/logic-flow.cjs.js"
     },
     "./my-component": {
       "import": "./dist/components/my-component.js",
