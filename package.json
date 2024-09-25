@@ -1,7 +1,7 @@
 {
-  "name": "flowy",
+  "name": "logic-flow",
   "version": "0.0.1",
-  "description": "Stencil Component Starter",
+  "description": "Framework agnostic web components for building non-linear user interfaces, workflow editors, logic flows and more.",
   "main": "dist/index.cjs.js",
   "module": "dist/index.js",
   "types": "dist/types/index.d.ts",

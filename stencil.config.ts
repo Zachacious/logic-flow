@@ -6,12 +6,15 @@ export const config: Config = {
     {
       type: 'dist',
       esmLoaderPath: '../loader',
+      collectionDir: 'dist/components',
+      isPrimaryPackageOutputTarget: true,
     },
-    {
-      type: 'dist-custom-elements',
-      customElementsExportBehavior: 'auto-define-custom-elements',
-      externalRuntime: false,
-    },
+    // {
+    //   type: 'dist-custom-elements',
+    //   customElementsExportBehavior: 'auto-define-custom-elements',
+    //   externalRuntime: false,
+    // generateTypeDeclarations: true,
+    // },
     {
       type: 'docs-readme',
     },
