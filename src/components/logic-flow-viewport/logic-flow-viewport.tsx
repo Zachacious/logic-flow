@@ -80,10 +80,10 @@ export class LogicFlowViewport {
     });
 
     viewportEl.addEventListener('touchstart', this.elTouchStart, {
-      passive: true,
+      passive: false,
     });
     viewportEl.addEventListener('touchmove', this.elTouchMove, {
-      passive: true,
+      passive: false,
     });
     viewportEl.addEventListener('touchend', this.elTouchEnd, { passive: true });
 

@@ -1178,10 +1178,10 @@ const LogicFlowViewport = class {
             passive: true,
         });
         viewportEl.addEventListener('touchstart', this.elTouchStart, {
-            passive: true,
+            passive: false,
         });
         viewportEl.addEventListener('touchmove', this.elTouchMove, {
-            passive: true,
+            passive: false,
         });
         viewportEl.addEventListener('touchend', this.elTouchEnd, { passive: true });
         viewportEl.addEventListener('wheel', this.elWheel, { passive: false });
@@ -1430,7 +1430,7 @@ const LogicFlowViewport = class {
         this.ctx.contentEl.style.display = cdisplay;
     }
     render() {
-        return (h(Host, { key: 'dbde4e10eb5254bf355920921407958976eb3087' }, h("div", { key: '82b535c15eab095e32d8e80499acd8da0acccc6e', class: "logic-flow-viewport" }, h("canvas", { key: '8b654d7f3ca5e09f8746380a5806669094efb4aa', class: "logic-flow-grid" }), h("div", { key: 'aa822fc24560f949236f41184ad920851101b2b0', class: "viewport-content" }, h("slot", { key: '13e0e3737c7777499a8889a625e513e715f19761' })))));
+        return (h(Host, { key: 'fbeecec18c154e4d246a7cf70405fb5085506d67' }, h("div", { key: 'fe0fee5900c324ec7f37b7cd0b66c802fb93308a', class: "logic-flow-viewport" }, h("canvas", { key: 'fda664b80454a37c3cf970074d0802802536843a', class: "logic-flow-grid" }), h("div", { key: 'e37639ae8a66bfe346bb1ee7f06b6ffc6d04540c', class: "viewport-content" }, h("slot", { key: 'cee1d653eccee6c99e4c73189ade4fa95f503172' })))));
     }
     get el() { return getElement(this); }
     static get watchers() { return {
