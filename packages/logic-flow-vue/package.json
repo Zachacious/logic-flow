@@ -1,0 +1,41 @@
+{
+  "name": "logic-flow-vue",
+  "version": "0.0.1",
+  "description": "Thin Vue3 wrapper for logic flow",
+  "keywords": [
+    "logic",
+    "flow",
+    "vue"
+  ],
+  "author": "Zachacious <back4moore@gmail.com>",
+  "homepage": "https://github.com/Zachacious/logic-flow#readme",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "directories": {
+    "lib": "lib",
+    "test": "__tests__"
+  },
+  "files": [
+    "dist"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Zachacious/logic-flow.git"
+  },
+  "scripts": {
+    "test": "echo \"Error: run tests from root\" && exit 1",
+    "build": "npm run tsc",
+    "tsc": "tsc -p . --outDir ./dist"
+  },
+  "bugs": {
+    "url": "https://github.com/Zachacious/logic-flow/issues"
+  },
+  "dependencies": {
+    "vue": "^3.5.9",
+    "logic-flow": "*"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

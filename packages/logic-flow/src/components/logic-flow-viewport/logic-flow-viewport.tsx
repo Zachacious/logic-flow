@@ -89,22 +89,6 @@ export class LogicFlowViewport {
 
     viewportEl.addEventListener('wheel', this.elWheel, { passive: false });
 
-    //create quadtree
-    // const boundary = {
-    //   left: this.ctx.viewportRect.left,
-    //   top: this.ctx.viewportRect.top,
-    //   width: this.ctx.viewportRect.width,
-    //   height: this.ctx.viewportRect.height,
-    // };
-
-    // get/set viewport rect
-    // const viewportRect = this.ctx.viewportEl.getBoundingClientRect();
-    // this.ctx.viewportRect = viewportRect;
-    // console.log('viewportRect', viewportRect);
-
-    // this.ctx.connectorQuadtree.boundary = viewportRect;
-    // this.ctx.viewportQuadtree.boundary = viewportRect;
-
     // Handle resize events
     this.resizeObserver = new ResizeObserver(() => this.debouncedResize());
     this.resizeObserver.observe(this.ctx.viewportEl);
@@ -145,15 +129,18 @@ export class LogicFlowViewport {
   }
 
   onResize() {
+    console.log('onResize');
     this.ctx.needsRedraw = true;
     this.ctx.viewportRect = this.ctx.viewportEl.getBoundingClientRect();
+
+    this.ctx.gridEl.width = this.ctx.viewportRect.width;
+    this.ctx.gridEl.height = this.ctx.viewportRect.height;
 
     this.ctx.viewportOffset = {
       top: this.ctx.viewportRect.top,
       left: this.ctx.viewportRect.left,
     };
 
-    this.renderGrid();
     // update quadtree boundary
     const boundary = {
       left: this.ctx.viewportRect.left - this.ctx.viewportRect.left,
@@ -167,6 +154,8 @@ export class LogicFlowViewport {
 
     this.ctx.connectorQuadtree.boundary = this.ctx.viewportRect;
     this.ctx.viewportQuadtree.boundary = this.ctx.viewportRect;
+
+    this.renderGrid();
   }
 
   renderGrid() {

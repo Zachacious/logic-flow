@@ -21,10 +21,13 @@ export const renderCanvasGrid = (
     step *= 2;
   }
 
-  const dpr = window.devicePixelRatio || 1;
-  canvas.width = width * dpr;
-  canvas.height = height * dpr;
-  ctx.scale(dpr, dpr);
+  // const dpr = window.devicePixelRatio || 1;
+  // canvas.width = width * dpr;
+  // canvas.height = height * dpr;
+  // ctx.scale(dpr, dpr);
+
+  // canvas.width = width;
+  // canvas.height = height;
 
   ctx.strokeStyle = color;
   ctx.lineWidth = 1;
@@ -72,10 +75,10 @@ export const renderCanvasDotGrid = (
     step *= 2;
   }
 
-  const dpr = window.devicePixelRatio || 1;
-  canvas.width = width * dpr;
-  canvas.height = height * dpr;
-  ctx.scale(dpr, dpr);
+  // const dpr = window.devicePixelRatio || 1;
+  // canvas.width = width * dpr;
+  // canvas.height = height * dpr;
+  // ctx.scale(dpr, dpr);
 
   ctx.strokeStyle = color;
   ctx.lineWidth = 1;
