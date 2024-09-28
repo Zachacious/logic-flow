@@ -1177,7 +1177,7 @@ const LogicFlowViewport = class {
         this.elTouchMove = (e) => this.throttledTouchMove(e);
         this.elTouchEnd = (e) => this.onPointerUp(e);
         this.elWheel = (e) => this.handleWheel(e);
-        this.elScroll = (e) => this.debouncedUpdateViewportRect();
+        this.elScroll = () => this.debouncedUpdateViewportRect();
         this.showGrid = true;
         this.showDotGrid = false;
         this.gridSize = 20;
@@ -1300,10 +1300,12 @@ const LogicFlowViewport = class {
         const loc = getEventLocation(event);
         const worldCoords = this.ctx.camera.toWorldCoords(loc);
         const target = document.elementFromPoint(loc.x, loc.y);
-        // if mouseclicked on srollbar, return
-        // if viewport is full width/height  with scrollbar
-        if (loc.x > this.ctx.viewportRect.width ||
-            loc.y > this.ctx.viewportRect.height) {
+        console.log(this.ctx.viewportOffset);
+        // if pointer outside viewport, return
+        if (loc.x > this.ctx.viewportOffset.left + this.ctx.viewportRect.width ||
+            loc.x < this.ctx.viewportOffset.left ||
+            loc.y > this.ctx.viewportOffset.top + this.ctx.viewportRect.height ||
+            loc.y < this.ctx.viewportOffset.top) {
             return;
         }
         // if a connection clicked
@@ -1458,7 +1460,7 @@ const LogicFlowViewport = class {
         this.ctx.contentEl.style.display = cdisplay;
     }
     render() {
-        return (h(Host, { key: 'd5c39f38bcd42b8cd988736f1dd6a0258f13226b' }, h("div", { key: 'cf39d50bf4afcb8b3bf81db499b7a2eded789a88', class: "logic-flow-viewport" }, h("canvas", { key: 'f0c5e0338e85459fe647de26f2136140d4da2bd7', class: "logic-flow-grid" }), h("div", { key: 'a3e53cbf565bb09798e39e359650afdfc7eefb25', class: "viewport-content" }, h("slot", { key: 'dfa3c9327e55c8f7919dea8a14e689d9aa5d0d5b' })))));
+        return (h(Host, { key: 'b1063c0d0e5d0455039521749a904d6e0d07a1fa' }, h("div", { key: '94fe5568507ca6bbaa79c17e5a0504a09c37cda6', class: "logic-flow-viewport" }, h("canvas", { key: 'd4f0a3413cfd2135eb09d08b864f3c54ba47aef3', class: "logic-flow-grid" }), h("div", { key: '327a9abe0a26289edcef4cbe7f16e6a37db394a3', class: "viewport-content" }, h("slot", { key: '4d1150757ea1f70bba3dcefff9fc3ccde9f59b94' })))));
     }
     get el() { return getElement(this); }
     static get watchers() { return {

@@ -54,7 +54,7 @@ export class LogicFlowViewport {
 
   elWheel = (e: WheelEvent) => this.handleWheel(e);
 
-  elScroll = (e: Event) => this.debouncedUpdateViewportRect();
+  elScroll = () => this.debouncedUpdateViewportRect();
 
   componentDidLoad() {
     this.ctx = new ViewContext(this.el);
@@ -213,12 +213,14 @@ export class LogicFlowViewport {
     const loc = getEventLocation(event);
     const worldCoords = this.ctx.camera.toWorldCoords(loc);
     const target = document.elementFromPoint(loc.x, loc.y) as HTMLElement;
+    console.log(this.ctx.viewportOffset);
 
-    // if mouseclicked on srollbar, return
-    // if viewport is full width/height  with scrollbar
+    // if pointer outside viewport, return
     if (
-      loc.x > this.ctx.viewportRect.width ||
-      loc.y > this.ctx.viewportRect.height
+      loc.x > this.ctx.viewportOffset.left + this.ctx.viewportRect.width ||
+      loc.x < this.ctx.viewportOffset.left ||
+      loc.y > this.ctx.viewportOffset.top + this.ctx.viewportRect.height ||
+      loc.y < this.ctx.viewportOffset.top
     ) {
       return;
     }
