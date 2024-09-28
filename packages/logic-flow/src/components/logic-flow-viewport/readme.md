@@ -22,6 +22,35 @@
 | `zoomSpeed`                 | `zoom-speed`                  |             | `number`                   | `0.08`                                                                        |
 
 
+## Methods
+
+### `getCamera() => Promise<import("/home/zach/src/logic-flow/packages/logic-flow/src/types/Camera").Camera>`
+
+
+
+#### Returns
+
+Type: `Promise<Camera>`
+
+
+
+### `screenToWorldCoords(screenCoords: Coords) => Promise<Coords>`
+
+
+
+#### Parameters
+
+| Name           | Type                        | Description |
+| -------------- | --------------------------- | ----------- |
+| `screenCoords` | `{ x: number; y: number; }` |             |
+
+#### Returns
+
+Type: `Promise<Coords>`
+
+
+
+
 ----------------------------------------------
 
 *Built with [StencilJS](https://stenciljs.com/)*

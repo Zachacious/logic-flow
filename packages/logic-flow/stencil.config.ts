@@ -12,13 +12,13 @@ export const config: Config = {
       isPrimaryPackageOutputTarget: true,
       copy: [{ src: './styles', dest: 'styles' }],
     },
-    {
-      type: 'dist-custom-elements',
-      customElementsExportBehavior: 'auto-define-custom-elements',
-      externalRuntime: false,
-      generateTypeDeclarations: true,
-      copy: [{ src: './styles', dest: 'styles' }],
-    },
+    // {
+    //   type: 'dist-custom-elements',
+    //   customElementsExportBehavior: 'auto-define-custom-elements',
+    //   externalRuntime: false,
+    //   generateTypeDeclarations: true,
+    //   copy: [{ src: './styles', dest: 'styles' }],
+    // },
     vueOutputTarget({
       componentCorePackage: 'logic-flow',
       proxiesFile: '../logic-flow-vue/lib/components.ts',

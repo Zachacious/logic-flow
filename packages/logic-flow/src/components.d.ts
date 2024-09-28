@@ -29,12 +29,14 @@ export namespace Components {
     interface LogicFlowViewport {
         "connectorSnappingDistance": number;
         "cursors": Record<string, string>;
+        "getCamera": () => Promise<import("/home/zach/src/logic-flow/packages/logic-flow/src/types/Camera").Camera>;
         "gridBgColor": string;
         "gridLineColor": string;
         "gridSize": number;
         "gridType": 'line' | 'dot';
         "maxZoom": number;
         "minZoom": number;
+        "screenToWorldCoords": (screenCoords: Coords) => Promise<Coords>;
         "showGrid": boolean;
         "snapToGrid": boolean;
         "zoomSpeed": number;

@@ -22,11 +22,15 @@ export class LogicFlowNode {
     //  set initial size
     this.updateTransform();
 
-    this.position = { x: this.position.x, y: this.position.y };
+    // this.position = { x: this.position.x, y: this.position.y };
+    this.onPositionChange(this.position);
   }
 
   @Watch('position')
-  onPositionChange() {
+  onPositionChange(newValue: Coords | string) {
+    if (typeof newValue === 'string') {
+      this.position = JSON.parse(newValue);
+    }
     // update transform
     this.updateTransform();
   }

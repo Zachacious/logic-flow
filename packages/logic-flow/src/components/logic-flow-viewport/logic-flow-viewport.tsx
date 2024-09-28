@@ -1,4 +1,4 @@
-import { Component, Prop, h, Element, Watch } from '@stencil/core';
+import { Component, Prop, h, Element, Watch, Method } from '@stencil/core';
 import { debounce } from '../../utils/debounce';
 import { throttle } from '../../utils/throttle';
 import { getEventLocation } from '../../utils/getEventLocation';
@@ -7,6 +7,7 @@ import {
   renderCanvasDotGrid,
   renderCanvasGrid,
 } from '../../utils/renderCanvasGrid';
+import { Coords } from '../../types/Coords';
 
 @Component({
   tag: 'logic-flow-viewport',
@@ -127,6 +128,22 @@ export class LogicFlowViewport {
     window.removeEventListener('scroll', this.elScroll);
 
     this.ctx.destroy();
+  }
+
+  @Method()
+  async getCamera() {
+    return this.ctx.camera;
+  }
+
+  @Method()
+  async screenToWorldCoords(screenCoords: Coords) {
+    // adjust screen coords to viewport offset
+    const loc = {
+      x: screenCoords.x - this.ctx.viewportOffset.left,
+      y: screenCoords.y - this.ctx.viewportOffset.top,
+    };
+
+    return this.ctx.camera.toWorldCoords(loc);
   }
 
   @Watch('snapToGrid')

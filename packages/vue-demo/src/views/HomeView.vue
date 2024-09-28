@@ -1,14 +1,21 @@
 <script setup lang="ts">
 import ImageNode from '@/components/ImageNode.vue'
 // import LFViewport from '@/components/LFViewport.vue'
-// import { LogicFlowViewport } from 'logic-flow-vue'
-import { nextTick, ref, shallowRef, triggerRef } from 'vue'
+import { LogicFlowViewport } from 'logic-flow-vue'
+import { onMounted, ref, shallowRef, triggerRef } from 'vue'
+// import { HTMLLogicFlowViewportElement } from 'logic-flow-vue'
+
+type node = {
+  position: { x: number; y: number }
+  type: typeof ImageNode
+}
+
+const viewport = ref<HTMLLogicFlowViewportElement | null>(null)
 
 const snapToGrid = ref(false)
-const gridSize = ref(20)
 const gridType = ref<'line' | 'dot' | 'none'>('line')
 
-const nodes = shallowRef<(typeof ImageNode)[]>([])
+const nodes = shallowRef<node[]>([])
 
 const nodeDragStart = (e: DragEvent, type: string) => {
   e.dataTransfer?.setData('text', type)
@@ -18,11 +25,24 @@ const viewportDragOver = (e: DragEvent) => {
   e.preventDefault()
 }
 
-const viewportDrop = (e: DragEvent) => {
+const viewportDrop = async (e: DragEvent) => {
   e.preventDefault()
+
+  const pointerCoords = {
+    x: e.clientX,
+    y: e.clientY
+  }
+
   const type = e.dataTransfer?.getData('text')
   if (type === 'ImageNode') {
-    nodes.value.push(ImageNode)
+    const worldCoords = await viewport.value?.screenToWorldCoords(pointerCoords)
+    nodes.value.push({
+      position: {
+        x: worldCoords.x,
+        y: worldCoords.y
+      },
+      type: ImageNode
+    } as node)
   }
 
   requestAnimationFrame(() => {
@@ -30,10 +50,10 @@ const viewportDrop = (e: DragEvent) => {
   })
 }
 
-let count = 0
-const getNextId = () => {
-  return count++
-}
+// onMounted(async () => {
+//   const cam = await viewport.value?.getCamera()
+//   console.log(cam)
+// })
 </script>
 
 <template>
@@ -78,6 +98,7 @@ const getNextId = () => {
       </div>
       <div class="w-full grow">
         <logic-flow-viewport
+          ref="viewport"
           grid-size="20"
           grid-bg-color="#888"
           class="vp"
@@ -88,7 +109,7 @@ const getNextId = () => {
           @drop="viewportDrop"
         >
           <template v-for="(node, index) in nodes" :key="index">
-            <component :is="node" />
+            <component :is="node.type" :position="node.position" />
           </template>
         </logic-flow-viewport>
 
