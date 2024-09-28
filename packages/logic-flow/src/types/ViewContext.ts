@@ -42,6 +42,7 @@ export class ViewContext {
   activeConnectorStartPos: Coords = { x: 0, y: 0 };
   activeConnection: HTMLLogicFlowConnectionElement;
   viewportOffset: Offset = { top: 0, left: 0 };
+  bringingToFront = false;
 
   debouncedUpdateVisibleElements = throttle(
     () => this.updateVisibleElements(),
@@ -85,7 +86,9 @@ export class ViewContext {
 
     ViewContext.initializeViewport(viewport);
 
-    this.observer = new MutationObserver(this.viewportMutation);
+    this.observer = new MutationObserver((m: MutationRecord[]) =>
+      this.viewportMutation(m),
+    );
     this.observer.observe(viewport, {
       childList: true,
       subtree: true,
@@ -237,7 +240,11 @@ export class ViewContext {
     if (!mutations.length) return;
     // happens whenu using bringNodeToFront
     // - stop the observer from firing
-    if (!this.registerNode) return;
+    // if (!this.registerNode) return;
+    if (this.bringingToFront) {
+      this.bringingToFront = false;
+      return;
+    }
 
     mutations.forEach(mutation => {
       if (mutation.type === 'childList') {
@@ -310,7 +317,8 @@ export class ViewContext {
     }
   }
 
-  static bringToFront(node: HTMLElement) {
+  bringToFront(node: HTMLElement) {
+    this.bringingToFront = true;
     node.parentElement?.appendChild(node);
   }
 
@@ -362,7 +370,7 @@ export class ViewContext {
 
     ViewContext.setCursor(cursor);
     this.activeNode = node;
-    ViewContext.bringToFront(node);
+    this.bringToFront(node);
 
     const pos = this.activeNode.position;
     this.activeNodeDragging = true;
@@ -655,7 +663,7 @@ export class ViewContext {
     ) as HTMLLogicFlowConnectionElement;
     if (!connection) return false;
 
-    ViewContext.bringToFront(connection);
+    this.bringToFront(connection);
 
     // const scrollOffset = {
     //   x: window.scrollX,

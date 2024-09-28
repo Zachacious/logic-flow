@@ -44,7 +44,7 @@ export class LogicFlowNode {
   }
 
   render() {
-    console.log('render', this.isVisible);
+    // console.log('render', this.isVisible);
     return (
       <Host class="logic-flow-node" style={this.style}>
         <div class="logic-flow-node-header">

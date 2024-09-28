@@ -3,6 +3,7 @@ import { vueOutputTarget } from '@stencil/vue-output-target';
 
 export const config: Config = {
   namespace: 'logic-flow',
+
   outputTargets: [
     {
       type: 'dist',

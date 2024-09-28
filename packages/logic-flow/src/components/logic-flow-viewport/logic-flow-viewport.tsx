@@ -1,4 +1,4 @@
-import { Component, Host, Prop, h, Element, Watch } from '@stencil/core';
+import { Component, Prop, h, Element, Watch } from '@stencil/core';
 import { debounce } from '../../utils/debounce';
 import { throttle } from '../../utils/throttle';
 import { getEventLocation } from '../../utils/getEventLocation';
@@ -235,6 +235,16 @@ export class LogicFlowViewport {
       return;
     }
 
+    // if target is not a logic-flow element, return
+    if (
+      !target ||
+      !target.closest(
+        'logic-flow-node, logic-flow-connector, logic-flow-connection, logic-flow-viewport',
+      )
+    ) {
+      return;
+    }
+
     // if a connection clicked
     if (
       this.ctx.startDisconnectConnection(
@@ -448,17 +458,17 @@ export class LogicFlowViewport {
 
   render() {
     return (
-      <Host>
-        <div class="logic-flow-viewport">
-          <canvas
-            class="logic-flow-grid"
-            style={{ display: this.showGrid ? 'block' : 'none' }}
-          ></canvas>
-          <div class="viewport-content">
-            <slot></slot>
-          </div>
+      // <Host>
+      <div class="logic-flow-viewport">
+        <canvas
+          class="logic-flow-grid"
+          style={{ display: this.showGrid ? 'block' : 'none' }}
+        ></canvas>
+        <div class="viewport-content">
+          <slot></slot>
         </div>
-      </Host>
+      </div>
+      // /* </Host> */
     );
   }
 }

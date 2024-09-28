@@ -1,10 +1,39 @@
 <script setup lang="ts">
-import { LogicFlowViewport } from 'logic-flow-vue'
-import { ref } from 'vue'
+import ImageNode from '@/components/ImageNode.vue'
+// import LFViewport from '@/components/LFViewport.vue'
+// import { LogicFlowViewport } from 'logic-flow-vue'
+import { nextTick, ref, shallowRef, triggerRef } from 'vue'
 
 const snapToGrid = ref(false)
 const gridSize = ref(20)
 const gridType = ref<'line' | 'dot' | 'none'>('line')
+
+const nodes = shallowRef<(typeof ImageNode)[]>([])
+
+const nodeDragStart = (e: DragEvent, type: string) => {
+  e.dataTransfer?.setData('text', type)
+}
+
+const viewportDragOver = (e: DragEvent) => {
+  e.preventDefault()
+}
+
+const viewportDrop = (e: DragEvent) => {
+  e.preventDefault()
+  const type = e.dataTransfer?.getData('text')
+  if (type === 'ImageNode') {
+    nodes.value.push(ImageNode)
+  }
+
+  requestAnimationFrame(() => {
+    triggerRef(nodes)
+  })
+}
+
+let count = 0
+const getNextId = () => {
+  return count++
+}
 </script>
 
 <template>
@@ -48,13 +77,32 @@ const gridType = ref<'line' | 'dot' | 'none'>('line')
         </div>
       </div>
       <div class="w-full grow">
-        <LogicFlowViewport
+        <logic-flow-viewport
           grid-size="20"
           grid-bg-color="#888"
           class="vp"
           :show-grid="gridType === 'line' || gridType === 'dot'"
           :grid-type="gridType"
-        ></LogicFlowViewport>
+          :snap-to-grid="snapToGrid"
+          @dragover="viewportDragOver"
+          @drop="viewportDrop"
+        >
+          <template v-for="(node, index) in nodes" :key="index">
+            <component :is="node" />
+          </template>
+        </logic-flow-viewport>
+
+        <div
+          class="absolute top-20 left-10 min-w-[100px] min-h-[100px] bg-[#333] text-white p-4 rounded-md shadow-lg z-40 flex flex-col gap-4"
+        >
+          <div
+            class="w-full p-2 bg-[#555] rounded-md cursor-pointer"
+            draggable="true"
+            @dragstart="(e) => nodeDragStart(e, 'ImageNode')"
+          >
+            Image Node
+          </div>
+        </div>
       </div>
     </div>
   </main>
