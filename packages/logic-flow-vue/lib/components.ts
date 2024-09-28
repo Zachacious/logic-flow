@@ -33,7 +33,7 @@ export const LogicFlowNode = /*@__PURE__*/ defineContainer<JSX.LogicFlowNode>('l
 
 export const LogicFlowViewport = /*@__PURE__*/ defineContainer<JSX.LogicFlowViewport>('logic-flow-viewport', undefined, [
   'showGrid',
-  'showDotGrid',
+  'gridType',
   'gridSize',
   'gridBgColor',
   'gridLineColor',

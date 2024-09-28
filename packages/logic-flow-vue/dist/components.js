@@ -19,7 +19,7 @@ export const LogicFlowNode = defineContainer('logic-flow-node', undefined, [
 ]);
 export const LogicFlowViewport = defineContainer('logic-flow-viewport', undefined, [
     'showGrid',
-    'showDotGrid',
+    'gridType',
     'gridSize',
     'gridBgColor',
     'gridLineColor',

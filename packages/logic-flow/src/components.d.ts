@@ -32,9 +32,9 @@ export namespace Components {
         "gridBgColor": string;
         "gridLineColor": string;
         "gridSize": number;
+        "gridType": 'line' | 'dot';
         "maxZoom": number;
         "minZoom": number;
-        "showDotGrid": boolean;
         "showGrid": boolean;
         "snapToGrid": boolean;
         "zoomSpeed": number;
@@ -95,9 +95,9 @@ declare namespace LocalJSX {
         "gridBgColor"?: string;
         "gridLineColor"?: string;
         "gridSize"?: number;
+        "gridType"?: 'line' | 'dot';
         "maxZoom"?: number;
         "minZoom"?: number;
-        "showDotGrid"?: boolean;
         "showGrid"?: boolean;
         "snapToGrid"?: boolean;
         "zoomSpeed"?: number;

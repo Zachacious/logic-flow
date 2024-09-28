@@ -16,8 +16,10 @@ import {
 export class LogicFlowViewport {
   @Element() el: HTMLLogicFlowViewportElement;
 
+  // @Prop() showGrid: boolean = true;
+  // @Prop() showDotGrid: boolean = false;
   @Prop() showGrid: boolean = true;
-  @Prop() showDotGrid: boolean = false;
+  @Prop() gridType: 'line' | 'dot' = 'line';
   @Prop() gridSize: number = 20;
   @Prop() gridBgColor: string = '#f7f7f7';
   @Prop() gridLineColor: string = '#555555';
@@ -132,6 +134,12 @@ export class LogicFlowViewport {
     this.ctx.snapToGrid = this.snapToGrid;
   }
 
+  @Watch('gridType')
+  onGridTypeChange() {
+    this.ctx.needsRedraw = true;
+    this.renderGrid();
+  }
+
   scheduleComponentUpdate() {
     this.ctx.needsRedraw = true;
     this.ctx.debouncedUpdateVisibleElements();
@@ -139,7 +147,7 @@ export class LogicFlowViewport {
   }
 
   onResize() {
-    console.log('onResize');
+    // console.log('onResize');
     this.ctx.needsRedraw = true;
     this.ctx.viewportRect = this.ctx.viewportEl.getBoundingClientRect();
 
@@ -169,10 +177,12 @@ export class LogicFlowViewport {
   }
 
   renderGrid() {
-    if ((!this.showGrid && !this.showDotGrid) || !this.ctx.needsRedraw) return;
+    if (!this.showGrid || !this.ctx.needsRedraw) return;
+
+    console.log(this.gridType);
 
     requestAnimationFrame(() => {
-      if (this.showGrid) {
+      if (this.gridType === 'line') {
         renderCanvasGrid(
           this.ctx.gridEl,
           this.ctx.viewportRect.width,
@@ -184,7 +194,7 @@ export class LogicFlowViewport {
         );
       }
 
-      if (this.showDotGrid) {
+      if (this.gridType === 'dot') {
         renderCanvasDotGrid(
           this.ctx.gridEl,
           this.ctx.viewportRect.width,
@@ -440,7 +450,10 @@ export class LogicFlowViewport {
     return (
       <Host>
         <div class="logic-flow-viewport">
-          <canvas class="logic-flow-grid"></canvas>
+          <canvas
+            class="logic-flow-grid"
+            style={{ display: this.showGrid ? 'block' : 'none' }}
+          ></canvas>
           <div class="viewport-content">
             <slot></slot>
           </div>

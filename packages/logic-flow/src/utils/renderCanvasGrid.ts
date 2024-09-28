@@ -99,10 +99,14 @@ export const renderCanvasDotGrid = (
   //   }
   // }
 
-  // more performant version - no nested loop
+  ctx.fillStyle = color;
+
   for (let x = -offsetX; x < width; x += step) {
     for (let y = -offsetY; y < height; y += step) {
-      ctx.fillRect(x - 2, y - 2, 2, 2);
+      //  ctx.moveTo(x, y);
+      //  ctx.arc(x, y, 1, 0, 2 * Math.PI);
+      // use fill rect
+      ctx.fillRect(x - 1, y - 1, 2, 2);
     }
   }
 
