@@ -37,6 +37,10 @@ export class LogicFlowViewport {
   resizeObserver: ResizeObserver;
   debouncedResize = debounce(() => this.onResize(), 16);
   debouncedUpdateScreen = debounce(() => this.updateScreen(), 1);
+  debouncedUpdateViewportRect = debounce(
+    () => this.ctx.updateViewportRect(),
+    100,
+  );
   throttledTouchMove = throttle(e => this.handleTouchMove(e), 1);
   forceContentReflowDebounced = debounce(() => this.forceContentReflow(), 30);
 
@@ -49,6 +53,8 @@ export class LogicFlowViewport {
   elTouchEnd = (e: MouseEvent | TouchEvent) => this.onPointerUp(e);
 
   elWheel = (e: WheelEvent) => this.handleWheel(e);
+
+  elScroll = (e: Event) => this.debouncedUpdateViewportRect();
 
   componentDidLoad() {
     this.ctx = new ViewContext(this.el);
@@ -89,6 +95,8 @@ export class LogicFlowViewport {
 
     viewportEl.addEventListener('wheel', this.elWheel, { passive: false });
 
+    window.addEventListener('scroll', this.elScroll, { passive: true });
+
     // Handle resize events
     this.resizeObserver = new ResizeObserver(() => this.debouncedResize());
     this.resizeObserver.observe(this.ctx.viewportEl);
@@ -113,6 +121,8 @@ export class LogicFlowViewport {
     canvasEl.removeEventListener('touchend', this.elTouchEnd);
 
     canvasEl.removeEventListener('wheel', this.elWheel);
+
+    window.removeEventListener('scroll', this.elScroll);
 
     this.ctx.destroy();
   }

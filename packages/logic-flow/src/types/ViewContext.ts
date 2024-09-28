@@ -70,6 +70,7 @@ export class ViewContext {
         width: rect.width - rect.left,
         height: rect.height - rect.top,
       };
+      // this.updateViewportRect();
     }
 
     const boundry = {
@@ -95,6 +96,20 @@ export class ViewContext {
     this.observer.disconnect();
 
     ViewContext.instances.delete(this.uid);
+  }
+
+  updateViewportRect() {
+    const rect = this.viewportEl.getBoundingClientRect();
+    this.viewportOffset = {
+      top: rect.top,
+      left: rect.left,
+    };
+    this.viewportRect = {
+      left: rect.left - rect.left,
+      top: rect.top - rect.top,
+      width: rect.width - rect.left,
+      height: rect.height - rect.top,
+    };
   }
 
   static seekAndDestroy(type: EntityType, id: string) {
@@ -463,6 +478,17 @@ export class ViewContext {
 
   moveActiveConnection(loc: Coords, snappingDist: number) {
     const aConn = this.activeConnection;
+    // const scrollOffset = {
+    //   x: window.scrollX,
+    //   y: window.screenY,
+    // };
+    // console.log(
+    //   'scrollOffset',
+    //   window.screenY,
+    //   window.scrollY,
+    //   this.viewportEl.offsetTop,
+    // );
+
     const worldCoords = this.camera.toWorldCoords({
       x: loc.x - this.viewportOffset.left,
       y: loc.y - this.viewportOffset.top,
@@ -488,6 +514,11 @@ export class ViewContext {
     let targetConnector = target.closest(
       'logic-flow-connector .connector',
     ) as HTMLLogicFlowConnectorElement;
+
+    // const scrollOffset = {
+    //   x: window.scrollX,
+    //   y: window.scrollY,
+    // };
 
     const snappedConnector = this.connectorQuadtree.checkNearby(
       {
@@ -625,6 +656,11 @@ export class ViewContext {
     if (!connection) return false;
 
     ViewContext.bringToFront(connection);
+
+    // const scrollOffset = {
+    //   x: window.scrollX,
+    //   y: window.scrollY,
+    // };
 
     const snappableConnector = this.connectorQuadtree.checkNearby(
       {
