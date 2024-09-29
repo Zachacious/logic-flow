@@ -5,10 +5,10 @@ import { Camera } from './Camera';
 import { Coords } from './Coords';
 import { throttle } from '../utils/throttle';
 import { Offset } from './Offset';
-import { LogicFlowNode } from '../components/logic-flow-node/logic-flow-node';
-import { LogicFlowConnection } from '../components/logic-flow-connection/logic-flow-connection';
+// import { LogicFlowNode } from '../components/logic-flow-node/logic-flow-node';
+// import { LogicFlowConnection } from '../components/logic-flow-connection/logic-flow-connection';
 
-type EntityType = 'node' | 'connector' | 'connection' | 'viewport';
+// type EntityType = 'node' | 'connector' | 'connection' | 'viewport';
 
 export class ViewContext {
   static instances = new Map<string, ViewContext>();
@@ -118,27 +118,27 @@ export class ViewContext {
     };
   }
 
-  static seekAndDestroy(type: EntityType, id: string) {
-    // search and destroy in all instances
-    for (const [, instance] of ViewContext.instances) {
-      switch (type) {
-        case 'node':
-          instance.unregisterNode(id);
-          break;
-        case 'connector':
-          instance.unregisterConnector(id);
-          break;
-        case 'connection':
-          instance.unregisterConnection(id);
-          break;
-        case 'viewport':
-          instance.destroy();
-          break;
-      }
-    }
-  }
+  // static seekAndDestroy(type: EntityType, id: string) {
+  //   // search and destroy in all instances
+  //   for (const [, instance] of ViewContext.instances) {
+  //     switch (type) {
+  //       case 'node':
+  //         instance.unregisterNode(id);
+  //         break;
+  //       case 'connector':
+  //         instance.unregisterConnector(id);
+  //         break;
+  //       case 'connection':
+  //         instance.unregisterConnection(id);
+  //         break;
+  //       case 'viewport':
+  //         instance.destroy();
+  //         break;
+  //     }
+  //   }
+  // }
 
-  registerNode(node: HTMLLogicFlowNodeElement) {
+  addNode(node: HTMLLogicFlowNodeElement) {
     const id = nanoid();
     node.id = id;
     this.nodes.set(id, node);
@@ -165,38 +165,39 @@ export class ViewContext {
     return id;
   }
 
-  unregisterNode(id: string) {
+  removeNode(id: string) {
+    console.log('remove node', id);
     // remove all connections and connectors associated with the node
     // get connectors
     const node = this.nodes.get(id);
     if (node) {
       // TODO: not sure if this is necessary with mutation observer
 
-      // const connectors = node.querySelectorAll('logic-flow-connector');
-      // connectors.forEach((connector: HTMLLogicFlowConnectorElement) => {
-      //   const cid = connector.id;
-      //   // remove connections
-      //   connector.connections.forEach(
-      //     (connection: HTMLLogicFlowConnectionElement) => {
-      //       const id = connection.id;
-      //       if (id) this.unregisterConnection(id);
-      //     },
-      //   );
-      //   // remove connector
-      //   this.unregisterConnector(cid);
-      // });
+      const connectors = node.querySelectorAll('logic-flow-connector');
+      connectors.forEach((connector: HTMLLogicFlowConnectorElement) => {
+        const cid = connector.id;
+        // remove connections
+        connector.connections.forEach(
+          (connection: HTMLLogicFlowConnectionElement) => {
+            const id = connection.id;
+            if (id) this.removeConnection(id);
+          },
+        );
+        // remove connector
+        this.removeConnector(cid);
+      });
 
       // remove from quadtree
       this.viewportQuadtree.remove(id);
-      node.setAttribute('data-viewport', '');
+      delete this.nodeRects[id];
+      // node.setAttribute('data-viewport', '');
 
       // remove from nodes
       this.nodes.delete(id);
     }
   }
 
-  registerConnector(connector: HTMLLogicFlowConnectorElement) {
-    console.log('registering connector');
+  addConnector(connector: HTMLLogicFlowConnectorElement) {
     const id = nanoid();
     connector.id = id;
     this.connectors.set(id, connector);
@@ -212,13 +213,23 @@ export class ViewContext {
     return id;
   }
 
-  unregisterConnector(id: string) {
+  removeConnector(id: string) {
+    const connector = this.connectors.get(id);
+
+    // remove connections
+    connector.connections.forEach(
+      (connection: HTMLLogicFlowConnectionElement) => {
+        const id = connection.id;
+        if (id) this.removeConnection(id);
+      },
+    );
+
     this.connectors.delete(id);
     this.connectorQuadtree.remove(id);
     delete this.connectorRects[id];
   }
 
-  registerConnection(connection: HTMLLogicFlowConnectionElement) {
+  addConnection(connection: HTMLLogicFlowConnectionElement) {
     const id = nanoid();
     connection.id = id;
     this.connections.set(id, connection);
@@ -228,16 +239,45 @@ export class ViewContext {
     return id;
   }
 
-  unregisterConnection(id: string) {
+  removeConnection(id: string) {
     const connection = this.connections.get(id);
-    connection.setAttribute('data-viewport', '');
+    if (!connection) return;
+    // connection.setAttribute('data-viewport', '');
     // remove from dom
-    const el = document.getElementById(id);
-    if (el) {
-      el.remove();
+    // const el = document.getElementById(id);
+
+    // if (el) {
+    //   el.remove();
+    // }
+
+    // TODO: find connectors and remove connections
+    // handle connectors
+    const connectors = connection.connectors;
+    if (connectors.size > 0) {
+      // for (let i = 0; i < connectors.size; i++) {
+      //   const connector = connectors.
+      //   const connIndex = connector.connections.indexOf(connection);
+      //   if (connIndex > -1) {
+      //     connector.connections.splice(connIndex, 1);
+      //   }
+      //   connector.connectingConnector = null;
+
+      //   // update quadtree
+      // }
+      for (const connector of connectors) {
+        const connIndex = connector.connections.indexOf(connection);
+        if (connIndex > -1) {
+          connector.connections.splice(connIndex, 1);
+        }
+        connector.connectingConnector = null;
+        // update quadtree
+      }
     }
 
+    delete this.connectionRects[id];
+    this.viewportQuadtree.remove(id);
     this.connections.delete(id);
+    connection.remove();
   }
 
   // mutation observer callback
@@ -260,13 +300,13 @@ export class ViewContext {
           if (node instanceof HTMLElement) {
             if (node.tagName === 'LOGIC-FLOW-NODE') {
               const logicNode = node as HTMLLogicFlowNodeElement;
-              this.registerNode(logicNode);
+              this.addNode(logicNode);
             } else if (node.tagName === 'LOGIC-FLOW-CONNECTOR') {
               const logicConnector = node as HTMLLogicFlowConnectorElement;
-              this.registerConnector(logicConnector);
+              this.addConnector(logicConnector);
             } else if (node.tagName === 'LOGIC-FLOW-CONNECTION') {
               const logicConnection = node as HTMLLogicFlowConnectionElement;
-              this.registerConnection(logicConnection);
+              this.addConnection(logicConnection);
             }
           }
         }
@@ -276,13 +316,13 @@ export class ViewContext {
           if (node instanceof HTMLElement) {
             if (node.tagName === 'LOGIC-FLOW-NODE') {
               const logicNode = node as HTMLLogicFlowNodeElement;
-              this.unregisterNode(logicNode.getAttribute('id'));
+              this.removeNode(logicNode.getAttribute('id'));
             } else if (node.tagName === 'LOGIC-FLOW-CONNECTOR') {
               const logicConnector = node as HTMLLogicFlowConnectorElement;
-              this.unregisterConnector(logicConnector.getAttribute('id'));
+              this.removeConnector(logicConnector.getAttribute('id'));
             } else if (node.tagName === 'LOGIC-FLOW-CONNECTION') {
               const logicConnection = node as HTMLLogicFlowConnectionElement;
-              this.unregisterConnection(logicConnection.getAttribute('id'));
+              this.removeConnection(logicConnection.getAttribute('id'));
             }
           }
         }
@@ -303,13 +343,13 @@ export class ViewContext {
     const traverse = (el: HTMLElement) => {
       if (el.tagName === 'LOGIC-FLOW-NODE') {
         const logicNode = el as HTMLLogicFlowNodeElement;
-        instance.registerNode(logicNode);
+        instance.addNode(logicNode);
       } else if (el.tagName === 'LOGIC-FLOW-CONNECTOR') {
         const logicConnector = el as HTMLLogicFlowConnectorElement;
-        instance.registerConnector(logicConnector);
+        instance.addConnector(logicConnector);
       } else if (el.tagName === 'LOGIC-FLOW-CONNECTION') {
         const logicConnection = el as HTMLLogicFlowConnectionElement;
-        instance.registerConnection(logicConnection);
+        instance.addConnection(logicConnection);
       }
 
       const children = el.children;
@@ -485,10 +525,14 @@ export class ViewContext {
       const path = connection.querySelector('path');
       const rect = path.getBoundingClientRect();
       this.connectionRects[connection.id] = {
-        left: rect.x - this.viewportOffset.left,
-        top: rect.y - this.viewportOffset.top,
-        width: rect.width,
-        height: rect.height,
+        left:
+          (rect.x - this.viewportOffset.left) / this.camera.zoom -
+          this.camera.pos.x,
+        top:
+          (rect.y - this.viewportOffset.top) / this.camera.zoom -
+          this.camera.pos.y,
+        width: rect.width / this.camera.zoom,
+        height: rect.height / this.camera.zoom,
       };
       this.updateViewportQuadtree(connection);
     }
@@ -620,10 +664,14 @@ export class ViewContext {
     const path = this.activeConnection.querySelector('path');
     const rect = path.getBoundingClientRect();
     this.connectionRects[this.activeConnection.id] = {
-      left: rect.x - this.viewportOffset.left,
-      top: rect.y - this.viewportOffset.top,
-      width: rect.width,
-      height: rect.height,
+      left:
+        (rect.x - this.viewportOffset.left) / this.camera.zoom -
+        this.camera.pos.x,
+      top:
+        (rect.y - this.viewportOffset.top) / this.camera.zoom -
+        this.camera.pos.y,
+      width: rect.width / this.camera.zoom,
+      height: rect.height / this.camera.zoom,
     };
 
     // use debug div to show connection
@@ -698,6 +746,10 @@ export class ViewContext {
     active.connections.push(this.activeConnection);
     target.connectingConnector = active;
     target.connections.push(this.activeConnection);
+
+    this.activeConnection.connectors.clear();
+    this.activeConnection.connectors.add(active);
+    this.activeConnection.connectors.add(target);
   }
 
   startDisconnectConnection(
@@ -849,6 +901,7 @@ export class ViewContext {
     );
 
     const newVisibleElements = visibleEntities.map((entity: any) => entity.id);
+    console.log('newVisibleElements', newVisibleElements);
 
     const allItems = new Set([
       ...this.prevVisibleElements,

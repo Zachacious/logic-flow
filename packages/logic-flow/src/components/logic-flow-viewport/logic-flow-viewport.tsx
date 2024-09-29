@@ -59,6 +59,8 @@ export class LogicFlowViewport {
 
   elScroll = () => this.debouncedUpdateViewportRect();
 
+  elKeyPress = (e: KeyboardEvent) => this.onKeyPress(e);
+
   componentDidLoad() {
     this.ctx = new ViewContext(this.el);
     // this.ctx.camera = this.ctx.camera;
@@ -100,6 +102,8 @@ export class LogicFlowViewport {
 
     window.addEventListener('scroll', this.elScroll, { passive: true });
 
+    window.addEventListener('keydown', this.elKeyPress, { passive: true });
+
     // Handle resize events
     this.resizeObserver = new ResizeObserver(() => this.debouncedResize());
     this.resizeObserver.observe(this.ctx.viewportEl);
@@ -126,6 +130,8 @@ export class LogicFlowViewport {
     canvasEl.removeEventListener('wheel', this.elWheel);
 
     window.removeEventListener('scroll', this.elScroll);
+
+    window.removeEventListener('keydown', this.elKeyPress);
 
     this.ctx.destroy();
   }
@@ -232,6 +238,28 @@ export class LogicFlowViewport {
       contentEl.style.transform = `perspective(1px) scale(${this.ctx.camera.zoom}) translate(${this.ctx.camera.pos.x}px, ${this.ctx.camera.pos.y}px)`;
       this.renderGrid();
     });
+  }
+
+  onKeyPress(event: KeyboardEvent) {
+    // if delete key pressed
+    // check if node or connection is current focused
+    // if so, delete it
+
+    if (event.key === 'Delete') {
+      const target = document.activeElement as HTMLElement;
+
+      if (target.tagName === 'LOGIC-FLOW-NODE') {
+        // this.ctx.removeNode(target.id);
+        // remove from dom
+        target.remove();
+      } else if (target.closest('logic-flow-connection')) {
+        // this.ctx.removeConnection(target.id);
+        // remove from dom
+        // target.remove();
+        const connection = target.closest('logic-flow-connection');
+        connection.remove();
+      }
+    }
   }
 
   onPointerDown(event: MouseEvent | TouchEvent) {

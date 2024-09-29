@@ -4,7 +4,9 @@ defineCustomElements();
 export const LogicFlowConnection = defineContainer('logic-flow-connection', undefined, [
     'start',
     'end',
-    'type'
+    'type',
+    'isVisible',
+    'connectors'
 ]);
 export const LogicFlowConnector = defineContainer('logic-flow-connector', undefined, [
     'type',

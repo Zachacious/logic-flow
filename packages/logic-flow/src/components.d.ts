@@ -11,6 +11,7 @@ export { Coords } from "./types/Coords";
 export { LogicFlowConnection } from "./components/logic-flow-connection/logic-flow-connection";
 export namespace Components {
     interface LogicFlowConnection {
+        "connectors": Set<HTMLLogicFlowConnectorElement>;
         "end": Coords;
         "isVisible": boolean;
         "start": Coords;
@@ -76,6 +77,7 @@ declare global {
 }
 declare namespace LocalJSX {
     interface LogicFlowConnection {
+        "connectors"?: Set<HTMLLogicFlowConnectorElement>;
         "end"?: Coords;
         "isVisible"?: boolean;
         "start"?: Coords;

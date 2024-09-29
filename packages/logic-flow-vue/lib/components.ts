@@ -13,7 +13,8 @@ export const LogicFlowConnection = /*@__PURE__*/ defineContainer<JSX.LogicFlowCo
   'start',
   'end',
   'type',
-  'isVisible'
+  'isVisible',
+  'connectors'
 ]);
 
 
