@@ -50,7 +50,7 @@ export class LogicFlowNode {
   render() {
     // console.log('render', this.isVisible);
     return (
-      <Host class="logic-flow-node" style={this.style}>
+      <Host class="logic-flow-node" style={this.style} tabIndex="0">
         {/* <div class="logic-flow-node-header">
           {this.name}
           <slot name="header"></slot>

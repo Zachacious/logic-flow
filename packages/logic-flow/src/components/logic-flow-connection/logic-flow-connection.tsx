@@ -86,7 +86,7 @@ export class LogicFlowConnection {
     return (
       <Host class="logic-flow-connection" style={this.style}>
         <svg class="connection">
-          <path class="connection-line" d={this.path}></path>
+          <path class="connection-line" d={this.path} tabindex={0}></path>
           {/* Start cap */}
           <circle
             cx={this.start.x}

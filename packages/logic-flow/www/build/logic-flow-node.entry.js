@@ -37,7 +37,7 @@ const LogicFlowNode = class {
     }
     render() {
         // console.log('render', this.isVisible);
-        return (h(Host, { key: '764caa8146baf244a73a2fe2ce5b0dbee7925261', class: "logic-flow-node", style: this.style }, h("slot", { key: '27d3623e362e3b76e0b05cb8a558e2342c88c2a2' })));
+        return (h(Host, { key: 'e29bcde796f3fa11cb76620ca9c9fb1e165ce27f', class: "logic-flow-node", style: this.style, tabIndex: "0" }, h("slot", { key: '2c546d53db26e7e85ef093a89d4d6ad5926e2ae6' })));
     }
     get el() { return getElement(this); }
     static get watchers() { return {
