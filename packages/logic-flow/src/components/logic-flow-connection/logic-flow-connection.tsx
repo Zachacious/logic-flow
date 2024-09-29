@@ -10,9 +10,11 @@ export class LogicFlowConnection {
   @Prop() start: Coords = { x: 0, y: 0 };
   @Prop() end: Coords = { x: 0, y: 0 };
   @Prop() type: 'input' | 'output' = 'input';
+  @Prop({ mutable: true }) isVisible: boolean = true;
 
   path: string;
   private _capRadius = 5;
+  style = {};
 
   componentWillLoad() {
     // calculate cap width based on connector size
@@ -71,9 +73,18 @@ export class LogicFlowConnection {
     }
   }
 
+  componentWillRender() {
+    if (!this.isVisible) {
+      this.style = { display: 'none' };
+    } else {
+      this.style = {};
+    }
+  }
+
   render() {
+    // console.log('render', this.isVisible);
     return (
-      <Host class="logic-flow-connection">
+      <Host class="logic-flow-connection" style={this.style}>
         <svg class="connection">
           <path class="connection-line" d={this.path}></path>
           {/* Start cap */}

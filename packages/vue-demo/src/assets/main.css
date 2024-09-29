@@ -9,7 +9,7 @@ logic-flow-viewport {
 }
 
 .logic-flow-viewport {
-  position: absolute;
+  position: relative;
   overflow: hidden;
   width: 100%;
   height: 100%;

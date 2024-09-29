@@ -12,7 +12,8 @@ defineCustomElements();
 export const LogicFlowConnection = /*@__PURE__*/ defineContainer<JSX.LogicFlowConnection>('logic-flow-connection', undefined, [
   'start',
   'end',
-  'type'
+  'type',
+  'isVisible'
 ]);
 
 
@@ -25,7 +26,6 @@ export const LogicFlowConnector = /*@__PURE__*/ defineContainer<JSX.LogicFlowCon
 
 export const LogicFlowNode = /*@__PURE__*/ defineContainer<JSX.LogicFlowNode>('logic-flow-node', undefined, [
   'type',
-  'name',
   'position',
   'isVisible'
 ]);

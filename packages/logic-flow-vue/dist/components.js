@@ -13,7 +13,6 @@ export const LogicFlowConnector = defineContainer('logic-flow-connector', undefi
 ]);
 export const LogicFlowNode = defineContainer('logic-flow-node', undefined, [
     'type',
-    'name',
     'position',
     'isVisible'
 ]);

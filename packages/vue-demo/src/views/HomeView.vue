@@ -2,7 +2,7 @@
 import ImageNode from '@/components/ImageNode.vue'
 // import LFViewport from '@/components/LFViewport.vue'
 import { LogicFlowViewport } from 'logic-flow-vue'
-import { onMounted, ref, shallowRef, triggerRef } from 'vue'
+import { ref, shallowRef, triggerRef } from 'vue'
 // import { HTMLLogicFlowViewportElement } from 'logic-flow-vue'
 
 type node = {
@@ -49,11 +49,6 @@ const viewportDrop = async (e: DragEvent) => {
     triggerRef(nodes)
   })
 }
-
-// onMounted(async () => {
-//   const cam = await viewport.value?.getCamera()
-//   console.log(cam)
-// })
 </script>
 
 <template>
@@ -114,7 +109,7 @@ const viewportDrop = async (e: DragEvent) => {
         </logic-flow-viewport>
 
         <div
-          class="absolute top-20 left-10 min-w-[100px] min-h-[100px] bg-[#333] text-white p-4 rounded-md shadow-lg z-40 flex flex-col gap-4"
+          class="absolute top-20 left-10 min-w-[100px] bg-[#333] text-white p-4 rounded-md shadow-lg z-40 flex flex-col gap-4"
         >
           <div
             class="w-full p-2 bg-[#555] rounded-md cursor-pointer"

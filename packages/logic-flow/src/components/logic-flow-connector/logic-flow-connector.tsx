@@ -23,7 +23,7 @@ export class LogicFlowConnector {
       <Host class={`logic-flow-connector ${typeClass}`}>
         <div
           class={`connector ${sideClass} ${
-            this.connections.length > 0 && 'connected'
+            (this.connections.length > 0 && 'connected') || ''
           }`}
         ></div>
         <div class={`connector-content ${sideClass}`}>

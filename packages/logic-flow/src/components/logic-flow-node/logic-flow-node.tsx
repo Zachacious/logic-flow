@@ -10,7 +10,7 @@ export class LogicFlowNode {
   @Element() el: HTMLElement;
 
   @Prop() type: string = 'default';
-  @Prop() name: string = 'Node';
+  // @Prop() name: string = 'Node';
   @Prop({ mutable: true }) position: Coords = { x: 0, y: 0 };
   @Prop({ mutable: true }) isVisible: boolean = true;
 
@@ -51,14 +51,14 @@ export class LogicFlowNode {
     // console.log('render', this.isVisible);
     return (
       <Host class="logic-flow-node" style={this.style}>
-        <div class="logic-flow-node-header">
+        {/* <div class="logic-flow-node-header">
           {this.name}
           <slot name="header"></slot>
-        </div>
+        </div> */}
         <slot></slot>
-        <div class="logic-flow-node-footer">
+        {/* <div class="logic-flow-node-footer">
           <slot name="footer"></slot>
-        </div>
+        </div> */}
       </Host>
     );
   }

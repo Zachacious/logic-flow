@@ -196,8 +196,6 @@ export class LogicFlowViewport {
   renderGrid() {
     if (!this.showGrid || !this.ctx.needsRedraw) return;
 
-    console.log(this.gridType);
-
     requestAnimationFrame(() => {
       if (this.gridType === 'line') {
         renderCanvasGrid(
@@ -240,7 +238,6 @@ export class LogicFlowViewport {
     const loc = getEventLocation(event);
     const worldCoords = this.ctx.camera.toWorldCoords(loc);
     const target = document.elementFromPoint(loc.x, loc.y) as HTMLElement;
-    console.log(this.ctx.viewportOffset);
 
     // if pointer outside viewport, return
     if (

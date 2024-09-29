@@ -12,6 +12,7 @@ export { LogicFlowConnection } from "./components/logic-flow-connection/logic-fl
 export namespace Components {
     interface LogicFlowConnection {
         "end": Coords;
+        "isVisible": boolean;
         "start": Coords;
         "type": 'input' | 'output';
     }
@@ -22,7 +23,6 @@ export namespace Components {
     }
     interface LogicFlowNode {
         "isVisible": boolean;
-        "name": string;
         "position": Coords;
         "type": string;
     }
@@ -77,6 +77,7 @@ declare global {
 declare namespace LocalJSX {
     interface LogicFlowConnection {
         "end"?: Coords;
+        "isVisible"?: boolean;
         "start"?: Coords;
         "type"?: 'input' | 'output';
     }
@@ -87,7 +88,6 @@ declare namespace LocalJSX {
     }
     interface LogicFlowNode {
         "isVisible"?: boolean;
-        "name"?: string;
         "position"?: Coords;
         "type"?: string;
     }
