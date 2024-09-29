@@ -58,7 +58,11 @@ logic-flow-viewport {
   /* z-index: 10; */
 }
 
-.logic-flow-node .logic-flow-node-header {
+.logic-flow-node:focus-within {
+  border: 3px solid rgb(81, 199, 130);
+}
+
+/* .logic-flow-node .logic-flow-node-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -72,7 +76,7 @@ logic-flow-viewport {
 
 .logic-flow-node .logic-flow-node-footer {
   height: 10px;
-}
+} */
 
 .logic-flow-connector {
   position: relative;
@@ -143,6 +147,14 @@ logic-flow-viewport {
   position: absolute;
   pointer-events: none;
   overflow: visible;
+}
+
+.logic-flow-connection .connection:focus-within .connection-line {
+  stroke: rgb(81, 199, 130);
+  stroke-width: 5;
+
+  /* remove default path focus style */
+  outline: none;
 }
 
 .logic-flow-connection .connection .connection-line {

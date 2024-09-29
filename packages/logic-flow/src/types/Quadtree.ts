@@ -246,7 +246,7 @@ export class Quadtree {
     //   height: range.height / zoom,
     // };
 
-    // const debugDiv = document.getElementById('debug');
+    // const debugDiv = document.getElementById('debug2');
     // debugDiv.style.width = `${screenRange.width}px`;
     // debugDiv.style.height = `${screenRange.height}px`;
     // debugDiv.style.left = `${screenRange.left}px`;

@@ -215,6 +215,7 @@ export class ViewContext {
 
   removeConnector(id: string) {
     const connector = this.connectors.get(id);
+    if (!connector) return;
 
     // remove connections
     connector.connections.forEach(
@@ -515,10 +516,13 @@ export class ViewContext {
     this.activeNodeDragging = false;
     this.updateNodeConnectorsQuadtree(this.activeNode);
 
-    // update connections rects
-    const connections = this.activeNode.querySelectorAll(
-      'logic-flow-connection',
-    );
+    const connectors = this.activeNode.querySelectorAll('logic-flow-connector');
+
+    let connections = [];
+    for (let i = 0; i < connectors.length; i++) {
+      const connector = connectors[i] as HTMLLogicFlowConnectorElement;
+      connections = connections.concat(connector.connections);
+    }
 
     for (let i = 0; i < connections.length; i++) {
       const connection = connections[i] as HTMLLogicFlowConnectionElement;
@@ -535,6 +539,16 @@ export class ViewContext {
         height: rect.height / this.camera.zoom,
       };
       this.updateViewportQuadtree(connection);
+
+      // use debug div to show connection
+      // const debug = document.getElementById('debug');
+      // const debugRect = this.connectionRects[connection.id];
+      // if (debug) {
+      //   debug.style.left = `${debugRect.left}px`;
+      //   debug.style.top = `${debugRect.top}px`;
+      //   debug.style.width = `${debugRect.width}px`;
+      //   debug.style.height = `${debugRect.height}px`;
+      // }
     }
     this.updateViewportQuadtree(this.activeNode);
 
@@ -901,7 +915,7 @@ export class ViewContext {
     );
 
     const newVisibleElements = visibleEntities.map((entity: any) => entity.id);
-    console.log('newVisibleElements', newVisibleElements);
+    // console.log('newVisibleElements', newVisibleElements);
 
     const allItems = new Set([
       ...this.prevVisibleElements,
