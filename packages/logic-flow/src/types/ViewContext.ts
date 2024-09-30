@@ -146,20 +146,23 @@ export class ViewContext {
     // set data attribute for the context id
     node.setAttribute('data-viewport', this.uid);
 
-    // update rect
-    const rect = node.getBoundingClientRect();
-    this.nodeRects[id] = {
-      left: node.position.x,
-      top: node.position.y,
-      width: rect.width,
-      height: rect.height,
-    };
+    const n = node;
 
-    // add to quadtree
-    this.updateViewportQuadtree(node);
     // wait for next frame to update connectors rects until the connectors have registered
     requestAnimationFrame(() => {
-      this.updateNodeConnectorsQuadtree(node);
+      // update rect
+      const rect = n.getBoundingClientRect();
+      this.nodeRects[id] = {
+        left: n?.position?.x || n.startX || rect.x,
+        top: n?.position?.y || n.startY || rect.y,
+        width: rect.width,
+        height: rect.height,
+      };
+
+      // add to quadtree
+      this.updateViewportQuadtree(n);
+
+      // this.updateNodeConnectorsQuadtree(node);
     });
 
     return id;
@@ -201,14 +204,28 @@ export class ViewContext {
     const id = nanoid();
     connector.id = id;
     this.connectors.set(id, connector);
-    const connectorEl = connector.querySelector('.connector');
-    const rect = connectorEl.getBoundingClientRect();
-    this.connectorRects[id] = {
-      left: rect.x - this.viewportOffset.left,
-      top: rect.y - this.viewportOffset.top,
-      width: rect.width,
-      height: rect.height,
-    };
+    requestAnimationFrame(() => {
+      const connectorEl = connector.querySelector('.connector');
+      const rect = connectorEl.getBoundingClientRect();
+      this.connectorRects[id] = {
+        left:
+          (rect.x - this.viewportOffset.left) / this.camera.zoom -
+          this.camera.pos.x,
+        top:
+          (rect.y - this.viewportOffset.top) / this.camera.zoom -
+          this.camera.pos.y,
+        width: rect.width / this.camera.zoom,
+        height: rect.height / this.camera.zoom,
+      };
+
+      // add to quadtree
+      const qrect = this.connectorRects[id];
+      this.connectorQuadtree.insert({
+        id,
+        x: qrect.left + qrect.width / 2,
+        y: qrect.top + qrect.height / 2,
+      });
+    });
 
     return id;
   }
@@ -506,10 +523,10 @@ export class ViewContext {
     rect.height = aNode.clientHeight || rect.height;
     this.nodeRects[aNode.id] = rect;
 
+    aNode.position = newPos;
+
     // update node position and it's connections
     this.updateNodeConnectorPos(aNode, delta); // ???
-
-    aNode.position = newPos;
   }
 
   endNodeDrag() {
@@ -842,10 +859,12 @@ export class ViewContext {
     const connectors = node.querySelectorAll(
       'logic-flow-connector',
     ) as NodeListOf<HTMLLogicFlowConnectorElement>;
+
     for (let i = 0; i < connectors.length; i++) {
       const connector = connectors[i];
       let rect = this.connectorRects[connector.id];
       if (!rect) {
+        console.log('no rect');
         let connectorEl = connector.querySelector('.connector');
 
         const r = connectorEl.getBoundingClientRect();

@@ -193,7 +193,7 @@ export class LogicFlowViewport {
     // get set viewport rect
     this.ctx.viewportRect = boundary;
 
-    this.ctx.connectorQuadtree.boundary = this.ctx.viewportRect;
+    // this.ctx.connectorQuadtree.boundary = this.ctx.viewportRect;
     this.ctx.viewportQuadtree.boundary = this.ctx.viewportRect;
 
     this.renderGrid();

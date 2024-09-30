@@ -11,6 +11,8 @@ export class LogicFlowNode {
 
   @Prop() type: string = 'default';
   // @Prop() name: string = 'Node';
+  @Prop() startX: number = 0;
+  @Prop() startY: number = 0;
   @Prop({ mutable: true }) position: Coords = { x: 0, y: 0 };
   @Prop({ mutable: true }) isVisible: boolean = true;
 
@@ -20,7 +22,10 @@ export class LogicFlowNode {
 
   componentWillLoad() {
     //  set initial size
-    this.updateTransform();
+    this.position.x = this.startX;
+    this.position.y = this.startY;
+
+    // this.updateTransform();
 
     // this.position = { x: this.position.x, y: this.position.y };
     this.onPositionChange(this.position);

@@ -25,6 +25,8 @@ export namespace Components {
     interface LogicFlowNode {
         "isVisible": boolean;
         "position": Coords;
+        "startX": number;
+        "startY": number;
         "type": string;
     }
     interface LogicFlowViewport {
@@ -91,6 +93,8 @@ declare namespace LocalJSX {
     interface LogicFlowNode {
         "isVisible"?: boolean;
         "position"?: Coords;
+        "startX"?: number;
+        "startY"?: number;
         "type"?: string;
     }
     interface LogicFlowViewport {

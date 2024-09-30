@@ -104,7 +104,7 @@ const viewportDrop = async (e: DragEvent) => {
           @drop="viewportDrop"
         >
           <template v-for="(node, index) in nodes" :key="index">
-            <component :is="node.type" :position="node.position" />
+            <component :is="node.type" :start-x="node.position.x" :start-y="node.position.y" />
           </template>
         </logic-flow-viewport>
 
@@ -121,5 +121,21 @@ const viewportDrop = async (e: DragEvent) => {
         </div>
       </div>
     </div>
+
+    <div id="debug" class="debug"></div>
+    <div id="debug2" class="debug"></div>
   </main>
 </template>
+
+<style scoped>
+.debug {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 100;
+  border: 2px solid #ffffff;
+  border-radius: 5px;
+  color: white;
+  pointer-events: none;
+}
+</style>

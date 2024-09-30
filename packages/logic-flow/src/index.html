@@ -80,11 +80,15 @@
           grid-bg-color="#888"
           grid-type="dot"
         >
-          <logic-flow-node title="Test Node">
+          <logic-flow-node start-x="500" start-y="500">
             <logic-flow-connector>input 1</logic-flow-connector>
             <logic-flow-connector type="output">output</logic-flow-connector>
           </logic-flow-node>
           <logic-flow-node title="Test Node 2">
+            <logic-flow-connector type="output">output</logic-flow-connector>
+            <logic-flow-connector type="output">output2</logic-flow-connector>
+          </logic-flow-node>
+          <logic-flow-node title="Test Node 3">
             <logic-flow-connector type="output">output</logic-flow-connector>
             <logic-flow-connector type="output">output2</logic-flow-connector>
           </logic-flow-node>
@@ -94,5 +98,21 @@
       </div>
     </div>
     <!-- </div> -->
+
+    <script>
+      // add a node after 3 sec
+      setTimeout(() => {
+        const node = document.createElement('logic-flow-node');
+        node.setAttribute('start-x', '300');
+        node.setAttribute('start-y', '300');
+        node.innerHTML = `
+          <logic-flow-connector type="output">output</logic-flow-connector>
+          <logic-flow-connector type="output">output2</logic-flow-connector>
+        `;
+        document
+          .querySelector('logic-flow-viewport .viewport-content')
+          .appendChild(node);
+      }, 3000);
+    </script>
   </body>
 </html>
