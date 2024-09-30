@@ -10,7 +10,7 @@ type node = {
   type: typeof ImageNode
 }
 
-const viewport = ref<HTMLLogicFlowViewportElement | null>(null)
+const viewport = ref<any | null>(null)
 
 const snapToGrid = ref(false)
 const gridType = ref<'line' | 'dot' | 'none'>('line')
@@ -27,6 +27,7 @@ const viewportDragOver = (e: DragEvent) => {
 
 const viewportDrop = async (e: DragEvent) => {
   e.preventDefault()
+  e.stopPropagation()
 
   const pointerCoords = {
     x: e.clientX,
@@ -45,9 +46,9 @@ const viewportDrop = async (e: DragEvent) => {
     } as node)
   }
 
-  requestAnimationFrame(() => {
+  setTimeout(() => {
     triggerRef(nodes)
-  })
+  }, 0)
 }
 </script>
 

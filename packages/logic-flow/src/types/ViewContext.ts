@@ -49,7 +49,7 @@ export class ViewContext {
 
   debouncedUpdateVisibleElements = throttle(
     () => this.updateVisibleElements(),
-    100,
+    20,
   );
 
   constructor(viewport: HTMLLogicFlowViewportElement) {
@@ -118,26 +118,6 @@ export class ViewContext {
     };
   }
 
-  // static seekAndDestroy(type: EntityType, id: string) {
-  //   // search and destroy in all instances
-  //   for (const [, instance] of ViewContext.instances) {
-  //     switch (type) {
-  //       case 'node':
-  //         instance.unregisterNode(id);
-  //         break;
-  //       case 'connector':
-  //         instance.unregisterConnector(id);
-  //         break;
-  //       case 'connection':
-  //         instance.unregisterConnection(id);
-  //         break;
-  //       case 'viewport':
-  //         instance.destroy();
-  //         break;
-  //     }
-  //   }
-  // }
-
   addNode(node: HTMLLogicFlowNodeElement) {
     const id = nanoid();
     node.id = id;
@@ -149,21 +129,25 @@ export class ViewContext {
     const n = node;
 
     // wait for next frame to update connectors rects until the connectors have registered
-    requestAnimationFrame(() => {
-      // update rect
-      const rect = n.getBoundingClientRect();
-      this.nodeRects[id] = {
-        left: n?.position?.x || n.startX || rect.x,
-        top: n?.position?.y || n.startY || rect.y,
-        width: rect.width,
-        height: rect.height,
-      };
+    requestIdleCallback(
+      () => {
+        // update rect
+        const rect = n.getBoundingClientRect();
 
-      // add to quadtree
-      this.updateViewportQuadtree(n);
+        this.nodeRects[id] = {
+          left: n?.position?.x || n.startX || rect.x,
+          top: n?.position?.y || n.startY || rect.y,
+          width: rect.width,
+          height: rect.height,
+        };
 
-      // this.updateNodeConnectorsQuadtree(node);
-    });
+        // add to quadtree
+        this.updateViewportQuadtree(n);
+
+        // this.updateNodeConnectorsQuadtree(node);
+      },
+      { timeout: 100 },
+    );
 
     return id;
   }
@@ -174,8 +158,6 @@ export class ViewContext {
     // get connectors
     const node = this.nodes.get(id);
     if (node) {
-      // TODO: not sure if this is necessary with mutation observer
-
       const connectors = node.querySelectorAll('logic-flow-connector');
       connectors.forEach((connector: HTMLLogicFlowConnectorElement) => {
         const cid = connector.id;

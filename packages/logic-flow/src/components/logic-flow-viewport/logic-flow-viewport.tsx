@@ -486,6 +486,11 @@ export class LogicFlowViewport {
     // Apply the new zoom level
     this.ctx.camera.zoom = newZoom;
 
+    // if zooming in, force a reflow to prevent blurry text
+    if (scaleFactor > 1) {
+      this.forceContentReflowDebounced();
+    }
+
     // Trigger a screen redraw
     this.debouncedUpdateScreen();
   }
