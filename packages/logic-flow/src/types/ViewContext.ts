@@ -5,10 +5,6 @@ import { Camera } from './Camera';
 import { Coords } from './Coords';
 import { throttle } from '../utils/throttle';
 import { Offset } from './Offset';
-// import { LogicFlowNode } from '../components/logic-flow-node/logic-flow-node';
-// import { LogicFlowConnection } from '../components/logic-flow-connection/logic-flow-connection';
-
-// type EntityType = 'node' | 'connector' | 'connection' | 'viewport';
 
 export class ViewContext {
   static instances = new Map<string, ViewContext>();
@@ -242,28 +238,10 @@ export class ViewContext {
   removeConnection(id: string) {
     const connection = this.connections.get(id);
     if (!connection) return;
-    // connection.setAttribute('data-viewport', '');
-    // remove from dom
-    // const el = document.getElementById(id);
 
-    // if (el) {
-    //   el.remove();
-    // }
-
-    // TODO: find connectors and remove connections
     // handle connectors
     const connectors = connection.connectors;
     if (connectors.size > 0) {
-      // for (let i = 0; i < connectors.size; i++) {
-      //   const connector = connectors.
-      //   const connIndex = connector.connections.indexOf(connection);
-      //   if (connIndex > -1) {
-      //     connector.connections.splice(connIndex, 1);
-      //   }
-      //   connector.connectingConnector = null;
-
-      //   // update quadtree
-      // }
       for (const connector of connectors) {
         const connIndex = connector.connections.indexOf(connection);
         if (connIndex > -1) {
@@ -568,16 +546,6 @@ export class ViewContext {
 
   moveActiveConnection(loc: Coords, snappingDist: number) {
     const aConn = this.activeConnection;
-    // const scrollOffset = {
-    //   x: window.scrollX,
-    //   y: window.screenY,
-    // };
-    // console.log(
-    //   'scrollOffset',
-    //   window.screenY,
-    //   window.scrollY,
-    //   this.viewportEl.offsetTop,
-    // );
 
     const worldCoords = this.camera.toWorldCoords({
       x: loc.x - this.viewportOffset.left,
@@ -604,11 +572,6 @@ export class ViewContext {
     let targetConnector = target.closest(
       'logic-flow-connector .connector',
     ) as HTMLLogicFlowConnectorElement;
-
-    // const scrollOffset = {
-    //   x: window.scrollX,
-    //   y: window.scrollY,
-    // };
 
     const snappedConnector = this.connectorQuadtree.checkNearby(
       {
@@ -779,11 +742,6 @@ export class ViewContext {
     if (!connection) return false;
 
     this.bringToFront(connection);
-
-    // const scrollOffset = {
-    //   x: window.scrollX,
-    //   y: window.scrollY,
-    // };
 
     const snappableConnector = this.connectorQuadtree.checkNearby(
       {

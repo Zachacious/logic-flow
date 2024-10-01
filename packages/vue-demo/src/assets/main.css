@@ -105,6 +105,7 @@ logic-flow-viewport {
 .logic-flow-connector .connector-content {
   width: 100%;
   font-size: 0.7em;
+  color: #333;
 }
 
 .logic-flow-connector .left-connector {

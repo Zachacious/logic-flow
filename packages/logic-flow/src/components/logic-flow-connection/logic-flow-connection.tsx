@@ -11,8 +11,6 @@ export class LogicFlowConnection {
   @Prop() end: Coords = { x: 0, y: 0 };
   @Prop() type: 'input' | 'output' = 'input';
   @Prop({ mutable: true }) isVisible: boolean = true;
-  // @Prop() connectors: HTMLLogicFlowConnectorElement[] = [];
-  // connectors Set
   @Prop() connectors: Set<HTMLLogicFlowConnectorElement> = new Set();
 
   path: string;
@@ -85,7 +83,6 @@ export class LogicFlowConnection {
   }
 
   render() {
-    // console.log('render', this.isVisible);
     return (
       <Host class="logic-flow-connection" style={this.style}>
         <svg class="connection">

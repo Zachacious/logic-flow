@@ -17,8 +17,6 @@ import { Coords } from '../../types/Coords';
 export class LogicFlowViewport {
   @Element() el: HTMLLogicFlowViewportElement;
 
-  // @Prop() showGrid: boolean = true;
-  // @Prop() showDotGrid: boolean = false;
   @Prop() showGrid: boolean = true;
   @Prop() gridType: 'line' | 'dot' = 'line';
   @Prop() gridSize: number = 20;
@@ -137,8 +135,8 @@ export class LogicFlowViewport {
   }
 
   @Method()
-  async getCamera() {
-    return this.ctx.camera;
+  async getContext() {
+    return this.ctx;
   }
 
   @Method()
@@ -505,7 +503,6 @@ export class LogicFlowViewport {
 
   render() {
     return (
-      // <Host>
       <div class="logic-flow-viewport">
         <canvas
           class="logic-flow-grid"
@@ -515,7 +512,6 @@ export class LogicFlowViewport {
           <slot></slot>
         </div>
       </div>
-      // /* </Host> */
     );
   }
 }

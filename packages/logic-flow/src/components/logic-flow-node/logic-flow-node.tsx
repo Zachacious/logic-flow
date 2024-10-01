@@ -25,9 +25,6 @@ export class LogicFlowNode {
     this.position.x = this.startX;
     this.position.y = this.startY;
 
-    // this.updateTransform();
-
-    // this.position = { x: this.position.x, y: this.position.y };
     this.onPositionChange(this.position);
   }
 
@@ -53,17 +50,9 @@ export class LogicFlowNode {
   }
 
   render() {
-    // console.log('render', this.isVisible);
     return (
       <Host class="logic-flow-node" style={this.style} tabIndex="0">
-        {/* <div class="logic-flow-node-header">
-          {this.name}
-          <slot name="header"></slot>
-        </div> */}
         <slot></slot>
-        {/* <div class="logic-flow-node-footer">
-          <slot name="footer"></slot>
-        </div> */}
       </Host>
     );
   }

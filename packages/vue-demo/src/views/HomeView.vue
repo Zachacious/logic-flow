@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import ImageNode from '@/components/ImageNode.vue'
+import UrlNode from '@/components/UrlNode.vue'
 // import LFViewport from '@/components/LFViewport.vue'
 import { LogicFlowViewport } from 'logic-flow-vue'
 import { ref, shallowRef, triggerRef } from 'vue'
@@ -7,7 +8,7 @@ import { ref, shallowRef, triggerRef } from 'vue'
 
 type node = {
   position: { x: number; y: number }
-  type: typeof ImageNode
+  type: typeof ImageNode | typeof UrlNode
 }
 
 const viewport = ref<any | null>(null)
@@ -35,14 +36,15 @@ const viewportDrop = async (e: DragEvent) => {
   }
 
   const type = e.dataTransfer?.getData('text')
-  if (type === 'ImageNode') {
+  if (type) {
+    const nodeType = type === 'ImageNode' ? ImageNode : UrlNode
     const worldCoords = await viewport.value?.screenToWorldCoords(pointerCoords)
     nodes.value.push({
       position: {
         x: worldCoords.x,
         y: worldCoords.y
       },
-      type: ImageNode
+      type: nodeType
     } as node)
   }
 
@@ -118,6 +120,14 @@ const viewportDrop = async (e: DragEvent) => {
             @dragstart="(e) => nodeDragStart(e, 'ImageNode')"
           >
             Image Node
+          </div>
+
+          <div
+            class="w-full p-2 bg-[#555] rounded-md cursor-pointer"
+            draggable="true"
+            @dragstart="(e) => nodeDragStart(e, 'UrlNode')"
+          >
+            Url Node
           </div>
         </div>
       </div>
