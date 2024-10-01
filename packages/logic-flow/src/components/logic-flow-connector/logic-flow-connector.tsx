@@ -1,4 +1,4 @@
-import { Component, Host, Prop, h, Element } from '@stencil/core';
+import { Component, Host, Prop, h, Element, Method } from '@stencil/core';
 import { LogicFlowConnection } from '../logic-flow-connection/logic-flow-connection';
 
 @Component({
@@ -12,6 +12,15 @@ export class LogicFlowConnector {
   @Prop() type: 'input' | 'output' = 'input';
   @Prop() connectingConnector: LogicFlowConnector | null = null;
   @Prop() connections: LogicFlowConnection[] = [];
+  @Prop() onConnection: (
+    sourceConnector: HTMLLogicFlowConnectorElement,
+    // targetConnector: HTMLLogicFlowConnectorElement,
+  ) => Promise<boolean>;
+
+  @Method()
+  async getNode() {
+    return this.el.closest('logic-flow-node');
+  }
 
   render() {
     const sideClass =

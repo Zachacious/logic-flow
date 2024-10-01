@@ -3,7 +3,7 @@ import { LogicFlowNode } from 'logic-flow-vue'
 </script>
 
 <template>
-  <LogicFlowNode v-bind="$attrs">
+  <LogicFlowNode v-bind="$attrs" type="url-node">
     <div class="text-md font-bold p-2">Url</div>
 
     <logic-flow-connector type="output"

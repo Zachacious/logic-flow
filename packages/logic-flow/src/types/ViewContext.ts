@@ -633,6 +633,20 @@ export class ViewContext {
       return;
     }
 
+    // if connector has a onConnection callback
+    // call it. If it returns false, cancel the connection
+    const connection = this.activeConnection;
+    if (target.onConnection) {
+      target.onConnection(aConn).then(result => {
+        if (result === false) {
+          // destroy connection
+          connection.remove();
+          // remove from rects
+          delete this.connectionRects[connection.id];
+        }
+      });
+    }
+
     this.updateConnectionEndpoints(aConn, tConn);
     this.finalizeConnection(aConn, tConn);
 

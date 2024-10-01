@@ -7,8 +7,10 @@
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
 import { Coords } from "./types/Coords";
 import { LogicFlowConnection } from "./components/logic-flow-connection/logic-flow-connection";
+import { ViewContext } from "./types/ViewContext";
 export { Coords } from "./types/Coords";
 export { LogicFlowConnection } from "./components/logic-flow-connection/logic-flow-connection";
+export { ViewContext } from "./types/ViewContext";
 export namespace Components {
     interface LogicFlowConnection {
         "connectors": Set<HTMLLogicFlowConnectorElement>;
@@ -20,6 +22,11 @@ export namespace Components {
     interface LogicFlowConnector {
         "connectingConnector": LogicFlowConnector | null;
         "connections": LogicFlowConnection[];
+        "getNode": () => Promise<HTMLLogicFlowNodeElement>;
+        "onConnection": (
+    sourceConnector: HTMLLogicFlowConnectorElement,
+    // targetConnector: HTMLLogicFlowConnectorElement,
+  ) => Promise<boolean>;
         "type": 'input' | 'output';
     }
     interface LogicFlowNode {
@@ -32,7 +39,7 @@ export namespace Components {
     interface LogicFlowViewport {
         "connectorSnappingDistance": number;
         "cursors": Record<string, string>;
-        "getCamera": () => Promise<import("/home/zach/src/logic-flow/packages/logic-flow/src/types/Camera").Camera>;
+        "getContext": () => Promise<ViewContext>;
         "gridBgColor": string;
         "gridLineColor": string;
         "gridSize": number;
@@ -88,6 +95,10 @@ declare namespace LocalJSX {
     interface LogicFlowConnector {
         "connectingConnector"?: LogicFlowConnector | null;
         "connections"?: LogicFlowConnection[];
+        "onConnection"?: (
+    sourceConnector: HTMLLogicFlowConnectorElement,
+    // targetConnector: HTMLLogicFlowConnectorElement,
+  ) => Promise<boolean>;
         "type"?: 'input' | 'output';
     }
     interface LogicFlowNode {

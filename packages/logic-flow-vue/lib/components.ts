@@ -21,7 +21,8 @@ export const LogicFlowConnection = /*@__PURE__*/ defineContainer<JSX.LogicFlowCo
 export const LogicFlowConnector = /*@__PURE__*/ defineContainer<JSX.LogicFlowConnector>('logic-flow-connector', undefined, [
   'type',
   'connectingConnector',
-  'connections'
+  'connections',
+  'onConnection'
 ]);
 
 

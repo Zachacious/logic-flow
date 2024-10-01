@@ -11,7 +11,8 @@ export const LogicFlowConnection = defineContainer('logic-flow-connection', unde
 export const LogicFlowConnector = defineContainer('logic-flow-connector', undefined, [
     'type',
     'connectingConnector',
-    'connections'
+    'connections',
+    'onConnection'
 ]);
 export const LogicFlowNode = defineContainer('logic-flow-node', undefined, [
     'type',

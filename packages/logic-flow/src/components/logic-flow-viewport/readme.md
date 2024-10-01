@@ -24,13 +24,13 @@
 
 ## Methods
 
-### `getCamera() => Promise<import("/home/zach/src/logic-flow/packages/logic-flow/src/types/Camera").Camera>`
+### `getContext() => Promise<ViewContext>`
 
 
 
 #### Returns
 
-Type: `Promise<Camera>`
+Type: `Promise<ViewContext>`
 
 
 
