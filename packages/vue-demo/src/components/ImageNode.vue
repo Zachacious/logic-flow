@@ -2,15 +2,16 @@
 import { LogicFlowNode } from 'logic-flow-vue'
 import { onMounted, ref } from 'vue'
 
-const inputConnector = ref<HTMLLogicFlowConnectorElement>(null)
+const inputConnector = ref<HTMLLogicFlowConnectorElement | null>(null)
 
 onMounted(async () => {
   const node = await inputConnector?.value?.getNode()
   if (!node || !inputConnector.value) {
     return
   }
-  inputConnector.value.onConnection = async (src) => {
+  inputConnector.value.onConnection = async (src: HTMLLogicFlowConnectorElement) => {
     const sourceNode = await src?.getNode()
+
     if (sourceNode.type !== 'url-node') {
       console.log('Invalid connection')
       return false

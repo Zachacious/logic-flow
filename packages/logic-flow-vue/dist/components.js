@@ -12,14 +12,17 @@ export const LogicFlowConnector = defineContainer('logic-flow-connector', undefi
     'type',
     'connectingConnector',
     'connections',
-    'onConnection'
+    'onConnection',
+    'onDisconnection',
+    'onUpdateFromConnectedNode'
 ]);
 export const LogicFlowNode = defineContainer('logic-flow-node', undefined, [
     'type',
     'startX',
     'startY',
     'position',
-    'isVisible'
+    'isVisible',
+    'notifyConnectors'
 ]);
 export const LogicFlowViewport = defineContainer('logic-flow-viewport', undefined, [
     'showGrid',

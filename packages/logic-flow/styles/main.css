@@ -32,9 +32,6 @@ logic-flow-viewport {
   will-change: transform;
   image-rendering: crisp-edges;
   backface-visibility: hidden;
-  /* top: 50%;
-  left: 50%; */
-  /* transform: translate(-50%, -50%); */
 }
 
 .logic-flow-node {
@@ -56,20 +53,8 @@ logic-flow-viewport {
   /* z-index: 10; */
 }
 
-.logic-flow-node .logic-flow-node-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-  font-size: 0.7em;
-  padding: 4px;
-  background: #333;
-  color: #fff;
-  text-rendering: optimizeSpeed;
-}
-
-.logic-flow-node .logic-flow-node-footer {
-  height: 10px;
+.logic-flow-node:focus-within {
+  border: 3px solid rgb(81, 199, 130);
 }
 
 .logic-flow-connector {
@@ -130,17 +115,18 @@ logic-flow-viewport {
   left: 0;
 }
 
-/* .connection-line {
-  stroke: #000;
-  stroke-width: 2;
-  fill: none;
-  transition: stroke-width 0.2s ease, stroke 0.2s ease;
-} */
-
 .logic-flow-connection .connection {
   position: absolute;
   pointer-events: none;
   overflow: visible;
+}
+
+.logic-flow-connection .connection:focus-within .connection-line {
+  stroke: rgb(81, 199, 130);
+  stroke-width: 5;
+
+  /* remove default path focus style */
+  outline: none;
 }
 
 .logic-flow-connection .connection .connection-line {

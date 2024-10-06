@@ -22,7 +22,9 @@ export const LogicFlowConnector = /*@__PURE__*/ defineContainer<JSX.LogicFlowCon
   'type',
   'connectingConnector',
   'connections',
-  'onConnection'
+  'onConnection',
+  'onDisconnection',
+  'onUpdateFromConnectedNode'
 ]);
 
 
@@ -31,7 +33,8 @@ export const LogicFlowNode = /*@__PURE__*/ defineContainer<JSX.LogicFlowNode>('l
   'startX',
   'startY',
   'position',
-  'isVisible'
+  'isVisible',
+  'notifyConnectors'
 ]);
 
 

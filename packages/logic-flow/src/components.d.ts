@@ -7,9 +7,11 @@
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
 import { Coords } from "./types/Coords";
 import { LogicFlowConnection } from "./components/logic-flow-connection/logic-flow-connection";
+import { Element } from "@stencil/core";
 import { ViewContext } from "./types/ViewContext";
 export { Coords } from "./types/Coords";
 export { LogicFlowConnection } from "./components/logic-flow-connection/logic-flow-connection";
+export { Element } from "@stencil/core";
 export { ViewContext } from "./types/ViewContext";
 export namespace Components {
     interface LogicFlowConnection {
@@ -27,10 +29,24 @@ export namespace Components {
     sourceConnector: HTMLLogicFlowConnectorElement,
     // targetConnector: HTMLLogicFlowConnectorElement,
   ) => Promise<boolean>;
+        "onDisconnection": (
+    sourceConnector: HTMLLogicFlowConnectorElement,
+    // targetConnector: HTMLLogicFlowConnectorElement,
+  ) => Promise<boolean>;
+        "onUpdateFromConnectedNode": (
+    connector: HTMLLogicFlowConnectorElement,
+    node: HTMLLogicFlowNodeElement,
+    data: any,
+  ) => Promise<void>;
         "type": 'input' | 'output';
     }
     interface LogicFlowNode {
+        "getConnectedNodes": (type?: "input" | "output" | "both") => Promise<void>;
+        "getConnectors": (type?: "input" | "output" | "both") => Promise<Set<HTMLLogicFlowConnectorElement>>;
+        "getInputConnectors": () => Promise<NodeListOf<Element>>;
+        "getOutputConnectors": () => Promise<NodeListOf<Element>>;
         "isVisible": boolean;
+        "notifyConnectedConnectors": (type: "input" | "output" | "both", data: any) => Promise<void>;
         "position": Coords;
         "startX": number;
         "startY": number;
@@ -52,6 +68,10 @@ export namespace Components {
         "zoomSpeed": number;
     }
 }
+export interface LogicFlowNodeCustomEvent<T> extends CustomEvent<T> {
+    detail: T;
+    target: HTMLLogicFlowNodeElement;
+}
 declare global {
     interface HTMLLogicFlowConnectionElement extends Components.LogicFlowConnection, HTMLStencilElement {
     }
@@ -65,7 +85,18 @@ declare global {
         prototype: HTMLLogicFlowConnectorElement;
         new (): HTMLLogicFlowConnectorElement;
     };
+    interface HTMLLogicFlowNodeElementEventMap {
+        "notifyConnectors": any;
+    }
     interface HTMLLogicFlowNodeElement extends Components.LogicFlowNode, HTMLStencilElement {
+        addEventListener<K extends keyof HTMLLogicFlowNodeElementEventMap>(type: K, listener: (this: HTMLLogicFlowNodeElement, ev: LogicFlowNodeCustomEvent<HTMLLogicFlowNodeElementEventMap[K]>) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | AddEventListenerOptions): void;
+        addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLLogicFlowNodeElementEventMap>(type: K, listener: (this: HTMLLogicFlowNodeElement, ev: LogicFlowNodeCustomEvent<HTMLLogicFlowNodeElementEventMap[K]>) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof DocumentEventMap>(type: K, listener: (this: Document, ev: DocumentEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener<K extends keyof HTMLElementEventMap>(type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any, options?: boolean | EventListenerOptions): void;
+        removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
     }
     var HTMLLogicFlowNodeElement: {
         prototype: HTMLLogicFlowNodeElement;
@@ -99,10 +130,20 @@ declare namespace LocalJSX {
     sourceConnector: HTMLLogicFlowConnectorElement,
     // targetConnector: HTMLLogicFlowConnectorElement,
   ) => Promise<boolean>;
+        "onDisconnection"?: (
+    sourceConnector: HTMLLogicFlowConnectorElement,
+    // targetConnector: HTMLLogicFlowConnectorElement,
+  ) => Promise<boolean>;
+        "onUpdateFromConnectedNode"?: (
+    connector: HTMLLogicFlowConnectorElement,
+    node: HTMLLogicFlowNodeElement,
+    data: any,
+  ) => Promise<void>;
         "type"?: 'input' | 'output';
     }
     interface LogicFlowNode {
         "isVisible"?: boolean;
+        "onNotifyConnectors"?: (event: LogicFlowNodeCustomEvent<any>) => void;
         "position"?: Coords;
         "startX"?: number;
         "startY"?: number;

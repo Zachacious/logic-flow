@@ -799,6 +799,12 @@ export class ViewContext {
       c => c !== connection,
     );
 
+    connection.connectors.forEach(connector => {
+      if (connector.onDisconnection) {
+        connector.onDisconnection(snapConnector);
+      }
+    });
+
     connector.connectingConnector = null;
     snapConnector.connectingConnector = null;
   }

@@ -1,4 +1,15 @@
-import { Component, Host, Prop, h, Element, State, Watch } from '@stencil/core';
+import {
+  Component,
+  Host,
+  Prop,
+  h,
+  Element,
+  State,
+  Watch,
+  Method,
+  EventEmitter,
+  Event,
+} from '@stencil/core';
 import { Coords } from '../../types/Coords';
 
 @Component({
@@ -7,7 +18,7 @@ import { Coords } from '../../types/Coords';
   shadow: false,
 })
 export class LogicFlowNode {
-  @Element() el: HTMLElement;
+  @Element() el: HTMLLogicFlowNodeElement;
 
   @Prop() type: string = 'default';
   // @Prop() name: string = 'Node';
@@ -18,7 +29,11 @@ export class LogicFlowNode {
 
   @State() isDragging = false;
 
+  @Event() notifyConnectors: EventEmitter;
+
   style = {};
+  observer: MutationObserver;
+  connectors: Set<HTMLLogicFlowConnectorElement> = new Set();
 
   componentWillLoad() {
     //  set initial size
@@ -26,6 +41,27 @@ export class LogicFlowNode {
     this.position.y = this.startY;
 
     this.onPositionChange(this.position);
+
+    // set up observer - watch for adding or removing connectors
+    this.observer = new MutationObserver((mutations: MutationRecord[]) => {
+      for (const mutation of mutations) {
+        if (mutation.type === 'childList') {
+          mutation.addedNodes.forEach((node: Node) => {
+            if (node.nodeName === 'LOGIC-FLOW-CONNECTOR') {
+              const connector = node as HTMLLogicFlowConnectorElement;
+              this.connectors.add(connector);
+            }
+          });
+
+          mutation.removedNodes.forEach((node: Node) => {
+            if (node.nodeName === 'LOGIC-FLOW-CONNECTOR') {
+              const connector = node as HTMLLogicFlowConnectorElement;
+              this.connectors.delete(connector);
+            }
+          });
+        }
+      }
+    });
   }
 
   @Watch('position')
@@ -35,6 +71,82 @@ export class LogicFlowNode {
     }
     // update transform
     this.updateTransform();
+  }
+
+  @Method()
+  async getInputConnectors() {
+    return this.el.querySelectorAll('logic-flow-connector[type="input"]');
+  }
+
+  @Method()
+  async getOutputConnectors() {
+    return this.el.querySelectorAll('logic-flow-connector[type="output"]');
+  }
+
+  @Method()
+  async getConnectors(type: 'input' | 'output' | 'both' = 'both') {
+    let connectors = this.connectors;
+    if (type === 'input') {
+      connectors = new Set(
+        Array.from(connectors).filter(connector => connector.type === 'input'),
+      );
+    } else if (type === 'output') {
+      connectors = new Set(
+        Array.from(connectors).filter(connector => connector.type === 'output'),
+      );
+    }
+
+    return connectors;
+  }
+
+  @Method()
+  async getConnectedNodes(type: 'input' | 'output' | 'both' = 'both') {
+    const nodes = [];
+    const connectors = await this.getConnectors(type);
+
+    for (const connector of connectors) {
+      const connections = connector.connections;
+      for (const connection of connections) {
+        // if connectors length is greater than 1, then we have a connection
+        if (connection.connectors.size > 1) {
+          // get the other connector
+          const otherConnector = Array.from(connection.connectors).find(
+            c => c !== connector,
+          );
+          // get the node
+          const node = await otherConnector.getNode();
+          nodes.push(node);
+        }
+      }
+    }
+  }
+
+  @Method()
+  async notifyConnectedConnectors(
+    type: 'input' | 'output' | 'both' = 'both',
+    data: any,
+  ) {
+    const connectors = await this.getConnectors(type);
+    for (const connector of connectors) {
+      const connections = connector.connections;
+      for (const connection of connections) {
+        // if connectors length is greater than 1, then we have a connection
+        if (connection.connectors.size > 1) {
+          // get the other connector
+          const otherConnector = Array.from(connection.connectors).find(
+            c => c !== connector,
+          );
+
+          if (otherConnector.onUpdateFromConnectedNode) {
+            otherConnector.onUpdateFromConnectedNode(
+              otherConnector,
+              this.el,
+              data,
+            );
+          }
+        }
+      }
+    }
   }
 
   updateTransform() {

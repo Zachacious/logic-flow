@@ -16,6 +16,15 @@ export class LogicFlowConnector {
     sourceConnector: HTMLLogicFlowConnectorElement,
     // targetConnector: HTMLLogicFlowConnectorElement,
   ) => Promise<boolean>;
+  @Prop() onDisconnection: (
+    sourceConnector: HTMLLogicFlowConnectorElement,
+    // targetConnector: HTMLLogicFlowConnectorElement,
+  ) => Promise<boolean>;
+  @Prop() onUpdateFromConnectedNode: (
+    connector: HTMLLogicFlowConnectorElement,
+    node: HTMLLogicFlowNodeElement,
+    data: any,
+  ) => Promise<void>;
 
   @Method()
   async getNode() {

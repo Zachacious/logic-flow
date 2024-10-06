@@ -1,7 +1,7 @@
-'use strict';
+"use strict";
 
 module.exports = vueLib;
 
-function vueLib() {
-  return 'Hello from vueLib';
-}
+// function logicFlowVue() {
+//   return 'Hello from vueLib';
+// }

@@ -6,6 +6,8 @@ export const config: Config = {
 
   extras: {
     experimentalSlotFixes: true,
+    // enableImportInjection: true,
+    experimentalScopedSlotChanges: true,
   },
 
   outputTargets: [
@@ -14,7 +16,10 @@ export const config: Config = {
       esmLoaderPath: '../loader',
       collectionDir: 'dist/components',
       isPrimaryPackageOutputTarget: true,
-      copy: [{ src: './styles', dest: 'styles' }],
+      copy: [
+        { src: 'styles' },
+        // { src: 'components.d.ts', dest: 'dist/components.d.ts' },
+      ],
     },
     // {
     //   type: 'dist-custom-elements',
@@ -28,6 +33,7 @@ export const config: Config = {
       proxiesFile: '../logic-flow-vue/lib/components.ts',
       includeDefineCustomElements: true,
     }),
+
     {
       type: 'docs-readme',
     },
