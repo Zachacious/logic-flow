@@ -33,8 +33,7 @@ export const LogicFlowNode = /*@__PURE__*/ defineContainer<JSX.LogicFlowNode>('l
   'startX',
   'startY',
   'position',
-  'isVisible',
-  'notifyConnectors'
+  'isVisible'
 ]);
 
 

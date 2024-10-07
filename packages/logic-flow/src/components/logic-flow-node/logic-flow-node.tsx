@@ -7,8 +7,6 @@ import {
   State,
   Watch,
   Method,
-  EventEmitter,
-  Event,
 } from '@stencil/core';
 import { Coords } from '../../types/Coords';
 
@@ -29,7 +27,7 @@ export class LogicFlowNode {
 
   @State() isDragging = false;
 
-  @Event() notifyConnectors: EventEmitter;
+  // @Event() notifyConnectors: EventEmitter;
 
   style = {};
   observer: MutationObserver;
@@ -62,6 +60,14 @@ export class LogicFlowNode {
         }
       }
     });
+
+    this.observer.observe(this.el, {
+      childList: true,
+    });
+  }
+
+  disconnectedCallback() {
+    this.observer.disconnect();
   }
 
   @Watch('position')
@@ -71,16 +77,6 @@ export class LogicFlowNode {
     }
     // update transform
     this.updateTransform();
-  }
-
-  @Method()
-  async getInputConnectors() {
-    return this.el.querySelectorAll('logic-flow-connector[type="input"]');
-  }
-
-  @Method()
-  async getOutputConnectors() {
-    return this.el.querySelectorAll('logic-flow-connector[type="output"]');
   }
 
   @Method()

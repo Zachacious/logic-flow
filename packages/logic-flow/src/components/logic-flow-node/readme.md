@@ -16,13 +16,6 @@
 | `type`      | `type`       |             | `string`                    | `'default'`      |
 
 
-## Events
-
-| Event              | Description | Type               |
-| ------------------ | ----------- | ------------------ |
-| `notifyConnectors` |             | `CustomEvent<any>` |
-
-
 ## Methods
 
 ### `getConnectedNodes(type?: "input" | "output" | "both") => Promise<void>`
@@ -54,26 +47,6 @@ Type: `Promise<void>`
 #### Returns
 
 Type: `Promise<Set<HTMLLogicFlowConnectorElement>>`
-
-
-
-### `getInputConnectors() => Promise<NodeListOf<Element>>`
-
-
-
-#### Returns
-
-Type: `Promise<NodeListOf<Element>>`
-
-
-
-### `getOutputConnectors() => Promise<NodeListOf<Element>>`
-
-
-
-#### Returns
-
-Type: `Promise<NodeListOf<Element>>`
 
 
 

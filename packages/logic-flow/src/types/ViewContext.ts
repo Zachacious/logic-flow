@@ -647,6 +647,19 @@ export class ViewContext {
       });
     }
 
+    // if connected to an input connector
+    // call the onConnection callback
+    if (aConn.type === 'input' && aConn.onConnection) {
+      aConn.onConnection(tConn).then(result => {
+        if (result === false) {
+          // destroy connection
+          connection.remove();
+          // remove from rects
+          delete this.connectionRects[connection.id];
+        }
+      });
+    }
+
     this.updateConnectionEndpoints(aConn, tConn);
     this.finalizeConnection(aConn, tConn);
 
@@ -799,11 +812,22 @@ export class ViewContext {
       c => c !== connection,
     );
 
-    connection.connectors.forEach(connector => {
-      if (connector.onDisconnection) {
-        connector.onDisconnection(snapConnector);
-      }
-    });
+    // just like onConnection, call onDisconnection if it exists
+    if (connector.onDisconnection) {
+      connector.onDisconnection(snapConnector);
+    }
+
+    // just like onConnection, if the other connector has an onDisconnection callback
+    // call it
+    if (snapConnector.onDisconnection) {
+      snapConnector.onDisconnection(connector);
+    }
+
+    // connection.connectors.forEach(connector => {
+    //   if (connector.onDisconnection) {
+    //     connector.onDisconnection(snapConnector);
+    //   }
+    // });
 
     connector.connectingConnector = null;
     snapConnector.connectingConnector = null;

@@ -21,8 +21,7 @@ export const LogicFlowNode = defineContainer('logic-flow-node', undefined, [
     'startX',
     'startY',
     'position',
-    'isVisible',
-    'notifyConnectors'
+    'isVisible'
 ]);
 export const LogicFlowViewport = defineContainer('logic-flow-viewport', undefined, [
     'showGrid',
