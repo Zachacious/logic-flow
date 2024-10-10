@@ -125,25 +125,22 @@ export class ViewContext {
     const n = node;
 
     // wait for next frame to update connectors rects until the connectors have registered
-    requestIdleCallback(
-      () => {
-        // update rect
-        const rect = n.getBoundingClientRect();
+    setTimeout(() => {
+      // update rect
+      const rect = n.getBoundingClientRect();
 
-        this.nodeRects[id] = {
-          left: n?.position?.x || n.startX || rect.x,
-          top: n?.position?.y || n.startY || rect.y,
-          width: rect.width,
-          height: rect.height,
-        };
+      this.nodeRects[id] = {
+        left: n?.position?.x || n.startX || rect.x,
+        top: n?.position?.y || n.startY || rect.y,
+        width: rect.width,
+        height: rect.height,
+      };
 
-        // add to quadtree
-        this.updateViewportQuadtree(n);
+      // add to quadtree
+      this.updateViewportQuadtree(n);
 
-        // this.updateNodeConnectorsQuadtree(node);
-      },
-      { timeout: 100 },
-    );
+      // this.updateNodeConnectorsQuadtree(node);
+    }, 1);
 
     return id;
   }
