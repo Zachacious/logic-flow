@@ -118,10 +118,7 @@ export class LogicFlowNode {
   }
 
   @Method()
-  async notifyConnectedConnectors(
-    type: 'input' | 'output' | 'both' = 'both',
-    data: any,
-  ) {
+  async sendDataUpdate(type: 'input' | 'output' | 'both' = 'both', data: any) {
     const connectors = await this.getConnectors(type);
     for (const connector of connectors) {
       const connections = connector.connections;
@@ -133,12 +130,8 @@ export class LogicFlowNode {
             c => c !== connector,
           );
 
-          if (otherConnector.onUpdateFromConnectedNode) {
-            otherConnector.onUpdateFromConnectedNode(
-              otherConnector,
-              this.el,
-              data,
-            );
+          if (otherConnector.onDataUpdate) {
+            otherConnector.onDataUpdate(otherConnector, this.el, data);
           }
         }
       }

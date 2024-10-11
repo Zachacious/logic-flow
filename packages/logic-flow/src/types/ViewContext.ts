@@ -836,6 +836,24 @@ export class ViewContext {
     connection.end = start;
   }
 
+  makeConnection(
+    source: HTMLLogicFlowConnectorElement,
+    target: HTMLLogicFlowConnectorElement,
+  ) {
+    const connection = document.createElement(
+      'logic-flow-connection',
+    ) as HTMLLogicFlowConnectionElement;
+    connection.start = this.getRectCenter(this.connectorRects[source.id]);
+    connection.end = this.getRectCenter(this.connectorRects[target.id]);
+    connection.type = source.type;
+
+    this.activeConnection = connection;
+    this.contentEl.appendChild(connection);
+
+    this.updateConnectionEndpoints(source, target);
+    this.finalizeConnection(source, target);
+  }
+
   updateNodeConnectorsQuadtree(node: HTMLLogicFlowNodeElement) {
     const connectors = node.querySelectorAll(
       'logic-flow-connector',

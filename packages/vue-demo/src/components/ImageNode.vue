@@ -23,13 +23,14 @@ onMounted(async () => {
     console.log('Disconnected', src)
   }
 
-  // inputConnector.value.onUpdateFromConnectedNode = async (
-  //   connector: HTMLLogicFlowConnectorElement,
-  //   node: HTMLLogicFlowNodeElement,
-  //   data: any
-  // ) => {
-  //   url.value = data.data.url || ''
-  // }
+  inputConnector.value.onDataUpdate = async (
+    connector: HTMLLogicFlowConnectorElement,
+    node: HTMLLogicFlowNodeElement,
+    data: any
+  ) => {
+    url.value = data.data.url || ''
+    console.log('Data updated', data)
+  }
 })
 </script>
 

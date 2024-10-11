@@ -14,7 +14,7 @@ export const LogicFlowConnector = defineContainer('logic-flow-connector', undefi
     'connections',
     'onConnection',
     'onDisconnection',
-    'onUpdateFromConnectedNode'
+    'onDataUpdate'
 ]);
 export const LogicFlowNode = defineContainer('logic-flow-node', undefined, [
     'type',

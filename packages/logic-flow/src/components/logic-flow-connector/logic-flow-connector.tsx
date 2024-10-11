@@ -20,7 +20,7 @@ export class LogicFlowConnector {
     sourceConnector: HTMLLogicFlowConnectorElement,
     // targetConnector: HTMLLogicFlowConnectorElement,
   ) => Promise<boolean>;
-  @Prop() onUpdateFromConnectedNode: (
+  @Prop() onDataUpdate: (
     connector: HTMLLogicFlowConnectorElement,
     node: HTMLLogicFlowNodeElement,
     data: any,

@@ -27,23 +27,23 @@ export namespace Components {
     sourceConnector: HTMLLogicFlowConnectorElement,
     // targetConnector: HTMLLogicFlowConnectorElement,
   ) => Promise<boolean>;
-        "onDisconnection": (
-    sourceConnector: HTMLLogicFlowConnectorElement,
-    // targetConnector: HTMLLogicFlowConnectorElement,
-  ) => Promise<boolean>;
-        "onUpdateFromConnectedNode": (
+        "onDataUpdate": (
     connector: HTMLLogicFlowConnectorElement,
     node: HTMLLogicFlowNodeElement,
     data: any,
   ) => Promise<void>;
+        "onDisconnection": (
+    sourceConnector: HTMLLogicFlowConnectorElement,
+    // targetConnector: HTMLLogicFlowConnectorElement,
+  ) => Promise<boolean>;
         "type": 'input' | 'output';
     }
     interface LogicFlowNode {
         "getConnectedNodes": (type?: "input" | "output" | "both") => Promise<void>;
         "getConnectors": (type?: "input" | "output" | "both") => Promise<Set<HTMLLogicFlowConnectorElement>>;
         "isVisible": boolean;
-        "notifyConnectedConnectors": (type: "input" | "output" | "both", data: any) => Promise<void>;
         "position": Coords;
+        "sendDataUpdate": (type: "input" | "output" | "both", data: any) => Promise<void>;
         "startX": number;
         "startY": number;
         "type": string;
@@ -111,15 +111,15 @@ declare namespace LocalJSX {
     sourceConnector: HTMLLogicFlowConnectorElement,
     // targetConnector: HTMLLogicFlowConnectorElement,
   ) => Promise<boolean>;
-        "onDisconnection"?: (
-    sourceConnector: HTMLLogicFlowConnectorElement,
-    // targetConnector: HTMLLogicFlowConnectorElement,
-  ) => Promise<boolean>;
-        "onUpdateFromConnectedNode"?: (
+        "onDataUpdate"?: (
     connector: HTMLLogicFlowConnectorElement,
     node: HTMLLogicFlowNodeElement,
     data: any,
   ) => Promise<void>;
+        "onDisconnection"?: (
+    sourceConnector: HTMLLogicFlowConnectorElement,
+    // targetConnector: HTMLLogicFlowConnectorElement,
+  ) => Promise<boolean>;
         "type"?: 'input' | 'output';
     }
     interface LogicFlowNode {

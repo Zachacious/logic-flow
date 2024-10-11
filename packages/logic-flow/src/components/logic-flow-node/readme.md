@@ -50,7 +50,7 @@ Type: `Promise<Set<HTMLLogicFlowConnectorElement>>`
 
 
 
-### `notifyConnectedConnectors(type: "input" | "output" | "both", data: any) => Promise<void>`
+### `sendDataUpdate(type: "input" | "output" | "both", data: any) => Promise<void>`
 
 
 

@@ -11,20 +11,22 @@ const onUpdate = async () => {
     return
   }
 
-  // node.value.$el.notifyConnectedConnectors('both', {
-  //   type: 'url-node',
-  //   data: {
-  //     url: url.value
-  //   }
-  // })
+  console.log('Sending data update', url.value)
+
+  node.value.$el.sendDataUpdate('both', {
+    type: 'url-node',
+    data: {
+      url: url.value
+    }
+  })
 }
 
-// onMounted(async () => {
-//   connector.value.onConnection = async (src: HTMLLogicFlowConnectorElement) => {
-//     console.log('Connected', src)
-//     onUpdate()
-//   }
-// })
+onMounted(async () => {
+  connector.value.onConnection = async (src: HTMLLogicFlowConnectorElement) => {
+    console.log('Connected', src)
+    onUpdate()
+  }
+})
 </script>
 
 <template>
