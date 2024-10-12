@@ -7,14 +7,16 @@
 
 ## Properties
 
-| Property              | Attribute | Description | Type                                                                                                     | Default     |
-| --------------------- | --------- | ----------- | -------------------------------------------------------------------------------------------------------- | ----------- |
-| `connectingConnector` | --        |             | `LogicFlowConnector`                                                                                     | `null`      |
-| `connections`         | --        |             | `LogicFlowConnection[]`                                                                                  | `[]`        |
-| `onConnection`        | --        |             | `(sourceConnector: HTMLLogicFlowConnectorElement) => Promise<boolean>`                                   | `undefined` |
-| `onDataUpdate`        | --        |             | `(connector: HTMLLogicFlowConnectorElement, node: HTMLLogicFlowNodeElement, data: any) => Promise<void>` | `undefined` |
-| `onDisconnection`     | --        |             | `(sourceConnector: HTMLLogicFlowConnectorElement) => Promise<boolean>`                                   | `undefined` |
-| `type`                | `type`    |             | `"input" \| "output"`                                                                                    | `'input'`   |
+| Property               | Attribute | Description | Type                                                                                                     | Default     |
+| ---------------------- | --------- | ----------- | -------------------------------------------------------------------------------------------------------- | ----------- |
+| `connectingConnector`  | --        |             | `LogicFlowConnector`                                                                                     | `null`      |
+| `connections`          | --        |             | `LogicFlowConnection[]`                                                                                  | `[]`        |
+| `onConnection`         | --        |             | `(sourceConnector: HTMLLogicFlowConnectorElement) => Promise<boolean>`                                   | `undefined` |
+| `onConnectionRecieved` | --        |             | `(sourceConnector: HTMLLogicFlowConnectorElement) => Promise<boolean>`                                   | `undefined` |
+| `onConnectionRemoved`  | --        |             | `(sourceConnector: HTMLLogicFlowConnectorElement) => Promise<boolean>`                                   | `undefined` |
+| `onDataUpdate`         | --        |             | `(connector: HTMLLogicFlowConnectorElement, node: HTMLLogicFlowNodeElement, data: any) => Promise<void>` | `undefined` |
+| `onDisconnection`      | --        |             | `(sourceConnector: HTMLLogicFlowConnectorElement) => Promise<boolean>`                                   | `undefined` |
+| `type`                 | `type`    |             | `"input" \| "output"`                                                                                    | `'input'`   |
 
 
 ## Methods

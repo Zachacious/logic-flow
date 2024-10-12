@@ -22,7 +22,9 @@ export const LogicFlowConnector = /*@__PURE__*/ defineContainer<JSX.LogicFlowCon
   'type',
   'connectingConnector',
   'connections',
+  'onConnectionRecieved',
   'onConnection',
+  'onConnectionRemoved',
   'onDisconnection',
   'onDataUpdate'
 ]);

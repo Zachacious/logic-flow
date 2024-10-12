@@ -20,7 +20,7 @@ onMounted(async () => {
   }
 
   inputConnector.value.onDisconnection = async (src: HTMLLogicFlowConnectorElement) => {
-    console.log('Disconnected', src)
+    url.value = ''
   }
 
   inputConnector.value.onDataUpdate = async (

@@ -12,7 +12,9 @@ export const LogicFlowConnector = defineContainer('logic-flow-connector', undefi
     'type',
     'connectingConnector',
     'connections',
+    'onConnectionRecieved',
     'onConnection',
+    'onConnectionRemoved',
     'onDisconnection',
     'onDataUpdate'
 ]);

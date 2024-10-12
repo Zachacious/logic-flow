@@ -27,6 +27,14 @@ export namespace Components {
     sourceConnector: HTMLLogicFlowConnectorElement,
     // targetConnector: HTMLLogicFlowConnectorElement,
   ) => Promise<boolean>;
+        "onConnectionRecieved": (
+    sourceConnector: HTMLLogicFlowConnectorElement,
+    // targetConnector: HTMLLogicFlowConnectorElement,
+  ) => Promise<boolean>;
+        "onConnectionRemoved": (
+    sourceConnector: HTMLLogicFlowConnectorElement,
+    // targetConnector: HTMLLogicFlowConnectorElement,
+  ) => Promise<boolean>;
         "onDataUpdate": (
     connector: HTMLLogicFlowConnectorElement,
     node: HTMLLogicFlowNodeElement,
@@ -108,6 +116,14 @@ declare namespace LocalJSX {
         "connectingConnector"?: LogicFlowConnector | null;
         "connections"?: LogicFlowConnection[];
         "onConnection"?: (
+    sourceConnector: HTMLLogicFlowConnectorElement,
+    // targetConnector: HTMLLogicFlowConnectorElement,
+  ) => Promise<boolean>;
+        "onConnectionRecieved"?: (
+    sourceConnector: HTMLLogicFlowConnectorElement,
+    // targetConnector: HTMLLogicFlowConnectorElement,
+  ) => Promise<boolean>;
+        "onConnectionRemoved"?: (
     sourceConnector: HTMLLogicFlowConnectorElement,
     // targetConnector: HTMLLogicFlowConnectorElement,
   ) => Promise<boolean>;

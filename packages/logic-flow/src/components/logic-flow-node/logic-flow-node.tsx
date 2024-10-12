@@ -30,7 +30,8 @@ export class LogicFlowNode {
   // @Event() notifyConnectors: EventEmitter;
 
   style = {};
-  observer: MutationObserver;
+  mutObserver: MutationObserver;
+  // resizeObserver: ResizeObserver;
   connectors: Set<HTMLLogicFlowConnectorElement> = new Set();
 
   componentWillLoad() {
@@ -41,7 +42,7 @@ export class LogicFlowNode {
     this.onPositionChange(this.position);
 
     // set up observer - watch for adding or removing connectors
-    this.observer = new MutationObserver((mutations: MutationRecord[]) => {
+    this.mutObserver = new MutationObserver((mutations: MutationRecord[]) => {
       for (const mutation of mutations) {
         if (mutation.type === 'childList') {
           mutation.addedNodes.forEach((node: Node) => {
@@ -61,13 +62,13 @@ export class LogicFlowNode {
       }
     });
 
-    this.observer.observe(this.el, {
+    this.mutObserver.observe(this.el, {
       childList: true,
     });
   }
 
   disconnectedCallback() {
-    this.observer.disconnect();
+    this.mutObserver.disconnect();
   }
 
   @Watch('position')

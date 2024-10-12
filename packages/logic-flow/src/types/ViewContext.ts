@@ -20,7 +20,8 @@ export class ViewContext {
   viewportQuadtree: Quadtree;
   nodeRects = <Record<string, Rect>>{};
   camera = new Camera();
-  observer: MutationObserver;
+  mutObserver: MutationObserver;
+  resizeObserver: ResizeObserver;
   visibleElements: string[] = [];
   prevVisibleElements: string[] = [];
 
@@ -85,17 +86,44 @@ export class ViewContext {
 
     ViewContext.initializeViewport(viewport);
 
-    this.observer = new MutationObserver((m: MutationRecord[]) =>
+    this.mutObserver = new MutationObserver((m: MutationRecord[]) =>
       this.viewportMutation(m),
     );
-    this.observer.observe(viewport, {
+    this.mutObserver.observe(viewport, {
       childList: true,
       subtree: true,
     });
+
+    // resize observer for all nodes
+    // if resize then  update quadtree and rects etc
+    this.resizeObserver = new ResizeObserver(
+      (entries: ResizeObserverEntry[]) => {
+        entries.forEach(entry => {
+          // check if entry is a node
+          if (entry.target.tagName === 'LOGIC-FLOW-NODE') {
+            const node = entry.target as HTMLLogicFlowNodeElement;
+            const id = node.id;
+            const rect = node.getBoundingClientRect();
+            this.nodeRects[id] = {
+              left: node.position.x,
+              top: node.position.y,
+              width: rect.width,
+              height: rect.height,
+            };
+
+            // add to quadtree
+            this.updateViewportQuadtree(node);
+
+            this.updateNodeConnectorsQuadtree(node);
+          }
+        });
+      },
+    );
   }
 
   destroy() {
-    this.observer.disconnect();
+    this.mutObserver.disconnect();
+    this.resizeObserver.disconnect();
 
     ViewContext.instances.delete(this.uid);
   }
@@ -124,6 +152,9 @@ export class ViewContext {
 
     const n = node;
 
+    // resize observer
+    this.resizeObserver.observe(n);
+
     // wait for next frame to update connectors rects until the connectors have registered
     setTimeout(() => {
       // update rect
@@ -151,6 +182,8 @@ export class ViewContext {
     // get connectors
     const node = this.nodes.get(id);
     if (node) {
+      // remove resize observer
+      this.resizeObserver.unobserve(node);
       const connectors = node.querySelectorAll('logic-flow-connector');
       connectors.forEach((connector: HTMLLogicFlowConnectorElement) => {
         const cid = connector.id;
@@ -179,7 +212,7 @@ export class ViewContext {
     const id = nanoid();
     connector.id = id;
     this.connectors.set(id, connector);
-    requestAnimationFrame(() => {
+    setTimeout(() => {
       const connectorEl = connector.querySelector('.connector');
       const rect = connectorEl.getBoundingClientRect();
       this.connectorRects[id] = {
@@ -200,7 +233,7 @@ export class ViewContext {
         x: qrect.left + qrect.width / 2,
         y: qrect.top + qrect.height / 2,
       });
-    });
+    }, 1);
 
     return id;
   }
@@ -630,11 +663,26 @@ export class ViewContext {
       return;
     }
 
-    // if connector has a onConnection callback
+    // if connector has a onConnectionRecieved callback
     // call it. If it returns false, cancel the connection
     const connection = this.activeConnection;
-    if (target.onConnection) {
-      target.onConnection(aConn).then(result => {
+    if (target.onConnectionRecieved) {
+      target.onConnectionRecieved(aConn).then(result => {
+        if (result === false) {
+          // destroy connection
+          connection.remove();
+          // remove from rects
+          delete this.connectionRects[connection.id];
+        }
+      });
+    }
+    // TODO: handle connection recieved and connection removed
+    // onConnected and onDisconnected will be bi-directional
+
+    // if connected to an input connector
+    // call the onConnectionRecieved callback
+    if (aConn.type === 'input' && aConn.onConnectionRecieved) {
+      aConn.onConnectionRecieved(tConn).then(result => {
         if (result === false) {
           // destroy connection
           connection.remove();
@@ -644,10 +692,23 @@ export class ViewContext {
       });
     }
 
-    // if connected to an input connector
-    // call the onConnection callback
-    if (aConn.type === 'input' && aConn.onConnection) {
+    //if target or source has onConnection callback, call both
+    console.log('aConn.onConnection', aConn.onConnection);
+    if (aConn.onConnection) {
+      console.log('onConnection active');
       aConn.onConnection(tConn).then(result => {
+        if (result === false) {
+          // destroy connection
+          connection.remove();
+          // remove from rects
+          delete this.connectionRects[connection.id];
+        }
+      });
+    }
+
+    if (target.onConnection) {
+      console.log('onConnection target');
+      target.onConnection(aConn).then(result => {
         if (result === false) {
           // destroy connection
           connection.remove();
@@ -810,21 +871,24 @@ export class ViewContext {
     );
 
     // just like onConnection, call onDisconnection if it exists
-    if (connector.onDisconnection) {
-      connector.onDisconnection(snapConnector);
+    if (connector.onConnectionRemoved) {
+      connector.onConnectionRemoved(snapConnector);
     }
 
     // just like onConnection, if the other connector has an onDisconnection callback
     // call it
+    if (snapConnector.onConnectionRemoved) {
+      snapConnector.onConnectionRemoved(connector);
+    }
+
+    // if either has onDisconnected, call both
+    if (connector.onDisconnection) {
+      connector.onDisconnection(snapConnector);
+    }
+
     if (snapConnector.onDisconnection) {
       snapConnector.onDisconnection(connector);
     }
-
-    // connection.connectors.forEach(connector => {
-    //   if (connector.onDisconnection) {
-    //     connector.onDisconnection(snapConnector);
-    //   }
-    // });
 
     connector.connectingConnector = null;
     snapConnector.connectingConnector = null;

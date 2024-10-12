@@ -12,7 +12,15 @@ export class LogicFlowConnector {
   @Prop() type: 'input' | 'output' = 'input';
   @Prop() connectingConnector: LogicFlowConnector | null = null;
   @Prop() connections: LogicFlowConnection[] = [];
+  @Prop() onConnectionRecieved: (
+    sourceConnector: HTMLLogicFlowConnectorElement,
+    // targetConnector: HTMLLogicFlowConnectorElement,
+  ) => Promise<boolean>;
   @Prop() onConnection: (
+    sourceConnector: HTMLLogicFlowConnectorElement,
+    // targetConnector: HTMLLogicFlowConnectorElement,
+  ) => Promise<boolean>;
+  @Prop() onConnectionRemoved: (
     sourceConnector: HTMLLogicFlowConnectorElement,
     // targetConnector: HTMLLogicFlowConnectorElement,
   ) => Promise<boolean>;
