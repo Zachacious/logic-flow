@@ -98,12 +98,29 @@ export class ViewContext {
     // if resize then  update quadtree and rects etc
     this.resizeObserver = new ResizeObserver(
       (entries: ResizeObserverEntry[]) => {
-        entries.forEach(entry => {
+        // entries.forEach(entry => {
+        for (let i = 0; i < entries.length; i++) {
+          const entry = entries[i];
           // check if entry is a node
           if (entry.target.tagName === 'LOGIC-FLOW-NODE') {
+            // if not visible(display: none) then continue
+            if (
+              (entry.target as HTMLLogicFlowNodeElement).style.display ===
+              'none'
+            )
+              return;
             const node = entry.target as HTMLLogicFlowNodeElement;
+
             const id = node.id;
             const rect = node.getBoundingClientRect();
+            const delta = {
+              // x: (this.nodeRects[id]?.width ?? 0) - rect.width,
+              // y: (this.nodeRects[id]?.height ?? 0) - rect.height,
+              x: rect.width - (this.nodeRects[id]?.width ?? 0),
+              y: rect.height - (this.nodeRects[id]?.height ?? 0),
+            };
+
+            console.log('resize observer', delta);
             this.nodeRects[id] = {
               left: node.position.x,
               top: node.position.y,
@@ -114,9 +131,35 @@ export class ViewContext {
             // add to quadtree
             this.updateViewportQuadtree(node);
 
-            this.updateNodeConnectorsQuadtree(node);
+            // this.updateNodeConnectorPos(node, delta);
+
+            // update connectors
+            const connectors = node.querySelectorAll('logic-flow-connector');
+            for (let i = 0; i < connectors.length; i++) {
+              const connector = connectors[i] as HTMLLogicFlowConnectorElement;
+              const connectorEl = connector.querySelector('.connector');
+              const rect = connectorEl.getBoundingClientRect();
+              this.connectorRects[id] = {
+                left:
+                  (rect.x - this.viewportOffset.left) / this.camera.zoom -
+                  this.camera.pos.x,
+                top:
+                  (rect.y - this.viewportOffset.top) / this.camera.zoom -
+                  this.camera.pos.y,
+                width: rect.width / this.camera.zoom,
+                height: rect.height / this.camera.zoom,
+              };
+
+              // add to quadtree
+              const qrect = this.connectorRects[id];
+              this.connectorQuadtree.insert({
+                id,
+                x: qrect.left + qrect.width / 2,
+                y: qrect.top + qrect.height / 2,
+              });
+            }
           }
-        });
+        }
       },
     );
   }
@@ -177,7 +220,6 @@ export class ViewContext {
   }
 
   removeNode(id: string) {
-    console.log('remove node', id);
     // remove all connections and connectors associated with the node
     // get connectors
     const node = this.nodes.get(id);
@@ -449,6 +491,14 @@ export class ViewContext {
       this.connectorRects[connector.id] = rect;
 
       this.updateNodeConnectorConnectionsPos(connector, rect);
+
+      // update quadtree
+      this.connectorQuadtree.remove(connector.id);
+      this.connectorQuadtree.insert({
+        id: connector.id,
+        x: rect.left + rect.width / 2,
+        y: rect.top + rect.height / 2,
+      });
     }
   }
 
@@ -693,9 +743,7 @@ export class ViewContext {
     }
 
     //if target or source has onConnection callback, call both
-    console.log('aConn.onConnection', aConn.onConnection);
     if (aConn.onConnection) {
-      console.log('onConnection active');
       aConn.onConnection(tConn).then(result => {
         if (result === false) {
           // destroy connection
@@ -707,7 +755,6 @@ export class ViewContext {
     }
 
     if (target.onConnection) {
-      console.log('onConnection target');
       target.onConnection(aConn).then(result => {
         if (result === false) {
           // destroy connection
@@ -927,7 +974,6 @@ export class ViewContext {
       const connector = connectors[i];
       let rect = this.connectorRects[connector.id];
       if (!rect) {
-        console.log('no rect');
         let connectorEl = connector.querySelector('.connector');
 
         const r = connectorEl.getBoundingClientRect();

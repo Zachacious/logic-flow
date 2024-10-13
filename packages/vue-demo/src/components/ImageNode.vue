@@ -14,7 +14,7 @@ onMounted(async () => {
     const sourceNode = await src?.getNode()
 
     if (sourceNode.type !== 'url-node') {
-      console.log('Invalid connection')
+      // console.log('Invalid connection')
       return false
     }
   }
@@ -29,7 +29,7 @@ onMounted(async () => {
     data: any
   ) => {
     url.value = data.data.url || ''
-    console.log('Data updated', data)
+    // console.log('Data updated', data)
   }
 })
 </script>
