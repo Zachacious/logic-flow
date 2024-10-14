@@ -1,8 +1,8 @@
-# Logic Flow Component(under development)
+# Logic Flow Components(prototype/experimental)
 
-Framework agnostic native web components that allows you to create logic flow diagrams and non-linear editors. Think Unreal Engine's Blueprints or Blenders material editor. View layer only. You'll need to handle the data layer(perhaps some kind of graph structure), saving, loading, etc.
+Framework agnostic native web components for logic flow diagrams and non-linear editors. Think Unreal Engine's Blueprints or Blenders material editor. View layer only. You'll need to handle the data layer(perhaps some kind of graph structure), saving, loading, etc.
 
-![screenshot](./screenshots/screen1.png)
+![screenshot](./screenshots/screen2.png)
 
 ## Features
 
