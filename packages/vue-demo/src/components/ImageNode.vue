@@ -36,11 +36,11 @@ onMounted(async () => {
 
 <template>
   <LogicFlowNode v-bind="$attrs" type="image-node">
-    <div class="w-[150px] p-2">
+    <div class="w-[200px] h-[200px] p-2 overflow-hidden">
       <img
-        :src="url || 'https://via.placeholder.com/150'"
+        :src="url || 'https://via.placeholder.com/200'"
         alt="Placeholder"
-        class="pointer-events-none"
+        class="pointer-events-none bg-no-repeat bg-cover bg-center rounded-md"
       />
     </div>
 

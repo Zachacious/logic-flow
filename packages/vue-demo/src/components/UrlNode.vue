@@ -11,8 +11,6 @@ const onUpdate = async () => {
     return
   }
 
-  console.log('Sending data update', url.value)
-
   node.value.$el.sendDataUpdate('both', {
     type: 'url-node',
     data: {
@@ -23,15 +21,14 @@ const onUpdate = async () => {
 
 onMounted(async () => {
   connector.value.onConnection = async (src: HTMLLogicFlowConnectorElement) => {
-    console.log('Connected', src)
     onUpdate()
   }
 })
 </script>
 
 <template>
-  <LogicFlowNode ref="node" v-bind="$attrs" type="url-node">
-    <div class="text-md font-bold p-2">Url</div>
+  <LogicFlowNode ref="node" v-bind="$attrs" type="url-node" class="pb-2">
+    <div class="text-md text-gray-800 font-bold px-2 pt-1">Url</div>
 
     <logic-flow-connector ref="connector" type="output"
       ><div class="">

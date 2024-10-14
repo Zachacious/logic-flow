@@ -196,7 +196,7 @@ export class ViewContext {
     const n = node;
 
     // resize observer
-    this.resizeObserver.observe(n);
+    // this.resizeObserver.observe(n);
 
     // wait for next frame to update connectors rects until the connectors have registered
     setTimeout(() => {
@@ -225,7 +225,7 @@ export class ViewContext {
     const node = this.nodes.get(id);
     if (node) {
       // remove resize observer
-      this.resizeObserver.unobserve(node);
+      // this.resizeObserver.unobserve(node);
       const connectors = node.querySelectorAll('logic-flow-connector');
       connectors.forEach((connector: HTMLLogicFlowConnectorElement) => {
         const cid = connector.id;
